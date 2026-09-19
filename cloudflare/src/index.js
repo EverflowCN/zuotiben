@@ -51,7 +51,7 @@ export default {
 async function handleRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return corsPreflight(request, env);
-  if (url.pathname === '/health') return json({ ok: true, service: 'zuotiben-api', d1: Boolean(env.DB), storage: 'external-links', auth: 'd1-session' }, 200, request, env);
+  if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) return json({ ok: true, service: 'zuotiben-api', status: 'ready', d1: Boolean(env.DB), storage: 'external-links', auth: 'd1-session', endpoints: ['/health','/public/bootstrap','/auth/setup/status'] }, 200, request, env, {'Cache-Control':'no-store'});
   if (request.method === 'GET' && url.pathname === '/public/bootstrap') return json(await getPublicBootstrap(env), 200, request, env, publicCacheHeaders(env));
   if (url.pathname.startsWith('/auth/')) return handleAuth(request, env, url);
   if (url.pathname.startsWith('/admin/')) {
