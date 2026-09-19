@@ -11,7 +11,8 @@ const ICONS={
   audit:'<path d="M4 4h16v16H4Z"/><path d="M8 9h8M8 13h8M8 17h5"/>',logout:'<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 4h6v16h-6"/>',
   eye:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
-  account:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
+  account:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  text:'<path d="M4 5h16M9 9h11M9 13h11M9 17h7"/><path d="M4 9h1M4 13h1M4 17h1"/>'
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||ICONS.box)+'</svg>'}
 $$('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
@@ -19,6 +20,110 @@ $$('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 const pinnedResourceTitles=new Set(JSON.parse(localStorage.getItem('yanku-pinned-resource-titles')||'[]'));
 const pinnedAnnouncementTitles=new Set(JSON.parse(localStorage.getItem('yanku-pinned-announcement-titles')||'[]'));
 const storedAnnouncements=JSON.parse(localStorage.getItem('yanku-announcements-v2')||'null');
+
+const siteCopyDefaults={
+  brandName:'研库',
+  mobileBrandSubtitle:'资源导航',
+  sidebarColumnsTitle:'栏目',
+  sidebarSubjectsTitle:'科目',
+  navOverview:'总览',
+  navResources:'资料',
+  navExperience:'经验贴',
+  overviewEyebrow:'OVERVIEW',
+  overviewTitle:'总览',
+  overviewDesc:'快速查看最近更新、公告、勘误与资源收录情况。',
+  overviewSearchPlaceholder:'搜索资源、科目、经验或勘误',
+  resourcesEyebrow:'RESOURCE LIBRARY',
+  resourcesTitle:'全部资源',
+  resourcesDesc:'书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。',
+  resourcesSearchPlaceholder:'搜索资源、科目、版本或关键词',
+  experienceEyebrow:'EXPERIENCE',
+  experienceTitle:'经验贴',
+  experienceDesc:'围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。',
+  experienceSearchPlaceholder:'搜索经验贴、院校或专业',
+  allResourcesLabel:'全部资料',
+  allSubjectsLabel:'全部科目',
+  subjectGroupLabel:'已收录科目',
+  noSubjectMatch:'没有匹配的已收录科目',
+  filterHint:'支持搜索',
+  toolbarSort:'最近更新',
+  viewNote:'资源 · 版本 · 渠道',
+  freeTitle:'全部资源免费公开',
+  freeBody:'本站收录与整理的资源均免费公开，不设置付费门槛。',
+  qqTitle:'更多资料在 QQ 群',
+  qqBody:'更多资料、更新与交流可加入 QQ 群。',
+  qqNumber:'1032998814',
+  qqCopyButton:'复制群号',
+  progressTitle:'功能持续添加中',
+  progressBody:'资料、经验贴、勘误和后台功能会持续补充与完善。',
+  showFreeInfo:true,
+  showQQInfo:true,
+  showProgressInfo:true,
+  recentTitle:'最近更新',
+  recentAction:'查看全部',
+  maintenanceTitle:'资源维护',
+  maintenanceAction:'使用说明',
+  maintenanceEntryLabel:'获取入口',
+  maintenanceEntryTitle:'网盘 · 直链 · 打印',
+  maintenanceEntryBody:'按具体版本分别提供',
+  maintenanceErrataLabel:'勘误提交',
+  maintenanceErrataTitle:'发现问题可申请提交',
+  maintenanceErrataBody:'提交地址由后台单独配置',
+  metricResourcesLabel:'已收录资料',
+  metricResourcesNote:'查看全部资源',
+  metricVersionsLabel:'资源版本',
+  metricVersionsNote:'标准版 / 打印版等',
+  metricExperienceLabel:'经验贴',
+  metricExperienceNote:'备考经验整理',
+  metricErrataLabel:'公开勘误',
+  metricErrataNote:'随对应版本查看',
+  resourceEmptyTitle:'暂时没有收录资源',
+  resourceEmptyBody:'有内容后才会显示对应科目。',
+  experienceSectionTitle:'经验贴',
+  experienceSectionBody:'后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。',
+  experienceEmptyTitle:'暂未收录经验贴',
+  experienceEmptyBody:'后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。',
+  siteNoteTitle:'说明',
+  siteNoteBody:'资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。',
+  footerLeft:'研库 · 考研学习资源索引与分发',
+  footerRight:'zuotiben.top',
+  copySuccessText:'QQ群号已复制'
+};
+function loadSiteCopy(){
+  try{return {...siteCopyDefaults,...(JSON.parse(localStorage.getItem('yanku-site-copy-v1')||'{}'))}}
+  catch{return {...siteCopyDefaults}}
+}
+function saveSiteCopy(){localStorage.setItem('yanku-site-copy-v1',JSON.stringify(state.copy))}
+const copyGroups=[
+  {title:'品牌与导航',desc:'站点品牌、侧栏和栏目名称。',fields:[
+    ['brandName','品牌名称'],['mobileBrandSubtitle','移动端副标题'],['sidebarColumnsTitle','侧栏栏目标题'],['sidebarSubjectsTitle','侧栏科目标题'],
+    ['navOverview','总览栏目名'],['navResources','资料栏目名'],['navExperience','经验贴栏目名']
+  ]},
+  {title:'页面标题与搜索',desc:'各页面主标题、说明和搜索框提示。',fields:[
+    ['overviewEyebrow','总览英文眉题'],['overviewTitle','总览标题'],['overviewDesc','总览说明','textarea'],['overviewSearchPlaceholder','总览搜索提示'],
+    ['resourcesEyebrow','资料英文眉题'],['resourcesTitle','资料默认标题'],['resourcesDesc','资料说明','textarea'],['resourcesSearchPlaceholder','资料搜索提示'],
+    ['experienceEyebrow','经验贴英文眉题'],['experienceTitle','经验贴标题'],['experienceDesc','经验贴说明','textarea'],['experienceSearchPlaceholder','经验贴搜索提示']
+  ]},
+  {title:'筛选与列表',desc:'资源筛选、工具栏与空状态文案。',fields:[
+    ['allResourcesLabel','全部资料文字'],['allSubjectsLabel','全部科目文字'],['subjectGroupLabel','科目组标题'],['noSubjectMatch','无科目匹配提示'],
+    ['filterHint','筛选提示'],['toolbarSort','排序说明'],['viewNote','列表右侧说明'],['resourceEmptyTitle','资料空状态标题'],['resourceEmptyBody','资料空状态说明','textarea']
+  ]},
+  {title:'首页信息卡',desc:'免费公开、QQ群和持续更新说明。',fields:[
+    ['freeTitle','免费公开标题'],['freeBody','免费公开说明','textarea'],['qqTitle','QQ群标题'],['qqBody','QQ群说明','textarea'],['qqNumber','QQ群号'],['qqCopyButton','复制按钮文字'],
+    ['progressTitle','持续更新标题'],['progressBody','持续更新说明','textarea']
+  ]},
+  {title:'首页统计与维护',desc:'总览统计卡、最近更新和资源维护文案。',fields:[
+    ['metricResourcesLabel','资料统计标题'],['metricResourcesNote','资料统计说明'],['metricVersionsLabel','版本统计标题'],['metricVersionsNote','版本统计说明'],
+    ['metricExperienceLabel','经验贴统计标题'],['metricExperienceNote','经验贴统计说明'],['metricErrataLabel','勘误统计标题'],['metricErrataNote','勘误统计说明'],
+    ['recentTitle','最近更新标题'],['recentAction','最近更新按钮'],['maintenanceTitle','资源维护标题'],['maintenanceAction','资源维护按钮'],
+    ['maintenanceEntryLabel','获取入口小标题'],['maintenanceEntryTitle','获取入口标题'],['maintenanceEntryBody','获取入口说明'],
+    ['maintenanceErrataLabel','勘误小标题'],['maintenanceErrataTitle','勘误标题'],['maintenanceErrataBody','勘误说明']
+  ]},
+  {title:'经验贴、说明与页脚',desc:'经验贴空状态、站点说明和页脚。',fields:[
+    ['experienceSectionTitle','经验贴区标题'],['experienceSectionBody','经验贴区说明','textarea'],['experienceEmptyTitle','经验贴空状态标题'],['experienceEmptyBody','经验贴空状态说明','textarea'],
+    ['siteNoteTitle','站点说明标题'],['siteNoteBody','站点说明正文','textarea'],['footerLeft','页脚左侧'],['footerRight','页脚右侧'],['copySuccessText','复制成功提示']
+  ]}
+];
 
 const state={
   section:'overview',
@@ -39,15 +144,16 @@ const state={
   files:[],
   admins:[{id:1,name:'主管理员',role:'owner',status:'active',last:'当前会话',locked:true}],
   announcementSelection:new Set(),
+  copy:loadSiteCopy(),
   account:{displayName:'主管理员',username:'owner',email:'',role:'Owner',mfa:false,lastLogin:'当前会话'},
   settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:localStorage.getItem('yanku-errata-submit-url')||''}
 };
 const navGroups=[
-  {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article'],['announcements','公告','bell']]},
+  {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article'],['announcements','公告','bell'],['copy','文案与说明','text']]},
   {label:'资源管理',items:[['taxonomy','科目管理','tag'],['files','文件','folder']]},
   {label:'系统',items:[['account','账号中心','account'],['admins','成员与权限','users'],['settings','站点设置','settings'],['audit','审计日志','audit']]}
 ];
-const titles={overview:['OVERVIEW','概览'],resources:['RESOURCES','资料'],experience:['EXPERIENCE','经验贴'],announcements:['ANNOUNCEMENTS','公告'],taxonomy:['SUBJECTS','科目管理'],files:['MEDIA','文件'],account:['ACCOUNT','账号中心'],admins:['ACCESS','成员与权限'],settings:['SETTINGS','站点设置'],audit:['AUDIT','审计日志']};
+const titles={overview:['OVERVIEW','概览'],resources:['RESOURCES','资料'],experience:['EXPERIENCE','经验贴'],announcements:['ANNOUNCEMENTS','公告'],copy:['COPY','文案与说明'],taxonomy:['SUBJECTS','科目管理'],files:['MEDIA','文件'],account:['ACCOUNT','账号中心'],admins:['ACCESS','成员与权限'],settings:['SETTINGS','站点设置'],audit:['AUDIT','审计日志']};
 function subjectLabel(item){return item.subjectName+(item.subjectCode?'（'+item.subjectCode+'）':'')}
 function savePinnedResources(){localStorage.setItem('yanku-pinned-resource-titles',JSON.stringify(state.resources.filter(x=>x.pinned).map(x=>x.title)))}
 function savePinnedAnnouncements(){localStorage.setItem('yanku-pinned-announcement-titles',JSON.stringify(state.announcements.filter(x=>x.pinned).map(x=>x.title)))}
@@ -148,6 +254,24 @@ function renderAnnouncements(){
       '<div class="table-wrap"><table class="table announcement-table"><thead><tr><th class="select-cell"><input id="selectAllAnnouncements" type="checkbox"></th><th>公告</th><th>状态</th><th>置顶</th><th>显示</th><th>发布时间</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '</section>'
 }
+function renderCopy(){
+  const groups=copyGroups.map(group=>
+    '<section class="card copy-group"><div class="card-head"><div><h2>'+group.title+'</h2><p>'+group.desc+'</p></div></div><div class="card-body"><div class="copy-field-grid">'+
+      group.fields.map(([key,label,type])=>{
+        const value=state.copy[key]??'';
+        return '<label class="field '+(type==='textarea'?'wide':'')+'"><span>'+label+'</span>'+(type==='textarea'?'<textarea data-copy-input="'+key+'">'+value+'</textarea>':'<input data-copy-input="'+key+'" value="'+value+'">')+'</label>'
+      }).join('')+
+    '</div></div></section>'
+  ).join('');
+  return head('文案与说明','统一修改前台文字；保存后刷新前台即可看到变化。','<button class="btn" data-copy-export>导出 JSON</button><button class="btn" data-copy-reset>恢复默认</button><button class="btn primary" data-copy-save>保存文案</button>')+
+    '<section class="card copy-visibility-card"><div class="card-head"><div><h2>首页信息卡显示</h2><p>控制免费公开、QQ群和持续更新信息是否出现在总览。</p></div></div><div class="card-body"><div class="list">'+
+      '<div class="list-row"><div><strong>免费公开</strong><small>显示“全部资源免费公开”信息卡</small></div>'+toggle('copy-visibility','showFreeInfo',state.copy.showFreeInfo)+'</div>'+
+      '<div class="list-row"><div><strong>QQ群</strong><small>显示QQ群号和复制入口</small></div>'+toggle('copy-visibility','showQQInfo',state.copy.showQQInfo)+'</div>'+
+      '<div class="list-row"><div><strong>持续更新</strong><small>显示功能持续添加中的说明</small></div>'+toggle('copy-visibility','showProgressInfo',state.copy.showProgressInfo)+'</div>'+
+    '</div></div></section>'+
+    '<div class="copy-groups">'+groups+'</div>'+
+    '<div class="design-note">动态数据（资源数量、版本数量、发布日期等）仍由对应内容模块生成；其余主要前台文案都集中在这里维护。</div>'
+}
 function renderTaxonomy(){
   const rows=state.categories.map(x=>'<tr><td><strong>'+x.name+'</strong><small class="cell-sub">（'+x.code+'）</small></td><td>'+x.count+'</td><td>'+x.order+'</td><td>'+toggle('category',x.id,x.visible)+'</td><td><div class="row-actions"><button class="btn small" data-edit-category="'+x.id+'">编辑</button><button class="btn small danger" data-delete-category="'+x.id+'">删除</button></div></td></tr>').join('');
   return head('科目管理','统一使用「科目名称（科目代码）」；不再维护“公共课 / 专业课”这种上级分类。','<button class="btn primary" data-new-category>＋ 新建科目</button>')+
@@ -192,12 +316,12 @@ function renderAudit(){
 }
 function render(){
   renderNav(); const [ey,title]=titles[state.section]; $('#topEyebrow').textContent=ey;$('#topTitle').textContent=title;
-  const r={overview:renderOverview,resources:renderResources,experience:renderExperience,announcements:renderAnnouncements,taxonomy:renderTaxonomy,files:renderFiles,account:renderAccount,admins:renderAdmins,settings:renderSettings,audit:renderAudit}[state.section];
+  const r={overview:renderOverview,resources:renderResources,experience:renderExperience,announcements:renderAnnouncements,copy:renderCopy,taxonomy:renderTaxonomy,files:renderFiles,account:renderAccount,admins:renderAdmins,settings:renderSettings,audit:renderAudit}[state.section];
   $('#panelHost').innerHTML=r(); bind();
 }
 function bind(){
   $('[data-pin]').forEach(button=>button.onclick=event=>{event.stopPropagation();const scope=button.dataset.pin,id=button.dataset.id;if(scope==='resource'){const item=state.resources.find(x=>x.id==id);if(item){item.pinned=!item.pinned;savePinnedResources()}}if(scope==='announcement'){const item=state.announcements.find(x=>x.id==id);if(item){item.pinned=!item.pinned;saveAnnouncements()}}render();toast('置顶状态已更新（预览）')});
-  $('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible}render();toast('状态已更新（预览）')});
+  $('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='copy-visibility')return;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible}render();toast('状态已更新（预览）')});
   $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(Number(b.dataset.editResource)));
   $('[data-new-resource]')?.addEventListener('click',()=>openResource());
   $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);render();toast('已删除（预览）')}));
@@ -214,6 +338,18 @@ function bind(){
   $('[data-duplicate-announcement]').forEach(b=>b.onclick=()=>duplicateAnnouncement(Number(b.dataset.duplicateAnnouncement)));
   $('[data-new-announcement]')?.addEventListener('click',()=>openAnnouncement());
   $$('[data-delete-announcement]').forEach(b=>b.onclick=()=>confirmDelete('删除公告','该公告将不再出现在前台。',()=>{state.announcements=state.announcements.filter(x=>x.id!=b.dataset.deleteAnnouncement);saveAnnouncements();render();toast('已删除（预览）')}));
+  $('[data-copy-save]')?.addEventListener('click',()=>{
+    $('[data-copy-input]').forEach(input=>state.copy[input.dataset.copyInput]=input.value);
+    saveSiteCopy();toast('前台文案已保存（预览）')
+  });
+  $('[data-copy-reset]')?.addEventListener('click',()=>confirmDelete('恢复默认文案','将恢复所有前台文案和说明卡默认值。',()=>{state.copy={...siteCopyDefaults};saveSiteCopy();render();toast('已恢复默认文案')}));
+  $('[data-copy-export]')?.addEventListener('click',()=>{
+    const text=JSON.stringify(state.copy,null,2);
+    navigator.clipboard?.writeText(text).then(()=>toast('文案 JSON 已复制')).catch(()=>toast('复制失败'))
+  });
+  $('[data-toggle="copy-visibility"]').forEach(button=>button.onclick=()=>{
+    const key=button.dataset.id;state.copy[key]=!state.copy[key];saveSiteCopy();render();toast('显示设置已更新')
+  });
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
   $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(Number(b.dataset.editAdmin)));
   $('[data-save-settings]')?.addEventListener('click',()=>{
