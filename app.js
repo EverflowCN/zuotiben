@@ -13,6 +13,8 @@ const catalog = [
 ];
 
 const resourceTypes = ["全部资源", "书籍", "讲义", "做题本", "真题", "题库", "笔记", "模拟卷", "冲刺资料", "其他"];
+const experiencePosts = [];
+const errataItems = [];
 
 const resources = [
   {
@@ -79,13 +81,19 @@ const resources = [
 ];
 
 const state = {
+  section: "resources",
   category: "全部",
   subject: "全部科目",
   resourceType: "全部资源",
   query: ""
 };
 
+const sectionNav = document.getElementById("sectionNav");
+const categorySection = document.getElementById("categorySection");
 const categoryNav = document.getElementById("categoryNav");
+const resourceView = document.getElementById("resourceView");
+const experienceView = document.getElementById("experienceView");
+const errataView = document.getElementById("errataView");
 const subjectPicker = document.getElementById("subjectPicker");
 const subjectPickerButton = document.getElementById("subjectPickerButton");
 const subjectPickerText = document.getElementById("subjectPickerText");
@@ -104,11 +112,21 @@ const searchInput = document.getElementById("searchInput");
 const currentCategory = document.getElementById("currentCategory");
 const currentSubject = document.getElementById("currentSubject");
 const currentResourceType = document.getElementById("currentResourceType");
+const breadcrumb = document.getElementById("breadcrumb");
+const eyebrow = document.getElementById("eyebrow");
 const pageTitle = document.getElementById("pageTitle");
+const contentDesc = document.getElementById("contentDesc");
 const emptyState = document.getElementById("emptyState");
 const toast = document.getElementById("toast");
 const noticeCard = document.getElementById("noticeCard");
 const dismissNoticeButton = document.getElementById("dismissNoticeButton");
+const submitErrataButton = document.getElementById("submitErrataButton");
+
+function esc(text) {
+  return String(text ?? "").replace(/[&<>'"]/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+  }[ch]));
+}
 
 function icon(name, className = "ui-icon") {
   const paths = {
@@ -126,9 +144,9 @@ function icon(name, className = "ui-icon") {
 
 function resourceTypeIcon(type) {
   if (type === "书籍") return "book";
-  if (type === "讲义" || type === "真题" || type === "题库") return "file";
+  if (["讲义","真题","题库"].includes(type)) return "file";
   if (type === "笔记") return "note";
-  if (type === "做题本" || type === "模拟卷" || type === "冲刺资料") return "layers";
+  if (["做题本","模拟卷","冲刺资料"].includes(type)) return "layers";
   return "archive";
 }
 
@@ -137,16 +155,6 @@ function channelIcon(label) {
   if (label.includes("网盘")) return "cloud";
   if (label.includes("直链")) return "link";
   return "file";
-}
-
-function esc(text) {
-  return String(text ?? "").replace(/[&<>'"]/g, ch => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "'": "&#39;",
-    '"': "&quot;"
-  }[ch]));
 }
 
 function checkIcon() {
@@ -163,6 +171,10 @@ function showToast(message) {
 function categoryCount(category) {
   if (category === "全部") return resources.length;
   return resources.filter(item => item.category === category).length;
+}
+
+function getVisibleCategories() {
+  return catalog.map(item => item.name).filter(name => categoryCount(name) > 0);
 }
 
 function subjectCount(subject) {
@@ -182,112 +194,58 @@ function typeCount(type) {
   }).length;
 }
 
-function updateHeadings() {
-  currentCategory.textContent = state.category;
-  currentSubject.textContent = state.subject;
-  currentResourceType.textContent = state.resourceType;
-
-  if (state.subject !== "全部科目") {
-    pageTitle.textContent = `${state.subject}资源`;
-  } else if (state.category !== "全部") {
-    pageTitle.textContent = `${state.category}资源`;
-  } else if (state.resourceType !== "全部资源") {
-    pageTitle.textContent = state.resourceType;
-  } else {
-    pageTitle.textContent = "全部资源";
-  }
-
-  clearFiltersButton.hidden =
-    state.category === "全部" &&
-    state.subject === "全部科目" &&
-    state.resourceType === "全部资源";
-}
-
 function searchableText(item) {
-  const versionText = item.versions.flatMap(version => [
-    version.name,
-    version.note,
-    ...version.meta,
-    ...version.channels.flatMap(channel => [channel.label, channel.note, channel.code])
-  ]).join(" ");
-
   return [
-    item.title,
-    item.description,
-    item.category,
-    item.subject,
-    item.resourceType,
-    item.status,
-    versionText
+    item.title, item.description, item.category, item.subject, item.resourceType, item.status,
+    ...item.versions.flatMap(version => [
+      version.name, version.note, ...version.meta,
+      ...version.channels.flatMap(channel => [channel.label, channel.note, channel.code])
+    ])
   ].join(" ").toLowerCase();
 }
 
 function getFilteredResources() {
   const query = state.query.trim().toLowerCase();
-
   return resources
     .filter(item => state.category === "全部" || item.category === state.category)
     .filter(item => state.subject === "全部科目" || item.subject === state.subject)
     .filter(item => state.resourceType === "全部资源" || item.resourceType === state.resourceType)
     .filter(item => !query || searchableText(item).includes(query))
-    .sort((a, b) => b.updated.localeCompare(a.updated));
+    .sort((a,b) => b.updated.localeCompare(a.updated));
 }
 
-function copyText(text, message = "已复制") {
-  if (!text) {
-    showToast("暂无可复制内容");
-    return;
-  }
+function renderSections() {
+  const sections = [
+    { id: "resources", label: "资料", count: resources.length },
+    { id: "experience", label: "经验贴", count: experiencePosts.length },
+    { id: "errata", label: "勘误", count: errataItems.length }
+  ];
 
-  navigator.clipboard?.writeText(text)
-    .then(() => showToast(message))
-    .catch(() => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-      showToast(message);
+  sectionNav.innerHTML = sections.map(section => `
+    <button class="section-item${state.section === section.id ? " active" : ""}" type="button" data-section="${section.id}">
+      <span>${section.label}</span>
+      ${section.count ? `<span class="section-count">${section.count}</span>` : ""}
+    </button>
+  `).join("");
+
+  sectionNav.querySelectorAll(".section-item").forEach(button => {
+    button.addEventListener("click", () => {
+      state.section = button.dataset.section;
+      state.query = "";
+      searchInput.value = "";
+      renderAll();
     });
-}
-
-function channelCopyText(channel) {
-  if (!channel.url) return "";
-  return channel.code ? `${channel.url}\n提取码：${channel.code}` : channel.url;
-}
-
-function openChannel(resourceIndex, versionIndex, channelIndex) {
-  const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
-  if (!channel?.url) {
-    showToast("该入口尚未添加");
-    return;
-  }
-  window.open(channel.url, "_blank", "noopener,noreferrer");
-}
-
-function copyChannel(resourceIndex, versionIndex, channelIndex) {
-  const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
-  const text = channelCopyText(channel || {});
-  if (!text) {
-    showToast("该入口尚未添加");
-    return;
-  }
-  copyText(text, channel.code ? "链接和提取码已复制" : "链接已复制");
+  });
 }
 
 function renderCategories() {
-  const categories = ["全部", ...catalog.map(item => item.name)];
-
-  categoryNav.innerHTML = categories.map(category => {
-    const active = category === state.category ? " active" : "";
-    return `
-      <button class="category-item${active}" type="button" data-category="${esc(category)}">
-        <span>${esc(category)}</span>
-        <span class="category-count">${categoryCount(category) || ""}</span>
-      </button>
-    `;
-  }).join("");
+  const categories = ["全部", ...getVisibleCategories()];
+  categoryNav.innerHTML = categories.map(category => `
+    <button class="category-item${state.category === category ? " active" : ""}" type="button" data-category="${esc(category)}">
+      <span>${esc(category)}</span>
+      <span class="category-count">${categoryCount(category)}</span>
+    </button>
+  `).join("");
 
   categoryNav.querySelectorAll(".category-item").forEach(button => {
     button.addEventListener("click", () => {
@@ -301,59 +259,38 @@ function renderCategories() {
 
 function getSubjectGroups(query = "") {
   const normalized = query.trim().toLowerCase();
-  const groups = state.category === "全部"
-    ? catalog
-    : catalog.filter(group => group.name === state.category);
-
-  return groups
-    .map(group => ({
-      name: group.name,
-      subjects: group.subjects.filter(subject =>
-        !normalized || subject.toLowerCase().includes(normalized)
-      )
-    }))
-    .filter(group => group.subjects.length);
+  const groups = state.category === "全部" ? catalog : catalog.filter(group => group.name === state.category);
+  return groups.map(group => ({
+    name: group.name,
+    subjects: group.subjects.filter(subject => subjectCount(subject) > 0 && (!normalized || subject.toLowerCase().includes(normalized)))
+  })).filter(group => group.subjects.length);
 }
 
 function renderSubjectOptions(query = "") {
   const normalized = query.trim().toLowerCase();
   const showAll = !normalized || "全部科目".includes(query);
-  const allCount = subjectCount("全部科目");
   const groups = getSubjectGroups(query);
-
   let html = "";
 
   if (showAll) {
     html += `
-      <button class="command-item${state.subject === "全部科目" ? " selected" : ""}" type="button" role="option" data-subject="全部科目">
-        <span class="command-item-main">
-          <span>全部科目</span>
-          ${allCount ? `<small>${allCount} 项</small>` : ""}
-        </span>
+      <button class="command-item${state.subject === "全部科目" ? " selected" : ""}" type="button" data-subject="全部科目">
+        <span class="command-item-main"><span>全部科目</span><small>${subjectCount("全部科目")} 项</small></span>
         ${state.subject === "全部科目" ? checkIcon() : ""}
-      </button>
-    `;
+      </button>`;
   }
 
   groups.forEach(group => {
     html += `<div class="command-group-label">${esc(group.name)}</div>`;
-    html += group.subjects.map(subject => {
-      const active = subject === state.subject;
-      const subjectResources = subjectCount(subject);
-      return `
-        <button class="command-item${active ? " selected" : ""}" type="button" role="option" data-subject="${esc(subject)}">
-          <span class="command-item-main">
-            <span>${esc(subject)}</span>
-            ${subjectResources ? `<small>${subjectResources} 项</small>` : ""}
-          </span>
-          ${active ? checkIcon() : ""}
-        </button>
-      `;
-    }).join("");
+    html += group.subjects.map(subject => `
+      <button class="command-item${state.subject === subject ? " selected" : ""}" type="button" data-subject="${esc(subject)}">
+        <span class="command-item-main"><span>${esc(subject)}</span><small>${subjectCount(subject)} 项</small></span>
+        ${state.subject === subject ? checkIcon() : ""}
+      </button>`
+    ).join("");
   });
 
-  subjectOptions.innerHTML = html || '<div class="command-empty">没有匹配的科目</div>';
-
+  subjectOptions.innerHTML = html || '<div class="command-empty">没有匹配的已收录科目</div>';
   subjectOptions.querySelectorAll("[data-subject]").forEach(button => {
     button.addEventListener("click", () => {
       state.subject = button.dataset.subject;
@@ -369,20 +306,17 @@ function renderSubjectPicker() {
 }
 
 function renderResourceTypeOptions() {
-  resourceTypeOptions.innerHTML = resourceTypes.map(type => {
-    const active = type === state.resourceType;
-    const total = typeCount(type);
-    return `
-      <button class="command-item${active ? " selected" : ""}" type="button" role="option" data-resource-type="${esc(type)}">
-        <span class="command-item-main">
-          ${icon(resourceTypeIcon(type), "menu-icon")}
-          <span>${esc(type)}</span>
-          ${total ? `<small>${total} 项</small>` : ""}
-        </span>
-        ${active ? checkIcon() : ""}
-      </button>
-    `;
-  }).join("");
+  const visibleTypes = resourceTypes.filter(type => type === "全部资源" || typeCount(type) > 0);
+  resourceTypeOptions.innerHTML = visibleTypes.map(type => `
+    <button class="command-item${state.resourceType === type ? " selected" : ""}" type="button" data-resource-type="${esc(type)}">
+      <span class="command-item-main">
+        ${icon(resourceTypeIcon(type), "menu-icon")}
+        <span>${esc(type)}</span>
+        <small>${typeCount(type)} 项</small>
+      </span>
+      ${state.resourceType === type ? checkIcon() : ""}
+    </button>`
+  ).join("");
 
   resourceTypeOptions.querySelectorAll("[data-resource-type]").forEach(button => {
     button.addEventListener("click", () => {
@@ -401,196 +335,185 @@ function renderResourceTypePicker() {
 function openSubjectDropdown() {
   closeResourceTypeDropdown();
   subjectDropdown.hidden = false;
-  subjectPickerButton.setAttribute("aria-expanded", "true");
+  subjectPickerButton.setAttribute("aria-expanded","true");
   subjectSearchInput.value = "";
-  renderSubjectOptions("");
+  renderSubjectOptions();
   requestAnimationFrame(() => subjectSearchInput.focus());
 }
-
 function closeSubjectDropdown() {
   subjectDropdown.hidden = true;
-  subjectPickerButton.setAttribute("aria-expanded", "false");
+  subjectPickerButton.setAttribute("aria-expanded","false");
   subjectSearchInput.value = "";
 }
-
 function openResourceTypeDropdown() {
   closeSubjectDropdown();
   resourceTypeDropdown.hidden = false;
-  resourceTypePickerButton.setAttribute("aria-expanded", "true");
+  resourceTypePickerButton.setAttribute("aria-expanded","true");
   renderResourceTypeOptions();
 }
-
 function closeResourceTypeDropdown() {
   resourceTypeDropdown.hidden = true;
-  resourceTypePickerButton.setAttribute("aria-expanded", "false");
+  resourceTypePickerButton.setAttribute("aria-expanded","false");
 }
-
 function closeAllPopovers() {
   closeSubjectDropdown();
   closeResourceTypeDropdown();
 }
 
-function renderChannel(channel, resourceIndex, versionIndex, channelIndex) {
-  const ready = Boolean(channel.url);
-  const statusClass = ready ? "" : " unavailable";
-  const code = channel.code ? `<span class="channel-code">提取码 ${esc(channel.code)}</span>` : "";
-  const note = channel.note ? `<span class="channel-note">${esc(channel.note)}</span>` : "";
-
-  return `
-    <div class="channel-row${statusClass}">
-      <div class="channel-name">
-        ${icon(channelIcon(channel.label), "channel-icon")}
-        <span>${esc(channel.label)}</span>
-      </div>
-      <div class="channel-extra">${code}${note}</div>
-      <div class="channel-actions">
-        <button type="button" onclick="openChannel(${resourceIndex}, ${versionIndex}, ${channelIndex})">${ready ? "打开" : "未添加"}</button>
-        <button type="button" onclick="copyChannel(${resourceIndex}, ${versionIndex}, ${channelIndex})">复制</button>
-      </div>
-    </div>
-  `;
+function copyText(text, message="已复制") {
+  if (!text) return showToast("暂无可复制内容");
+  navigator.clipboard?.writeText(text).then(() => showToast(message)).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    showToast(message);
+  });
 }
 
-function renderVersion(version, resourceIndex, versionIndex) {
-  const isPrint = version.name.includes("打印");
+function openChannel(resourceIndex,versionIndex,channelIndex) {
+  const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
+  if (!channel?.url) return showToast("该入口尚未添加");
+  window.open(channel.url,"_blank","noopener,noreferrer");
+}
+function copyChannel(resourceIndex,versionIndex,channelIndex) {
+  const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
+  if (!channel?.url) return showToast("该入口尚未添加");
+  copyText(channel.code ? `${channel.url}\n提取码：${channel.code}` : channel.url, channel.code ? "链接和提取码已复制" : "链接已复制");
+}
+
+function renderChannel(channel,resourceIndex,versionIndex,channelIndex) {
+  const ready = Boolean(channel.url);
+  return `
+    <div class="channel-row${ready ? "" : " unavailable"}">
+      <div class="channel-name">${icon(channelIcon(channel.label),"channel-icon")}<span>${esc(channel.label)}</span></div>
+      <div class="channel-extra">
+        ${channel.code ? `<span class="channel-code">提取码 ${esc(channel.code)}</span>` : ""}
+        ${channel.note ? `<span>${esc(channel.note)}</span>` : ""}
+      </div>
+      <div class="channel-actions">
+        <button type="button" onclick="openChannel(${resourceIndex},${versionIndex},${channelIndex})">${ready ? "打开" : "未添加"}</button>
+        <button type="button" onclick="copyChannel(${resourceIndex},${versionIndex},${channelIndex})">复制</button>
+      </div>
+    </div>`;
+}
+
+function renderVersion(version,resourceIndex,versionIndex) {
   return `
     <details class="version" ${versionIndex === 0 ? "open" : ""}>
       <summary>
         <div class="version-summary-main">
-          ${icon(isPrint ? "printer" : "file", "version-icon")}
+          ${icon(version.name.includes("打印") ? "printer" : "file","version-icon")}
           <strong>${esc(version.name)}</strong>
-          <div class="version-meta">
-            ${version.meta.map(tag => `<span>${esc(tag)}</span>`).join("")}
-          </div>
+          <div class="version-meta">${version.meta.map(tag => `<span>${esc(tag)}</span>`).join("")}</div>
         </div>
         <span class="version-toggle">查看获取方式</span>
       </summary>
       <div class="version-body">
         <p class="version-note">${esc(version.note)}</p>
         <div class="channel-list">
-          ${version.channels.map((channel, channelIndex) =>
-            renderChannel(channel, resourceIndex, versionIndex, channelIndex)
-          ).join("")}
+          ${version.channels.map((channel,channelIndex) => renderChannel(channel,resourceIndex,versionIndex,channelIndex)).join("")}
         </div>
       </div>
-    </details>
-  `;
+    </details>`;
 }
 
 function renderResources() {
   const items = getFilteredResources();
   count.textContent = `${items.length} 项已收录`;
   emptyState.hidden = items.length !== 0;
-
   list.innerHTML = items.map(item => {
     const sourceIndex = resources.indexOf(item);
-
     return `
       <article class="resource-item">
         <div class="resource-head">
-          <div class="resource-icon" aria-hidden="true">
-            ${icon(resourceTypeIcon(item.resourceType), "resource-type-icon")}
-          </div>
+          <div class="resource-icon">${icon(resourceTypeIcon(item.resourceType),"resource-type-icon")}</div>
           <div class="resource-main">
-            <div class="resource-title-line">
-              <h2>${esc(item.title)}</h2>
-              <span class="status">${esc(item.status)}</span>
-            </div>
+            <div class="resource-title-line"><h2>${esc(item.title)}</h2><span class="status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
             <div class="resource-tags">
-              <span>${esc(item.category)}</span>
-              <span>${esc(item.subject)}</span>
-              <span>${esc(item.resourceType)}</span>
-              <span>${item.versions.length} 个版本</span>
+              <span>${esc(item.category)}</span><span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${item.versions.length} 个版本</span>
             </div>
           </div>
           <time datetime="${esc(item.updated)}">更新于 ${esc(item.updated)}</time>
         </div>
-
-        <div class="versions">
-          ${item.versions.map((version, versionIndex) =>
-            renderVersion(version, sourceIndex, versionIndex)
-          ).join("")}
-        </div>
-      </article>
-    `;
+        <div class="versions">${item.versions.map((version,i) => renderVersion(version,sourceIndex,i)).join("")}</div>
+      </article>`;
   }).join("");
 }
 
+function updatePageMode() {
+  const isResources = state.section === "resources";
+  resourceView.hidden = !isResources;
+  experienceView.hidden = state.section !== "experience";
+  errataView.hidden = state.section !== "errata";
+  categorySection.hidden = !isResources;
+  breadcrumb.hidden = !isResources;
+
+  if (state.section === "resources") {
+    eyebrow.textContent = "RESOURCE LIBRARY";
+    pageTitle.textContent = state.subject !== "全部科目" ? `${state.subject}资源` : state.category !== "全部" ? `${state.category}资源` : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
+    contentDesc.textContent = "书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。";
+    searchInput.placeholder = "搜索资源、科目、版本或关键词";
+    currentCategory.textContent = state.category;
+    currentSubject.textContent = state.subject;
+    currentResourceType.textContent = state.resourceType;
+    clearFiltersButton.hidden = state.category === "全部" && state.subject === "全部科目" && state.resourceType === "全部资源";
+  } else if (state.section === "experience") {
+    eyebrow.textContent = "EXPERIENCE";
+    pageTitle.textContent = "经验贴";
+    contentDesc.textContent = "围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。";
+    searchInput.placeholder = "搜索经验贴、院校或专业";
+    count.textContent = experiencePosts.length ? `${experiencePosts.length} 篇` : "";
+  } else {
+    eyebrow.textContent = "ERRATA";
+    pageTitle.textContent = "勘误";
+    contentDesc.textContent = "集中记录资源中的题目、答案、排版、链接与版本问题，并跟踪核对和修正状态。";
+    searchInput.placeholder = "搜索勘误、资源或题目";
+    count.textContent = errataItems.length ? `${errataItems.length} 条` : "";
+  }
+}
+
 function renderAll() {
-  updateHeadings();
+  renderSections();
   renderCategories();
   renderSubjectPicker();
   renderResourceTypePicker();
-  renderResources();
+  updatePageMode();
+  if (state.section === "resources") renderResources();
 }
 
 function initNotice() {
-  if (!noticeCard || !dismissNoticeButton) return;
-  const version = noticeCard.dataset.noticeVersion || "";
-  const dismissed = localStorage.getItem("yanku-notice-dismissed");
-  if (dismissed === version) {
-    noticeCard.hidden = true;
-  }
-
-  dismissNoticeButton.addEventListener("click", () => {
-    localStorage.setItem("yanku-notice-dismissed", version);
+  const version = noticeCard?.dataset.noticeVersion || "";
+  if (noticeCard && localStorage.getItem("yanku-notice-dismissed") === version) noticeCard.hidden = true;
+  dismissNoticeButton?.addEventListener("click",() => {
+    localStorage.setItem("yanku-notice-dismissed",version);
     noticeCard.hidden = true;
   });
 }
 
-subjectPickerButton.addEventListener("click", () => {
-  subjectDropdown.hidden ? openSubjectDropdown() : closeSubjectDropdown();
+subjectPickerButton.addEventListener("click",() => subjectDropdown.hidden ? openSubjectDropdown() : closeSubjectDropdown());
+resourceTypePickerButton.addEventListener("click",() => resourceTypeDropdown.hidden ? openResourceTypeDropdown() : closeResourceTypeDropdown());
+subjectSearchInput.addEventListener("input",e => renderSubjectOptions(e.target.value));
+clearFiltersButton.addEventListener("click",() => {
+  state.category = "全部"; state.subject = "全部科目"; state.resourceType = "全部资源";
+  closeAllPopovers(); renderAll();
 });
+submitErrataButton.addEventListener("click",() => showToast("接入管理后台后开放勘误提交"));
 
-resourceTypePickerButton.addEventListener("click", () => {
-  resourceTypeDropdown.hidden ? openResourceTypeDropdown() : closeResourceTypeDropdown();
+document.addEventListener("click",e => {
+  if (!subjectPicker.contains(e.target) && !resourceTypePicker.contains(e.target)) closeAllPopovers();
 });
-
-subjectSearchInput.addEventListener("input", event => {
-  renderSubjectOptions(event.target.value);
+searchInput.addEventListener("input",e => {
+  state.query = e.target.value;
+  if (state.section === "resources") renderResources();
 });
-
-clearFiltersButton.addEventListener("click", () => {
-  state.category = "全部";
-  state.subject = "全部科目";
-  state.resourceType = "全部资源";
-  closeAllPopovers();
-  renderAll();
-});
-
-document.addEventListener("click", event => {
-  if (!subjectPicker.contains(event.target) && !resourceTypePicker.contains(event.target)) {
-    closeAllPopovers();
-  }
-});
-
-searchInput.addEventListener("input", event => {
-  state.query = event.target.value;
-  renderResources();
-});
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && (!subjectDropdown.hidden || !resourceTypeDropdown.hidden)) {
-    closeAllPopovers();
-    return;
-  }
-
-  if (
-    event.key === "/" &&
-    document.activeElement !== searchInput &&
-    document.activeElement !== subjectSearchInput &&
-    !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)
-  ) {
-    event.preventDefault();
-    searchInput.focus();
-  }
-
-  if (event.key === "Escape" && document.activeElement === searchInput) {
-    searchInput.value = "";
-    state.query = "";
-    searchInput.blur();
-    renderResources();
+document.addEventListener("keydown",e => {
+  if (e.key === "Escape" && (!subjectDropdown.hidden || !resourceTypeDropdown.hidden)) return closeAllPopovers();
+  if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement?.tagName)) {
+    e.preventDefault(); searchInput.focus();
   }
 });
 
