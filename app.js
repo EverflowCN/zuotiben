@@ -161,7 +161,7 @@ const pinState = {
   resources: new Set(JSON.parse(localStorage.getItem("yanku-pinned-resource-titles") || "[]")),
   announcements: new Set(JSON.parse(localStorage.getItem("yanku-pinned-announcement-titles") || "[]"))
 };
-function isResourcePinned(item){ return pinState.resources.has(item.title); }
+function isResourcePinned(item){ return Boolean(item.pinned) || pinState.resources.has(item.title); }
 function isAnnouncementPinned(item){ return item.pinned || pinState.announcements.has(item.title); }
 
 const resources = [
@@ -245,6 +245,85 @@ const resources = [
     ]
   }
 ];
+
+const API_BASE = "https://api.zuotiben.top";
+
+function mapApiResource(item) {
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description || "",
+    subjectName: item.subject_name || "",
+    subjectCode: item.subject_code || "",
+    subject: item.subject || "",
+    resourceType: item.resource_type || "其他",
+    releaseVersion: item.release_version || "",
+    publishedAt: item.published_at || "",
+    updated: item.updated_at || item.published_at || "",
+    status: "已发布",
+    pinned: Boolean(item.pinned),
+    versions: (item.versions || []).map(version => ({
+      id: version.id,
+      name: version.name,
+      releaseVersion: version.release_version || item.release_version || "",
+      publishedAt: version.published_at || item.published_at || "",
+      current: Boolean(version.current),
+      meta: Array.isArray(version.meta) ? version.meta : [],
+      note: version.note || "",
+      channels: (version.links || []).map(link => ({
+        label: link.label,
+        url: link.url || "",
+        code: link.access_code || "",
+        note: link.note || "",
+        kind: link.kind || "link"
+      })),
+      errata: version.errata || []
+    }))
+  };
+}
+
+async function loadRemoteBootstrap() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(API_BASE + "/public/bootstrap", {
+      headers: { "Accept": "application/json" },
+      signal: controller.signal,
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("api_" + response.status);
+    const data = await response.json();
+    if (!data?.ok) throw new Error("invalid_bootstrap");
+
+    if (Array.isArray(data.resources)) {
+      resources.splice(0, resources.length, ...data.resources.map(mapApiResource));
+    }
+    if (Array.isArray(data.experiences)) {
+      experiencePosts.splice(0, experiencePosts.length, ...data.experiences);
+    }
+    if (Array.isArray(data.announcements)) {
+      announcements.splice(0, announcements.length, ...data.announcements.map(item => ({
+        id: String(item.id),
+        type: item.kind || "通知",
+        title: item.title || "",
+        body: item.body || "",
+        date: item.updated_at || item.publish_at || "",
+        pinned: Boolean(item.pinned),
+        ctaText: item.cta_text || "",
+        ctaUrl: item.cta_url || ""
+      })));
+    }
+    const remoteCopy = data.settings?.["public.copy"];
+    if (remoteCopy && typeof remoteCopy === "object") Object.assign(siteCopy, remoteCopy);
+
+    window.__ZUOTIBEN_DATA_SOURCE__ = "cloudflare";
+    renderAll();
+  } catch (error) {
+    window.__ZUOTIBEN_DATA_SOURCE__ = "static-fallback";
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 const state = {
   section: "overview",
@@ -945,3 +1024,4 @@ document.addEventListener("keydown",e => {
 
 initMobileDrawer();
 renderAll();
+loadRemoteBootstrap();
