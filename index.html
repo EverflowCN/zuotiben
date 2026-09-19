@@ -6,7 +6,7 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-iconfix5" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-drawer6" />
 </head>
 <body>
   <header class="topbar">
@@ -15,6 +15,12 @@
         <span class="brand-symbol" aria-hidden="true">研</span>
         <span class="brand-name">研库</span>
       </a>
+
+      <button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="打开导航" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
 
       <label class="search">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -28,8 +34,25 @@
     </div>
   </header>
 
+  <div id="mobileDrawerBackdrop" class="mobile-drawer-backdrop" hidden></div>
+
   <main class="shell">
-    <aside class="sidebar">
+    <aside id="mobileSidebar" class="sidebar">
+      <div class="mobile-drawer-head">
+        <div class="mobile-drawer-brand">
+          <span class="brand-symbol" aria-hidden="true">研</span>
+          <div>
+            <strong>研库</strong>
+            <small>资源导航</small>
+          </div>
+        </div>
+        <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="关闭导航">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
       <div class="sidebar-section">
         <div class="sidebar-title">栏目</div>
         <nav id="sectionNav" class="section-nav" aria-label="站点栏目"></nav>
@@ -215,6 +238,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260919-responsive4"></script>
+  <script src="./app.js?v=20260919-drawer6"></script>
 </body>
 </html>
