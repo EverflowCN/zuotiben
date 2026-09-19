@@ -6,7 +6,7 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-responsive4" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-iconfix5" />
 </head>
 <body>
   <header class="topbar">
@@ -79,8 +79,8 @@
           <p>资料会按标准版、平板版、打印专版等分别发布；经验贴与勘误栏目也会逐步补充。</p>
         </div>
         <button id="dismissNoticeButton" class="notice-close" type="button" aria-label="关闭公告">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path d="m6 6 8 8M14 6l-8 8"/>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
         </button>
       </section>
@@ -147,7 +147,12 @@
 
       <section id="experienceView" class="secondary-view" hidden>
         <div class="section-summary">
-          <div class="section-summary-icon">文</div>
+          <div class="section-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 4h14v16H5Z"/>
+              <path d="M8 8h8M8 12h8M8 16h5"/>
+            </svg>
+          </div>
           <div>
             <h2>经验贴</h2>
             <p>后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
@@ -161,7 +166,14 @@
 
       <section id="errataView" class="secondary-view" hidden>
         <div class="section-summary">
-          <div class="section-summary-icon">勘</div>
+          <div class="section-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 5h10v14H4Z"/>
+              <path d="M7 9h4M7 13h4"/>
+              <circle cx="17" cy="16" r="3"/>
+              <path d="m19.2 18.2 2 2"/>
+            </svg>
+          </div>
           <div>
             <h2>勘误中心</h2>
             <p>记录资源中的题目、答案、排版、链接和版本问题，并保留处理状态。</p>
