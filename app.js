@@ -114,14 +114,9 @@ function readStoredJson(key,fallback){
   }catch{return fallback;}
 }
 const siteCopy = {...siteCopyDefaults,...readStoredJson("yanku-site-copy-v1",{})};
-const legacyVisitorCopy = {
-  progressBody: "资料、经验贴、勘误和后台功能会持续补充与完善。",
-  maintenanceErrataBody: "提交地址由后台单独配置",
-  siteNoteBody: "资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。"
-};
-if (siteCopy.progressBody === legacyVisitorCopy.progressBody) siteCopy.progressBody = siteCopyDefaults.progressBody;
-if (siteCopy.maintenanceErrataBody === legacyVisitorCopy.maintenanceErrataBody) siteCopy.maintenanceErrataBody = siteCopyDefaults.maintenanceErrataBody;
-if (siteCopy.siteNoteBody === legacyVisitorCopy.siteNoteBody) siteCopy.siteNoteBody = siteCopyDefaults.siteNoteBody;
+for (const key of ["progressBody","maintenanceErrataBody","siteNoteBody"]) {
+  if (/后台|管理员|Studio|接入服务器/.test(String(siteCopy[key] || ""))) siteCopy[key] = siteCopyDefaults[key];
+}
 try { localStorage.setItem("yanku-site-copy-v1", JSON.stringify(siteCopy)); } catch {}
 
 function setText(id,value){
