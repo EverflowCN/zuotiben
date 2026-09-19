@@ -1126,6 +1126,30 @@ document.addEventListener("keydown",e => {
   }
 });
 
+const THEME_STORAGE_KEY="yanku-theme";
+const THEME_VALUES=new Set(["white","warm","dark"]);
+
+function applyTheme(theme,persist=true){
+  const next=THEME_VALUES.has(theme)?theme:"warm";
+  document.documentElement.dataset.theme=next;
+  document.querySelectorAll("[data-theme-option]").forEach(button=>{
+    button.setAttribute("aria-pressed",String(button.dataset.themeOption===next));
+  });
+  if(persist){
+    try{localStorage.setItem(THEME_STORAGE_KEY,next)}catch{}
+  }
+  window.dispatchEvent(new CustomEvent("yanku-theme-change",{detail:{theme:next}}));
+}
+
+function initThemeSwitcher(){
+  let saved="warm";
+  try{saved=localStorage.getItem(THEME_STORAGE_KEY)||"warm"}catch{}
+  applyTheme(saved,false);
+  document.querySelectorAll("[data-theme-option]").forEach(button=>{
+    button.addEventListener("click",()=>applyTheme(button.dataset.themeOption,true));
+  });
+}
+
 function initBitstreamBackground(){
   const canvas=document.getElementById("bitstreamBackground");
   if(!canvas)return;
@@ -1137,6 +1161,12 @@ function initBitstreamBackground(){
 
   let width=0,height=0,dpr=1,streams=[],frame=0,last=0;
   const isPhone=()=>window.innerWidth<=560;
+  const themeTone=()=>{
+    const theme=document.documentElement.dataset.theme||"warm";
+    if(theme==="dark")return {rgb:"148,174,155",boost:1.22};
+    if(theme==="white")return {rgb:"80,100,87",boost:.92};
+    return {rgb:"75,96,82",boost:1};
+  };
 
   function makeStream(index,count){
     const fontSize=isPhone()?11:12;
@@ -1176,6 +1206,7 @@ function initBitstreamBackground(){
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.font='500 '+(isPhone()?11:12)+'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    const tone=themeTone();
 
     streams.forEach(stream=>{
       stream.y+=stream.speed*delta;
@@ -1188,7 +1219,7 @@ function initBitstreamBackground(){
         const y=stream.y-i*stream.gap;
         if(y<-18||y>height+18)continue;
         const tail=1-i/Math.max(1,stream.length);
-        ctx.fillStyle='rgba(75,96,82,'+(stream.alpha*(.50+.50*tail)).toFixed(4)+')';
+        ctx.fillStyle='rgba('+tone.rgb+','+(stream.alpha*tone.boost*(.50+.50*tail)).toFixed(4)+')';
         ctx.fillText(stream.bits[i],stream.x,y);
       }
     });
@@ -1199,6 +1230,7 @@ function initBitstreamBackground(){
     clearTimeout(resizeTimer);
     resizeTimer=setTimeout(rebuild,120);
   },{passive:true});
+  window.addEventListener("yanku-theme-change",()=>{last=0});
   reduced?.addEventListener?.("change",event=>{
     canvas.hidden=event.matches;
     if(event.matches){cancelAnimationFrame(frame);ctx.clearRect(0,0,width,height)}
@@ -1209,6 +1241,7 @@ function initBitstreamBackground(){
   frame=requestAnimationFrame(draw);
 }
 
+initThemeSwitcher();
 initBitstreamBackground();
 initMobileDrawer();
 renderAll();
