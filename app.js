@@ -1,37 +1,43 @@
 const resources = [
   {
     title: "408 做题本",
-    description: "用于计算机 408 复习、刷题与知识点整理。",
-    tag: "408",
-    format: "PDF / 在线资源",
+    description: "计算机 408 复习、刷题与知识点整理。",
+    subject: "计算机",
+    type: "做题本",
     status: "即将开放",
     url: ""
   },
   {
     title: "数学二做题本",
-    description: "用于数学二刷题、复盘与错题整理。",
-    tag: "数学二",
-    format: "PDF / 在线资源",
+    description: "数学二刷题、复盘与错题整理。",
+    subject: "数学",
+    type: "做题本",
     status: "即将开放",
     url: ""
   }
 ];
 
-const grid = document.getElementById("resourceGrid");
+const list = document.getElementById("resourceList");
 const count = document.getElementById("resourceCount");
 const toast = document.getElementById("toast");
 
-count.textContent = `${resources.length} 项资源`;
+count.textContent = `共 ${resources.length} 项`;
 
 function esc(text) {
-  return String(text ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':'&quot;'}[ch]));
+  return String(text ?? "").replace(/[&<>'"]/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;"
+  }[ch]));
 }
 
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+  window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
 }
 
 async function copyLink(url) {
@@ -50,36 +56,27 @@ async function copyLink(url) {
   }
 }
 
-if (!resources.length) {
-  grid.innerHTML = '<div class="empty">暂无资源</div>';
-} else {
-  grid.innerHTML = resources.map((item, i) => {
-    const usable = Boolean(item.url);
-    const open = usable
-      ? `<a class="btn btn-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">打开资源 <span aria-hidden="true">↗</span></a>`
-      : `<button class="btn btn-primary" type="button" onclick="showToast('该资源尚未开放')">即将开放</button>`;
+list.innerHTML = resources.map((item, index) => {
+  const no = String(index + 1).padStart(3, "0");
+  const openAction = item.url
+    ? `<a class="text-link primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">打开 ↗</a>`
+    : `<button class="text-link muted-link" type="button" onclick="showToast('该资源尚未开放')">未开放</button>`;
 
-    return `
-      <article class="resource-card">
-        <div class="resource-top">
-          <div class="resource-title-wrap">
-            <span class="resource-index">${String(i + 1).padStart(2, "0")}</span>
-            <div>
-              <span class="kicker">FREE WORKBOOK</span>
-              <h3>${esc(item.title)}</h3>
-            </div>
-          </div>
-          <span class="badge">${esc(item.tag)}</span>
-        </div>
-        <p class="resource-desc">${esc(item.description)}</p>
-        <div class="meta">
-          <span>${esc(item.format)}</span>
-          <span>${esc(item.status)}</span>
-        </div>
-        <div class="actions">
-          ${open}
-          <button class="btn btn-secondary" type="button" onclick="copyLink(resources[${i}].url)">复制链接</button>
-        </div>
-      </article>`;
-  }).join("");
-}
+  return `
+    <article class="resource-row">
+      <div class="resource-no">${no}</div>
+      <div class="resource-main">
+        <h3>${esc(item.title)}</h3>
+        <p>${esc(item.description)}</p>
+      </div>
+      <div class="resource-meta">
+        <span>${esc(item.subject)}</span>
+        <span>${esc(item.type)}</span>
+        <span>${esc(item.status)}</span>
+      </div>
+      <div class="resource-actions">
+        ${openAction}
+        <button class="text-link" type="button" onclick="copyLink(resources[${index}].url)">复制地址</button>
+      </div>
+    </article>`;
+}).join("");
