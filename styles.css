@@ -1979,14 +1979,28 @@ a,
   z-index:0;
   pointer-events:none;
   opacity:1;
+  mix-blend-mode:multiply;
 }
-.topbar,
-.shell,
-.footer{
-  position:relative;
-  z-index:1;
-}
+
 @media(prefers-reduced-motion:reduce){
   .bitstream-background{display:none}
 }
 
+
+/* Mobile drawer layer repair */
+@media(max-width:560px){
+  .topbar{z-index:30}
+  .mobile-drawer-backdrop{
+    z-index:80;
+    background:rgba(34,31,27,.22);
+  }
+  .sidebar{
+    z-index:81 !important;
+    isolation:isolate;
+    transform:translate3d(-104%,0,0);
+    will-change:transform;
+  }
+  .sidebar.mobile-open{
+    transform:translate3d(0,0,0);
+  }
+}
