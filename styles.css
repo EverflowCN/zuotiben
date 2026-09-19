@@ -828,3 +828,30 @@ body.drawer-open {
     display:block;
   }
 }
+
+
+/* Secondary permanent notice */
+.notice-secondary {
+  margin-top:-6px;
+  background:rgba(255,253,248,.58);
+  box-shadow:none;
+}
+
+.notice-secondary .secondary-icon {
+  background:rgba(91,84,73,.08);
+  color:#6f695f;
+}
+
+.notice-secondary .notice-label {
+  color:#6f695f;
+}
+
+.notice-secondary .notice-body h2 {
+  font-size:14px;
+}
+
+@media (max-width:560px) {
+  .notice-secondary {
+    margin-top:-8px;
+  }
+}
