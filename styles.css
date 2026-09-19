@@ -1731,3 +1731,55 @@ a,
   .community-actions{grid-column:2/-1;justify-content:flex-start}
   .qq-card{grid-template-columns:34px minmax(0,1fr)}
 }
+
+/* public release/version traceability */
+.published-versions{
+  margin-top:13px;
+  padding:11px 12px;
+  border:1px solid rgba(74,68,58,.09);
+  border-radius:11px;
+  background:rgba(91,84,73,.035);
+}
+.published-versions-head{
+  margin-bottom:8px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+}
+.published-versions-head>span{font-size:10px;font-weight:700;color:var(--text)}
+.published-versions-head>small{font-size:9px;color:var(--muted-2)}
+.published-version-list{display:flex;gap:7px;flex-wrap:wrap}
+.published-version-item{
+  min-height:29px;
+  padding:5px 8px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid rgba(74,68,58,.08);
+  border-radius:8px;
+  background:rgba(255,253,248,.72);
+  font-size:9px;
+}
+.published-version-name{font-weight:650;color:var(--text)}
+.published-version-item strong{color:var(--blue);font-size:9px}
+.published-version-item time{color:var(--muted-2);font-size:9px}
+.published-current,.current-release{
+  padding:2px 5px;
+  border-radius:999px;
+  background:rgba(64,120,168,.10);
+  color:var(--blue);
+  font-size:8px;
+  font-weight:700;
+}
+.version-release-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.version-release-meta .version-number{
+  padding:2px 6px;border-radius:6px;background:var(--blue-soft);color:var(--blue);font-size:9px;font-weight:650
+}
+.version-release-meta time{color:var(--muted-2);font-size:9px}
+@media(max-width:560px){
+  .published-versions-head{align-items:flex-start;flex-direction:column;gap:2px}
+  .published-version-list{display:grid;grid-template-columns:1fr;width:100%}
+  .published-version-item{width:100%;justify-content:flex-start}
+  .version-release-meta{width:100%;padding-left:25px}
+}
