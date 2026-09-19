@@ -54,6 +54,9 @@ const siteCopyDefaults={
   qqBody:'更多资料、更新与交流可加入 QQ 群。',
   qqNumber:'1032998814',
   qqCopyButton:'复制群号',
+  qqJoinButton:'加入群',
+  qqJoinUrl:'',
+  showQQJoinButton:false,
   progressTitle:'功能持续添加中',
   progressBody:'资料、经验贴、勘误和后台功能会持续补充与完善。',
   showFreeInfo:true,
@@ -110,6 +113,7 @@ const copyGroups=[
   ]},
   {title:'首页信息卡',desc:'免费公开、QQ群和持续更新说明。',fields:[
     ['freeTitle','免费公开标题'],['freeBody','免费公开说明','textarea'],['qqTitle','QQ群标题'],['qqBody','QQ群说明','textarea'],['qqNumber','QQ群号'],['qqCopyButton','复制按钮文字'],
+    ['qqJoinButton','加入群按钮文字'],['qqJoinUrl','QQ群加入链接'],
     ['progressTitle','持续更新标题'],['progressBody','持续更新说明','textarea']
   ]},
   {title:'首页统计与维护',desc:'总览统计卡、最近更新和资源维护文案。',fields:[
@@ -267,6 +271,7 @@ function renderCopy(){
     '<section class="card copy-visibility-card"><div class="card-head"><div><h2>首页信息卡显示</h2><p>控制免费公开、QQ群和持续更新信息是否出现在总览。</p></div></div><div class="card-body"><div class="list">'+
       '<div class="list-row"><div><strong>免费公开</strong><small>显示“全部资源免费公开”信息卡</small></div>'+toggle('copy-visibility','showFreeInfo',state.copy.showFreeInfo)+'</div>'+
       '<div class="list-row"><div><strong>QQ群</strong><small>显示QQ群号和复制入口</small></div>'+toggle('copy-visibility','showQQInfo',state.copy.showQQInfo)+'</div>'+
+      '<div class="list-row"><div><strong>QQ群加入按钮</strong><small>配置加入链接后可在前台显示“加入群”</small></div>'+toggle('copy-visibility','showQQJoinButton',state.copy.showQQJoinButton)+'</div>'+
       '<div class="list-row"><div><strong>持续更新</strong><small>显示功能持续添加中的说明</small></div>'+toggle('copy-visibility','showProgressInfo',state.copy.showProgressInfo)+'</div>'+
     '</div></div></section>'+
     '<div class="copy-groups">'+groups+'</div>'+
