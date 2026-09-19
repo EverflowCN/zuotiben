@@ -1163,24 +1163,29 @@ function initBitstreamBackground(){
   const isPhone=()=>window.innerWidth<=560;
   const themeTone=()=>{
     const theme=document.documentElement.dataset.theme||"warm";
-    if(theme==="dark")return {rgb:"148,174,155",boost:1.22};
-    if(theme==="white")return {rgb:"80,100,87",boost:.92};
-    return {rgb:"75,96,82",boost:1};
+    if(theme==="dark")return {rgb:"150,184,162",line:.050,bit:.115};
+    if(theme==="white")return {rgb:"76,102,86",line:.024,bit:.070};
+    return {rgb:"78,102,86",line:.028,bit:.078};
   };
 
   function makeStream(index,count){
     const phone=isPhone();
-    const fontSize=phone?12:12;
-    const length=Math.floor((phone?8:6)+Math.random()*(phone?8:8));
+    const laneHeight=height/(count+1);
+    const baseY=laneHeight*(index+1)+(Math.random()-.5)*Math.min(28,laneHeight*.35);
+    const direction=Math.random()>.18?1:-1;
+    const spacing=phone?(34+Math.random()*12):(42+Math.random()*18);
+    const sequence=Array.from({length:32},()=>Math.random()>.5?"1":"0");
     return {
-      x:((index+.5)/count)*width+(Math.random()-.5)*Math.min(54,width/count*.45),
-      y:Math.random()*height,
-      speed:(phone?10:10)+Math.random()*(phone?7:8),
-      fontSize,
-      length,
-      gap:fontSize*(phone?1.42:1.5),
-      alpha:(phone?.095:.050)+Math.random()*(phone?.050:.030),
-      bits:Array.from({length},()=>Math.random()>.5?"1":"0")
+      baseY,
+      amplitude:phone?(7+Math.random()*10):(8+Math.random()*14),
+      wavelength:phone?(180+Math.random()*120):(240+Math.random()*180),
+      curvePhase:Math.random()*Math.PI*2,
+      slope:(Math.random()-.5)*(phone?18:28),
+      speed:direction*(phone?(18+Math.random()*12):(16+Math.random()*12)),
+      spacing,
+      offset:Math.random()*spacing,
+      alpha:.88+Math.random()*.20,
+      sequence
     };
   }
 
@@ -1193,8 +1198,41 @@ function initBitstreamBackground(){
     canvas.style.width=width+"px";
     canvas.style.height=height+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    const count=Math.max(isPhone()?9:8,Math.min(isPhone()?14:18,Math.floor(width/(isPhone()?36:92))));
+    const count=isPhone()?Math.max(5,Math.min(7,Math.round(height/145))):Math.max(6,Math.min(9,Math.round(height/130)));
     streams=Array.from({length:count},(_,i)=>makeStream(i,count));
+  }
+
+  function yAt(stream,x){
+    const normalized=(x-width*.5)/Math.max(width,1);
+    return stream.baseY
+      +Math.sin((x/stream.wavelength)*Math.PI*2+stream.curvePhase)*stream.amplitude
+      +normalized*stream.slope;
+  }
+
+  function drawStream(stream,tone,delta){
+    stream.offset=(stream.offset+stream.speed*delta)%stream.spacing;
+
+    ctx.beginPath();
+    const step=isPhone()?28:34;
+    for(let x=-20;x<=width+20;x+=step){
+      const y=yAt(stream,x);
+      if(x===-20)ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba('+tone.rgb+','+(tone.line*stream.alpha).toFixed(4)+')';
+    ctx.lineWidth=1;
+    ctx.stroke();
+
+    const pad=stream.spacing*2;
+    let index=0;
+    for(let x=-pad+stream.offset;x<=width+pad;x+=stream.spacing){
+      const y=yAt(stream,x);
+      const edge=Math.min(1,Math.max(0,Math.min((x+pad)/(pad*2),(width+pad-x)/(pad*2))));
+      const alpha=tone.bit*stream.alpha*(.60+.40*edge);
+      ctx.fillStyle='rgba('+tone.rgb+','+alpha.toFixed(4)+')';
+      ctx.fillText(stream.sequence[index%stream.sequence.length],x,y);
+      index++;
+    }
   }
 
   function draw(now){
@@ -1206,26 +1244,9 @@ function initBitstreamBackground(){
     ctx.clearRect(0,0,width,height);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.font=(isPhone()?'600 12px':'500 12px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.font=(isPhone()?'600 11px':'500 11px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
     const tone=themeTone();
-
-    streams.forEach(stream=>{
-      stream.y+=stream.speed*delta;
-      if(stream.y-stream.length*stream.gap>height+32){
-        stream.y=-24;
-        stream.speed=(isPhone()?10:10)+Math.random()*(isPhone()?7:8);
-        stream.bits=stream.bits.map(()=>Math.random()>.5?"1":"0");
-      }
-      for(let i=0;i<stream.length;i++){
-        const y=stream.y-i*stream.gap;
-        if(y<-18||y>height+18)continue;
-        const tail=1-i/Math.max(1,stream.length);
-        const phoneBoost=isPhone()?1.18:1;
-        const tailFloor=isPhone()?.64:.50;
-        ctx.fillStyle='rgba('+tone.rgb+','+(stream.alpha*tone.boost*phoneBoost*(tailFloor+(1-tailFloor)*tail)).toFixed(4)+')';
-        ctx.fillText(stream.bits[i],stream.x,y);
-      }
-    });
+    streams.forEach(stream=>drawStream(stream,tone,delta));
   }
 
   let resizeTimer=0;
@@ -1236,8 +1257,14 @@ function initBitstreamBackground(){
   window.addEventListener("yanku-theme-change",()=>{last=0});
   reduced?.addEventListener?.("change",event=>{
     canvas.hidden=event.matches;
-    if(event.matches){cancelAnimationFrame(frame);ctx.clearRect(0,0,width,height)}
-    else{rebuild();last=0;frame=requestAnimationFrame(draw)}
+    if(event.matches){
+      cancelAnimationFrame(frame);
+      ctx.clearRect(0,0,width,height);
+    }else{
+      rebuild();
+      last=0;
+      frame=requestAnimationFrame(draw);
+    }
   });
 
   rebuild();
