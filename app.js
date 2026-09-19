@@ -20,6 +20,10 @@ const announcements = [
   { id: "notice-guide", type: "使用说明", title: "同一资源可能存在多个版本与入口", body: "标准版、平板版、打印专版会分别标注；百度网盘、夸克网盘、直链与打印入口以对应版本为准。发现题目、答案、排版或链接问题时，可在勘误中提交。", date: "2026-09-19" }
 ];
 
+const siteSettings = {
+  errataSubmitUrl: ""
+};
+
 const resources = [
   {
     id: "408-workbook",
@@ -231,6 +235,19 @@ function getFilteredResources() {
     .sort((a,b) => b.updated.localeCompare(a.updated));
 }
 
+function commitViewUpdate(update) {
+  const apply = () => {
+    update();
+    renderAll();
+  };
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (document.startViewTransition && !reduced) {
+    document.startViewTransition(apply);
+  } else {
+    apply();
+  }
+}
+
 function renderSections() {
   const sections = [
     { id: "overview", label: "总览", icon: "home", count: 0 },
@@ -261,25 +278,29 @@ function renderSections() {
 
   sectionNav.querySelectorAll("[data-section]").forEach(button => {
     button.addEventListener("click", () => {
-      state.section = button.dataset.section;
-      state.query = "";
-      searchInput.value = "";
-      if (state.section !== "resources") {
-        state.category = "全部";
-        state.subject = "全部科目";
-        state.resourceType = "全部资源";
-      }
-      renderAll();
+      closeMobileDrawer();
+      commitViewUpdate(() => {
+        state.section = button.dataset.section;
+        state.query = "";
+        searchInput.value = "";
+        if (state.section !== "resources") {
+          state.category = "全部";
+          state.subject = "全部科目";
+          state.resourceType = "全部资源";
+        }
+      });
     });
   });
 
   sectionNav.querySelectorAll("[data-category]").forEach(button => {
     button.addEventListener("click", () => {
-      state.section = "resources";
-      state.category = button.dataset.category;
-      state.subject = "全部科目";
+      closeMobileDrawer();
       closeAllPopovers();
-      renderAll();
+      commitViewUpdate(() => {
+        state.section = "resources";
+        state.category = button.dataset.category;
+        state.subject = "全部科目";
+      });
     });
   });
 }
@@ -464,6 +485,24 @@ function renderChannel(channel,resourceIndex,versionIndex,channelIndex) {
     </div>`;
 }
 
+function openErrataSubmit(resourceIndex,versionIndex) {
+  const resource = resources[resourceIndex];
+  const version = resource?.versions?.[versionIndex];
+  const raw = siteSettings.errataSubmitUrl?.trim();
+  if (!raw) {
+    showToast("后台尚未配置勘误提交链接");
+    return;
+  }
+  try {
+    const target = new URL(raw, window.location.href);
+    if (resource) target.searchParams.set("resource", resource.title);
+    if (version) target.searchParams.set("version", version.name);
+    window.open(target.toString(), "_blank", "noopener,noreferrer");
+  } catch {
+    window.open(raw, "_blank", "noopener,noreferrer");
+  }
+}
+
 function openErrata(resourceIndex,versionIndex) {
   const resource = resources[resourceIndex];
   const version = resource?.versions?.[versionIndex];
@@ -476,7 +515,7 @@ function openErrata(resourceIndex,versionIndex) {
     kicker: "ERRATA",
     title: resource.title + " · " + version.name,
     body,
-    actions: [{ label: "提交勘误", primary: true, onClick: () => showToast("接入后台后开放勘误提交") }]
+    actions: [{ label: "申请提交", primary: true, onClick: () => openErrataSubmit(resourceIndex,versionIndex) }]
   });
 }
 
@@ -498,7 +537,7 @@ function renderVersion(version,resourceIndex,versionIndex) {
           <div class="channel-row errata-channel">
             <div class="channel-name">${icon("errata","channel-icon")}<span>勘误</span></div>
             <div class="channel-extra"><span>${(version.errata || []).length ? (version.errata || []).length + " 条公开记录" : "暂无公开勘误"}</span></div>
-            <div class="channel-actions"><button type="button" onclick="openErrata(${resourceIndex},${versionIndex})">查看</button></div>
+            <div class="channel-actions"><button type="button" onclick="openErrata(${resourceIndex},${versionIndex})">查看</button><button type="button" onclick="openErrataSubmit(${resourceIndex},${versionIndex})">申请提交</button></div>
           </div>
         </div>
       </div>
@@ -530,20 +569,26 @@ function renderResources() {
 }
 
 function renderOverview() {
+  const versionCount = resources.reduce((sum,item) => sum + item.versions.length,0);
+  const errataCount = resources.reduce((sum,item) => sum + item.versions.reduce((n,version) => n + (version.errata || []).length,0),0);
+  const notice = announcements[0];
+
   document.getElementById("metricResources").textContent = resources.length;
-  document.getElementById("metricAnnouncements").textContent = announcements.length;
-  document.getElementById("metricErrata").textContent = errataItems.length;
+  document.getElementById("metricVersions").textContent = versionCount;
+  document.getElementById("metricErrata").textContent = errataCount;
   document.getElementById("metricExperience").textContent = experiencePosts.length;
+
+  if (notice) {
+    document.getElementById("overviewNoticeTitle").textContent = notice.title;
+    document.getElementById("overviewNoticeBody").textContent = notice.body;
+    document.getElementById("overviewNoticeDate").textContent = notice.date;
+  }
 
   document.getElementById("recentResources").innerHTML = resources
     .slice()
     .sort((a,b) => b.updated.localeCompare(a.updated))
     .slice(0,4)
     .map(item => '<button class="overview-row" type="button" data-resource-category="' + esc(item.category) + '"><span class="overview-row-icon">' + icon(resourceTypeIcon(item.resourceType)) + '</span><span><strong>' + esc(item.title) + '</strong><small>' + esc(item.category) + ' · ' + esc(item.subject) + ' · ' + item.versions.length + ' 个版本</small></span><time>' + esc(item.updated) + '</time></button>')
-    .join("");
-
-  document.getElementById("overviewAnnouncements").innerHTML = announcements
-    .map((item,index) => '<button class="notice-row" type="button" data-announcement-index="' + index + '"><small>' + esc(item.type) + '</small><strong>' + esc(item.title) + '</strong><em>' + esc(item.date) + '</em></button>')
     .join("");
 }
 
@@ -611,6 +656,7 @@ function openMobileDrawer() {
   if (!mobileSidebar || !mobileDrawerBackdrop || !mobileMenuButton) return;
   mobileSidebar.classList.add("mobile-open");
   mobileDrawerBackdrop.hidden = false;
+  mobileDrawerBackdrop.style.pointerEvents = "auto";
   requestAnimationFrame(() => mobileDrawerBackdrop.classList.add("show"));
   mobileMenuButton.setAttribute("aria-expanded", "true");
   document.body.classList.add("drawer-open");
@@ -620,6 +666,7 @@ function closeMobileDrawer() {
   if (!mobileSidebar || !mobileDrawerBackdrop || !mobileMenuButton) return;
   mobileSidebar.classList.remove("mobile-open");
   mobileDrawerBackdrop.classList.remove("show");
+  mobileDrawerBackdrop.style.pointerEvents = "none";
   mobileMenuButton.setAttribute("aria-expanded", "false");
   document.body.classList.remove("drawer-open");
   setTimeout(() => {
@@ -664,20 +711,27 @@ document.addEventListener("click", event => {
     openAnnouncementListModal();
     return;
   }
+  const errataSubmit = event.target.closest("[data-open-errata-submit]");
+  if (errataSubmit) {
+    openErrataSubmit();
+    return;
+  }
   const go = event.target.closest("[data-go]");
   if (go) {
-    state.section = go.dataset.go;
-    renderAll();
     closeMobileDrawer();
+    commitViewUpdate(() => {
+      state.section = go.dataset.go;
+    });
     return;
   }
   const resourceJump = event.target.closest("[data-resource-category]");
   if (resourceJump) {
-    state.section = "resources";
-    state.category = resourceJump.dataset.resourceCategory;
-    state.subject = "全部科目";
-    renderAll();
     closeMobileDrawer();
+    commitViewUpdate(() => {
+      state.section = "resources";
+      state.category = resourceJump.dataset.resourceCategory;
+      state.subject = "全部科目";
+    });
   }
 });
 
