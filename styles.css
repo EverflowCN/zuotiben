@@ -1968,3 +1968,25 @@ a,
   .about-action{width:100%}
 }
 
+
+
+/* Subtle binary bitstream background */
+.bitstream-background{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+  opacity:1;
+}
+.topbar,
+.shell,
+.footer{
+  position:relative;
+  z-index:1;
+}
+@media(prefers-reduced-motion:reduce){
+  .bitstream-background{display:none}
+}
+
