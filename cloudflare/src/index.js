@@ -93,6 +93,7 @@ async function handleAdmin(request, env, url, identity) {
     return json({ok:true,identity,profile:profile||{email:identity.email,role:'admin',status:'active'}},200,request,env);
   }
   if (request.method==='GET' && url.pathname==='/admin/bootstrap') return json(await getAdminBootstrap(env,identity),200,request,env);
+  if (url.pathname==='/admin/studio-sync') return handleStudioSync(request,env,identity);
   if (url.pathname.startsWith('/admin/settings')) return handleAdminSettings(request,env,url,identity);
   const parts=url.pathname.split('/').filter(Boolean), entity=parts[1], id=parts[2]?decodeURIComponent(parts[2]):null, config=ENTITY_CONFIG[entity];
   if (!config) return json({ok:false,error:'unknown_entity'},404,request,env);
@@ -125,6 +126,59 @@ async function getAdminBootstrap(env, identity) {
   const data={ok:true,identity};
   for(const table of tables){const order=table==='audit_logs'?'created_at DESC':(table==='site_settings'?'key':'updated_at DESC');data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;}
   return data;
+}
+
+async function handleStudioSync(request, env, identity) {
+  if (request.method !== 'PUT') return json({ok:false,error:'method_not_allowed'},405,request,env);
+  const body = await readJson(request);
+  const subjects = Array.isArray(body.subjects) ? body.subjects : [];
+  const resources = Array.isArray(body.resources) ? body.resources : [];
+  const versions = Array.isArray(body.versions) ? body.versions : [];
+  const links = Array.isArray(body.links) ? body.links : [];
+  const experiences = Array.isArray(body.experiences) ? body.experiences : [];
+  const announcements = Array.isArray(body.announcements) ? body.announcements : [];
+  const statements = [
+    env.DB.prepare("DELETE FROM resource_links"),
+    env.DB.prepare("DELETE FROM resource_versions"),
+    env.DB.prepare("DELETE FROM errata"),
+    env.DB.prepare("DELETE FROM resources"),
+    env.DB.prepare("DELETE FROM subjects"),
+    env.DB.prepare("DELETE FROM experiences"),
+    env.DB.prepare("DELETE FROM announcements")
+  ];
+
+  for (const x of subjects) statements.push(
+    env.DB.prepare("INSERT INTO subjects (id,name,code,sort_order,visible,updated_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.name||'',x.code||'',Number(x.sort_order)||100,x.visible?1:0)
+  );
+  for (const x of resources) statements.push(
+    env.DB.prepare("INSERT INTO resources (id,slug,title,subject_id,resource_type,description,status,visible,pinned,release_version,published_at,updated_at,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(x.id,x.slug||x.id,x.title||'',x.subject_id||null,x.resource_type||'其他',x.description||'',x.status||'draft',x.visible?1:0,x.pinned?1:0,x.release_version||'v1.0',x.published_at||null,x.updated_at||new Date().toISOString(),Number(x.sort_order)||100)
+  );
+  for (const x of versions) statements.push(
+    env.DB.prepare("INSERT INTO resource_versions (id,resource_id,name,release_version,published_at,format,note,meta_json,current,visible,sort_order,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.resource_id,x.name||'未命名版本',x.release_version||'v1.0',x.published_at||null,x.format||'PDF',x.note||'',JSON.stringify(Array.isArray(x.meta)?x.meta:[]),x.current?1:0,x.visible===false?0:1,Number(x.sort_order)||100)
+  );
+  for (const x of links) statements.push(
+    env.DB.prepare("INSERT INTO resource_links (id,version_id,label,kind,url,access_code,note,visible,sort_order,updated_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.version_id,x.label||'链接',x.kind||'link',x.url||'',x.access_code||'',x.note||'',x.visible===false?0:1,Number(x.sort_order)||100)
+  );
+  for (const x of experiences) statements.push(
+    env.DB.prepare("INSERT INTO experiences (id,title,source_url,school,major,year,stage,author,body,status,visible,published_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.title||'',x.source_url||'',x.school||'',x.major||'',x.year||'',x.stage||'',x.author||'',x.body||'',x.status||'published',x.visible===false?0:1,x.published_at||null)
+  );
+  for (const x of announcements) statements.push(
+    env.DB.prepare("INSERT INTO announcements (id,title,kind,body,status,visible,pinned,dismissible,audience,publish_at,expires_at,cta_text,cta_url,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.title||'',x.kind||'更新通知',x.body||'',x.status||'draft',x.visible===false?0:1,x.pinned?1:0,x.dismissible===false?0:1,x.audience||'所有访客',x.publish_at||null,x.expires_at||null,x.cta_text||'',x.cta_url||'')
+  );
+
+  if (statements.length) await env.DB.batch(statements);
+  if (body.copy && typeof body.copy === 'object') {
+    await env.DB.prepare("INSERT INTO site_settings (key,value_json,updated_at) VALUES ('public.copy',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=CURRENT_TIMESTAMP")
+      .bind(JSON.stringify(body.copy)).run();
+  }
+  await audit(env,identity.email,'sync','studio','snapshot',{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,experiences:experiences.length,announcements:announcements.length});
+  return json({ok:true,counts:{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,experiences:experiences.length,announcements:announcements.length}},200,request,env);
 }
 
 async function handleAdminSettings(request, env, url, identity) {
@@ -166,7 +220,7 @@ function groupBy(items,key){return items.reduce((acc,item)=>{const value=item[ke
 function safeJson(value,fallback){try{return JSON.parse(value);}catch{return fallback;}}
 async function readJson(request){const contentType=request.headers.get('content-type')||'';if(!contentType.includes('application/json'))throw new Error('expected_json');return request.json();}
 function allowedOrigin(request,env){const origin=request.headers.get('origin')||'',allowed=String(env.ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean);if(!origin)return allowed[0]||'*';return allowed.includes(origin)?origin:'';}
-function corsHeaders(request,env){const origin=allowedOrigin(request,env),headers=new Headers({'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'86400'});if(origin)headers.set('Access-Control-Allow-Origin',origin);return headers;}
+function corsHeaders(request,env){const origin=allowedOrigin(request,env),headers=new Headers({'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'86400'});if(origin){headers.set('Access-Control-Allow-Origin',origin);headers.set('Access-Control-Allow-Credentials','true');}return headers;}
 function corsPreflight(request,env){if(!allowedOrigin(request,env))return new Response(null,{status:403});return new Response(null,{status:204,headers:corsHeaders(request,env)});}
 function publicCacheHeaders(env){const seconds=Math.max(0,Number(env.PUBLIC_CACHE_SECONDS||60));return {'Cache-Control':'public, max-age='+seconds+', s-maxage='+seconds};}
 function json(data,status,request,env,extraHeaders={}){const headers=corsHeaders(request,env);headers.set('Content-Type','application/json; charset=utf-8');for(const [key,value] of Object.entries(extraHeaders))headers.set(key,value);return new Response(JSON.stringify(data),{status,headers});}
