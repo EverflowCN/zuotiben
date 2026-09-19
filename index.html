@@ -57,9 +57,29 @@
         <div id="resourceCount" class="result-count"></div>
       </div>
 
-      <section class="filter-block" aria-label="科目筛选">
+      <section class="filter-block subject-filter-block" aria-label="科目筛选">
         <div class="filter-label">科目</div>
-        <div id="subjectNav" class="filter-nav"></div>
+        <div id="subjectPicker" class="subject-picker">
+          <button id="subjectPickerButton" class="subject-picker-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="subject-picker-main">
+              <span id="subjectPickerText">全部科目</span>
+              <small id="subjectPickerCount"></small>
+            </span>
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="m6 8 4 4 4-4"/>
+            </svg>
+          </button>
+
+          <div id="subjectDropdown" class="subject-dropdown" hidden>
+            <label class="subject-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
+              </svg>
+              <input id="subjectSearchInput" type="search" placeholder="搜索科目，如 408、数学二、法硕" autocomplete="off" />
+            </label>
+            <div id="subjectOptions" class="subject-options" role="listbox"></div>
+          </div>
+        </div>
       </section>
 
       <section class="filter-block" aria-label="资源类型筛选">
