@@ -38,9 +38,9 @@ const BOOL_FIELDS = new Set(['visible','pinned','current','dismissible']);
 const INT_FIELDS = new Set(['sort_order']);
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await handleRequest(request, env);
+      return await handleRequest(request, env, ctx);
     } catch (error) {
       console.error(error);
       return json({ ok: false, error: 'internal_error' }, 500, request, env);
@@ -48,13 +48,13 @@ export default {
   }
 };
 
-async function handleRequest(request, env) {
+async function handleRequest(request, env, ctx) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return corsPreflight(request, env);
   if (url.pathname === '/health') return json({ ok: true, service: 'zuotiben-api', d1: Boolean(env.DB), storage: 'external-links' }, 200, request, env);
   if (request.method === 'GET' && url.pathname === '/public/bootstrap') return json(await getPublicBootstrap(env), 200, request, env, publicCacheHeaders(env));
   if (url.pathname.startsWith('/admin/')) {
-    const identity = await requireAccessIdentity(request, env);
+    const identity = await requireAccessIdentity(request, env, ctx);
     if (identity instanceof Response) return identity;
     return handleAdmin(request, env, url, identity);
   }
@@ -203,15 +203,26 @@ async function updateEntity(env,config,id,body){const key=config.key||'id',data=
 function normalizeFields(fields,body){const out={};for(const field of fields){if(!(field in body))continue;let value=body[field];if(BOOL_FIELDS.has(field))value=value?1:0;if(INT_FIELDS.has(field))value=Number.isFinite(Number(value))?Number(value):100;if(field==='meta_json'&&typeof value!=='string')value=JSON.stringify(value??[]);out[field]=value??null;}return out;}
 async function audit(env,actor,action,entityType,entityId,payload){await env.DB.prepare("INSERT INTO audit_logs (id,actor_email,action,entity_type,entity_id,payload_json) VALUES (?,?,?,?,?,?)").bind(crypto.randomUUID(),actor||'',action,entityType,String(entityId||''),JSON.stringify(payload||{})).run();}
 
-async function requireAccessIdentity(request, env) {
-  if (!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD) return json({ok:false,error:'access_not_configured'},503,request,env);
-  const token=request.headers.get('cf-access-jwt-assertion');
-  if(!token)return json({ok:false,error:'access_required'},401,request,env);
-  const payload=await verifyAccessJwt(token,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
-  if(!payload)return json({ok:false,error:'invalid_access_token'},401,request,env);
-  const email=payload.email||request.headers.get('cf-access-authenticated-user-email')||'';
-  if(!email)return json({ok:false,error:'missing_identity'},401,request,env);
-  return {email,sub:payload.sub||'',aud:payload.aud};
+async function requireAccessIdentity(request, env, ctx) {
+  if (ctx?.access) {
+    const profile = await ctx.access.getIdentity();
+    const email = profile?.email || '';
+    if (!email) return json({ok:false,error:'missing_identity'},401,request,env);
+    return {email,sub:profile?.sub||'',aud:ctx.access.aud||'',name:profile?.name||''};
+  }
+
+  // Legacy fallback for hostname-based Access/JWT configurations.
+  if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD) {
+    const token=request.headers.get('cf-access-jwt-assertion');
+    if(!token)return json({ok:false,error:'access_required'},401,request,env);
+    const payload=await verifyAccessJwt(token,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
+    if(!payload)return json({ok:false,error:'invalid_access_token'},401,request,env);
+    const email=payload.email||request.headers.get('cf-access-authenticated-user-email')||'';
+    if(!email)return json({ok:false,error:'missing_identity'},401,request,env);
+    return {email,sub:payload.sub||'',aud:payload.aud};
+  }
+
+  return json({ok:false,error:'access_required'},401,request,env);
 }
 
 async function verifyAccessJwt(token,teamDomain,expectedAud){try{const [headerPart,payloadPart,signaturePart]=token.split('.');if(!headerPart||!payloadPart||!signaturePart)return null;const header=JSON.parse(new TextDecoder().decode(base64UrlDecode(headerPart))),payload=JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadPart))),issuer='https://'+teamDomain+'.cloudflareaccess.com',aud=Array.isArray(payload.aud)?payload.aud:[payload.aud];if(payload.iss!==issuer||!aud.includes(expectedAud)||!payload.exp||payload.exp*1000<=Date.now())return null;const certsResponse=await fetch(issuer+'/cdn-cgi/access/certs',{cf:{cacheTtl:3600,cacheEverything:true}});if(!certsResponse.ok)return null;const certs=await certsResponse.json(),jwk=(certs.keys||[]).find(key=>key.kid===header.kid);if(!jwk)return null;const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']),data=new TextEncoder().encode(headerPart+'.'+payloadPart),signature=base64UrlDecode(signaturePart),valid=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,signature,data);return valid?payload:null;}catch{return null;}}
