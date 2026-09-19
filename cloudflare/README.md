@@ -5,7 +5,7 @@ This directory contains the production backend for `zuotiben.top`:
 - **Cloudflare Workers** — API
 - **D1** — resources, versions, links, announcements, errata, experiences, settings, admin profiles and audit logs
 - **External links** — 百度网盘、夸克网盘、直链、打印链接等；文件本体不存 Cloudflare
-- **Cloudflare Access** — authentication in front of `/admin/*` (and the Studio URL)
+- **D1 session auth** — self-hosted administrator login, roles and sessions
 
 ## Security model
 
@@ -50,31 +50,27 @@ Recommended public endpoint:
 https://api.zuotiben.top/public/bootstrap
 ```
 
-## Cloudflare Access
+## Administrator authentication
 
-Protect at minimum:
+Studio uses self-hosted authentication in the Worker and D1. It does not require Cloudflare Zero Trust.
 
-```text
-api.zuotiben.top/admin/*
-```
-
-If the public site is proxied by Cloudflare, also protect:
+Before the first Owner account is created, add a Worker Secret named:
 
 ```text
-zuotiben.top/studio/*
+ADMIN_SETUP_TOKEN
 ```
 
-Recommended login method for a small team: Cloudflare identity provider restricted to your Cloudflare account members. Alternatively, use One-time PIN and explicitly allow only administrator email addresses.
+Use a long random value. The Studio first-run screen asks for this token once. After the first Owner is created, the setup endpoint is disabled by database state.
 
-Use a hostname/path-based Access application for:
+Admin passwords are stored as PBKDF2-SHA-256 hashes with per-user random salts. Login sessions use random opaque tokens; D1 stores only their SHA-256 hashes. The browser receives an HttpOnly, Secure, SameSite=Lax cookie.
+
+Production Studio should use:
 
 ```text
-zuotiben-api.bm9h54b4t9.workers.dev/admin/*
+https://api.zuotiben.top
 ```
 
-Do not protect the entire Worker, because `/public/bootstrap` and `/health` must remain public.
-
-Modern Workers Access exposes the signed-in identity through `ctx.access`, so no manual Access audience/team variables are required for this deployment.
+so the session cookie remains same-site with `https://zuotiben.top/studio/`.
 
 ## File delivery
 
