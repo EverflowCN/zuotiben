@@ -1170,24 +1170,44 @@ function initBitstreamBackground(){
 
   function makeStream(index,count){
     const phone=isPhone();
+    const sequence=Array.from({length:48},()=>Math.random()>.5?"1":"0");
+
+    if(phone){
+      const laneWidth=width/(count+1);
+      return {
+        mode:"vertical",
+        baseX:laneWidth*(index+1)+(Math.random()-.5)*Math.min(22,laneWidth*.28),
+        drift:4+Math.random()*7,
+        driftPhase:Math.random()*Math.PI*2,
+        driftLength:210+Math.random()*150,
+        speed:24+Math.random()*16,
+        spacing:62+Math.random()*16,
+        offset:Math.random()*80,
+        alpha:.92+Math.random()*.16,
+        sequence,
+        flipElapsed:Math.random()*.16,
+        flipEvery:.10+Math.random()*.17
+      };
+    }
+
     const laneHeight=height/(count+1);
     const baseY=laneHeight*(index+1)+(Math.random()-.5)*Math.min(28,laneHeight*.35);
     const direction=Math.random()>.18?1:-1;
-    const spacing=phone?(34+Math.random()*12):(42+Math.random()*18);
-    const sequence=Array.from({length:32},()=>Math.random()>.5?"1":"0");
+    const spacing=42+Math.random()*18;
     return {
+      mode:"horizontal",
       baseY,
-      amplitude:phone?(7+Math.random()*10):(8+Math.random()*14),
-      wavelength:phone?(180+Math.random()*120):(240+Math.random()*180),
+      amplitude:8+Math.random()*14,
+      wavelength:240+Math.random()*180,
       curvePhase:Math.random()*Math.PI*2,
-      slope:(Math.random()-.5)*(phone?18:28),
-      speed:direction*(phone?(18+Math.random()*12):(16+Math.random()*12)),
+      slope:(Math.random()-.5)*28,
+      speed:direction*(16+Math.random()*12),
       spacing,
       offset:Math.random()*spacing,
       alpha:.88+Math.random()*.20,
       sequence,
       flipElapsed:Math.random()*.18,
-      flipEvery:(phone?.11:.14)+Math.random()*(phone?.16:.20)
+      flipEvery:.14+Math.random()*.20
     };
   }
 
@@ -1200,7 +1220,7 @@ function initBitstreamBackground(){
     canvas.style.width=width+"px";
     canvas.style.height=height+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    const count=isPhone()?Math.max(5,Math.min(7,Math.round(height/145))):Math.max(6,Math.min(9,Math.round(height/130)));
+    const count=isPhone()?Math.max(4,Math.min(6,Math.round(width/82))):Math.max(6,Math.min(9,Math.round(height/130)));
     streams=Array.from({length:count},(_,i)=>makeStream(i,count));
   }
 
@@ -1217,16 +1237,30 @@ function initBitstreamBackground(){
     stream.flipElapsed+=delta;
     if(stream.flipElapsed>=stream.flipEvery){
       stream.flipElapsed=0;
-      stream.flipEvery=(isPhone()?.11:.14)+Math.random()*(isPhone()?.16:.20);
-      const changes=1+Math.floor(Math.random()*(isPhone()?3:2));
+      stream.flipEvery=(stream.mode==="vertical"?.10:.14)+Math.random()*(stream.mode==="vertical"?.17:.20);
+      const changes=1+Math.floor(Math.random()*(stream.mode==="vertical"?3:2));
       for(let n=0;n<changes;n++){
         const bitIndex=Math.floor(Math.random()*stream.sequence.length);
         stream.sequence[bitIndex]=stream.sequence[bitIndex]==="1"?"0":"1";
       }
     }
 
+    if(stream.mode==="vertical"){
+      const pad=stream.spacing*2;
+      let index=0;
+      for(let y=-pad+stream.offset;y<=height+pad;y+=stream.spacing){
+        const x=stream.baseX+Math.sin((y/stream.driftLength)*Math.PI*2+stream.driftPhase)*stream.drift;
+        const edge=Math.min(1,Math.max(0,Math.min((y+pad)/(pad*2),(height+pad-y)/(pad*2))));
+        const alpha=tone.bit*stream.alpha*(.72+.28*edge)*1.55;
+        ctx.fillStyle='rgba('+tone.rgb+','+Math.min(alpha,.34).toFixed(4)+')';
+        ctx.fillText(stream.sequence[index%stream.sequence.length],x,y);
+        index++;
+      }
+      return;
+    }
+
     ctx.beginPath();
-    const step=isPhone()?28:34;
+    const step=34;
     for(let x=-20;x<=width+20;x+=step){
       const y=yAt(stream,x);
       if(x===-20)ctx.moveTo(x,y);
@@ -1257,7 +1291,7 @@ function initBitstreamBackground(){
     ctx.clearRect(0,0,width,height);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.font=(isPhone()?'600 11px':'500 11px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.font=(isPhone()?'650 20px':'500 11px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
     const tone=themeTone();
     streams.forEach(stream=>drawStream(stream,tone,delta));
   }
