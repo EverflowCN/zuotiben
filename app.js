@@ -1,10 +1,26 @@
+const catalog = [
+  { name: "公共课", subjects: ["政治", "英语一", "英语二", "数学一", "数学二", "数学三"] },
+  { name: "计算机", subjects: ["408", "计算机自命题"] },
+  { name: "经管联考", subjects: ["199管理类联考", "396经济类联考", "经济学专业课", "金融专业课"] },
+  { name: "法学", subjects: ["法律硕士", "法学专业课"] },
+  { name: "教育·心理", subjects: ["教育学", "教育综合", "心理学"] },
+  { name: "医学", subjects: ["西医相关", "中医相关", "护理", "药学"] },
+  { name: "理工", subjects: ["机械", "电气", "电子信息", "自动化", "土木", "材料", "化工", "环境", "建筑"] },
+  { name: "农学", subjects: ["农学", "林学", "食品", "兽医"] },
+  { name: "人文社科", subjects: ["中文", "历史", "哲学", "新闻传播", "社会学", "公共管理"] },
+  { name: "艺术·体育", subjects: ["艺术", "设计", "体育"] },
+  { name: "其他", subjects: ["自命题专业课", "其他"] }
+];
+
+const workbookTypes = ["全部类型", "综合", "真题", "章节", "强化", "错题", "模拟", "冲刺"];
+
 const resources = [
   {
     title: "408 做题本",
     description: "计算机 408 复习、刷题与知识点整理。",
     category: "计算机",
     subject: "408",
-    type: "做题本",
+    type: "综合",
     updated: "2026-09-19",
     status: "待发布",
     url: ""
@@ -12,9 +28,9 @@ const resources = [
   {
     title: "数学二做题本",
     description: "数学二刷题、复盘与错题整理。",
-    category: "数学",
+    category: "公共课",
     subject: "数学二",
-    type: "做题本",
+    type: "综合",
     updated: "2026-09-19",
     status: "待发布",
     url: ""
@@ -23,19 +39,23 @@ const resources = [
 
 const state = {
   category: "全部",
+  subject: "全部科目",
+  type: "全部类型",
   query: ""
 };
 
 const categoryNav = document.getElementById("categoryNav");
+const subjectNav = document.getElementById("subjectNav");
+const typeNav = document.getElementById("typeNav");
 const list = document.getElementById("resourceList");
 const count = document.getElementById("resourceCount");
 const searchInput = document.getElementById("searchInput");
 const currentCategory = document.getElementById("currentCategory");
+const currentSubject = document.getElementById("currentSubject");
+const currentType = document.getElementById("currentType");
 const pageTitle = document.getElementById("pageTitle");
 const emptyState = document.getElementById("emptyState");
 const toast = document.getElementById("toast");
-
-const categories = ["全部", ...Array.from(new Set(resources.map(item => item.category)))];
 
 function esc(text) {
   return String(text ?? "").replace(/[&<>'"]/g, ch => ({
@@ -48,9 +68,25 @@ function esc(text) {
 }
 
 function categoryCount(category) {
-  return category === "全部"
-    ? resources.length
-    : resources.filter(item => item.category === category).length;
+  if (category === "全部") return resources.length;
+  return resources.filter(item => item.category === category).length;
+}
+
+function subjectCount(subject) {
+  return resources.filter(item => {
+    const categoryMatch = state.category === "全部" || item.category === state.category;
+    const subjectMatch = subject === "全部科目" || item.subject === subject;
+    return categoryMatch && subjectMatch;
+  }).length;
+}
+
+function getSubjects() {
+  if (state.category === "全部") {
+    return ["全部科目", ...Array.from(new Set(catalog.flatMap(group => group.subjects)))];
+  }
+
+  const group = catalog.find(item => item.name === state.category);
+  return ["全部科目", ...(group?.subjects || [])];
 }
 
 function showToast(message) {
@@ -85,6 +121,8 @@ function getFilteredResources() {
 
   return resources
     .filter(item => state.category === "全部" || item.category === state.category)
+    .filter(item => state.subject === "全部科目" || item.subject === state.subject)
+    .filter(item => state.type === "全部类型" || item.type === state.type)
     .filter(item => {
       if (!query) return true;
       return [
@@ -98,7 +136,23 @@ function getFilteredResources() {
     .sort((a, b) => b.updated.localeCompare(a.updated));
 }
 
+function updateHeadings() {
+  currentCategory.textContent = state.category;
+  currentSubject.textContent = state.subject;
+  currentType.textContent = state.type;
+
+  if (state.subject !== "全部科目") {
+    pageTitle.textContent = `${state.subject}做题本`;
+  } else if (state.category !== "全部") {
+    pageTitle.textContent = `${state.category}做题本`;
+  } else {
+    pageTitle.textContent = "全部做题本";
+  }
+}
+
 function renderCategories() {
+  const categories = ["全部", ...catalog.map(item => item.name)];
+
   categoryNav.innerHTML = categories.map(category => {
     const active = category === state.category ? " active" : "";
     return `
@@ -112,9 +166,53 @@ function renderCategories() {
   categoryNav.querySelectorAll(".category-item").forEach(button => {
     button.addEventListener("click", () => {
       state.category = button.dataset.category;
-      currentCategory.textContent = state.category;
-      pageTitle.textContent = state.category === "全部" ? "全部资料" : `${state.category}资料`;
+      state.subject = "全部科目";
+      updateHeadings();
       renderCategories();
+      renderSubjects();
+      renderResources();
+    });
+  });
+}
+
+function renderSubjects() {
+  const subjects = getSubjects();
+
+  subjectNav.innerHTML = subjects.map(subject => {
+    const active = subject === state.subject ? " active" : "";
+    return `
+      <button class="filter-chip${active}" type="button" data-subject="${esc(subject)}">
+        <span>${esc(subject)}</span>
+        <small>${subjectCount(subject)}</small>
+      </button>
+    `;
+  }).join("");
+
+  subjectNav.querySelectorAll(".filter-chip").forEach(button => {
+    button.addEventListener("click", () => {
+      state.subject = button.dataset.subject;
+      updateHeadings();
+      renderSubjects();
+      renderResources();
+    });
+  });
+}
+
+function renderTypes() {
+  typeNav.innerHTML = workbookTypes.map(type => {
+    const active = type === state.type ? " active" : "";
+    return `
+      <button class="filter-chip${active}" type="button" data-type="${esc(type)}">
+        ${esc(type)}
+      </button>
+    `;
+  }).join("");
+
+  typeNav.querySelectorAll(".filter-chip").forEach(button => {
+    button.addEventListener("click", () => {
+      state.type = button.dataset.type;
+      updateHeadings();
+      renderTypes();
       renderResources();
     });
   });
@@ -122,11 +220,12 @@ function renderCategories() {
 
 function renderResources() {
   const items = getFilteredResources();
-  count.textContent = `${items.length} 项`;
+  count.textContent = `${items.length} 项已收录`;
   emptyState.hidden = items.length !== 0;
 
-  list.innerHTML = items.map((item, index) => {
+  list.innerHTML = items.map(item => {
     const initial = item.subject.slice(0, 2);
+    const sourceIndex = resources.indexOf(item);
     const openAction = item.url
       ? `<a class="action-link action-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">打开资源 ↗</a>`
       : `<button class="action-link disabled" type="button" onclick="showToast('该资源尚未发布')">待发布</button>`;
@@ -154,7 +253,7 @@ function renderResources() {
           <time datetime="${esc(item.updated)}">更新于 ${esc(item.updated)}</time>
           <div class="resource-actions">
             ${openAction}
-            <button class="action-link" type="button" onclick="copyLink(resources[${resources.indexOf(item)}].url)">复制地址</button>
+            <button class="action-link" type="button" onclick="copyLink(resources[${sourceIndex}].url)">复制地址</button>
           </div>
         </div>
       </article>
@@ -185,5 +284,8 @@ document.addEventListener("keydown", event => {
   }
 });
 
+updateHeadings();
 renderCategories();
+renderSubjects();
+renderTypes();
 renderResources();
