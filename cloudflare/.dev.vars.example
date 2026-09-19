@@ -1,4 +1,6 @@
 # Admin endpoints intentionally fail closed until these are configured.
 # ACCESS_TEAM_DOMAIN is the left side of <team>.cloudflareaccess.com
-ACCESS_TEAM_DOMAIN="your-team-name"
-ACCESS_AUD="your-access-application-aud-tag"
+
+# One-time secret used only for the very first Owner creation.
+# Set this as a Worker Secret in Cloudflare; do not commit the real value.
+ADMIN_SETUP_TOKEN=replace-with-a-long-random-secret
