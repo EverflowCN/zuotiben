@@ -180,7 +180,7 @@ if(persistedCollections){
   }
 }
 
-const STUDIO_API_BASE='https://zuotiben-api.bm9h54b4t9.workers.dev';
+const STUDIO_API_BASE=location.hostname.endsWith('zuotiben.top')?'https://api.zuotiben.top':'https://zuotiben-api.bm9h54b4t9.workers.dev';
 const cloudState={status:'checking',message:'正在检测 D1',syncTimer:null,lastError:''};
 
 function cloudStatusLabel(){
