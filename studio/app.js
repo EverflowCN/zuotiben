@@ -294,6 +294,11 @@ function applyCloudBootstrap(data){
 }
 function authErrorText(code){
   return ({
+    internal_error:'云端创建账号时发生内部错误，请查看 Cloudflare Worker 日志（internal_error）',
+    origin_not_allowed:'当前网站地址未获后端允许，请核对 ALLOWED_ORIGINS',
+    request_timeout:'云端请求超过 8 秒，请检查网络及 Worker 日志后重试',
+    'Failed to fetch':'无法连接云端接口，请检查网络或跨域配置',
+    'Load failed':'无法连接云端接口，请检查网络或跨域配置',
     invalid_credentials:'邮箱或密码错误',
     too_many_attempts:'登录尝试过多，请稍后再试',
     invalid_setup_token:'初始化口令错误',
