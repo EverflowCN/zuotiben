@@ -1575,7 +1575,7 @@ a,
   }
 }
 
-@media(max-width:760px){
+@media(max-width:560px){
   .mobile-drawer-backdrop{
     pointer-events:none;
   }
