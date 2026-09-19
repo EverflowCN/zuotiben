@@ -1,16 +1,5 @@
-const catalog = [
-  { name: "公共课", subjects: ["政治", "英语一", "英语二", "数学一", "数学二", "数学三"] },
-  { name: "计算机", subjects: ["408", "计算机自命题"] },
-  { name: "经管联考", subjects: ["199管理类联考", "396经济类联考", "经济学专业课", "金融专业课"] },
-  { name: "法学", subjects: ["法律硕士", "法学专业课"] },
-  { name: "教育·心理", subjects: ["教育学", "教育综合", "心理学"] },
-  { name: "医学", subjects: ["西医相关", "中医相关", "护理", "药学"] },
-  { name: "理工", subjects: ["机械", "电气", "电子信息", "自动化", "土木", "材料", "化工", "环境", "建筑"] },
-  { name: "农学", subjects: ["农学", "林学", "食品", "兽医"] },
-  { name: "人文社科", subjects: ["中文", "历史", "哲学", "新闻传播", "社会学", "公共管理"] },
-  { name: "艺术·体育", subjects: ["艺术", "设计", "体育"] },
-  { name: "其他", subjects: ["自命题专业课", "其他"] }
-];
+const catalog = [];
+
 
 const resourceTypes = ["全部资源", "书籍", "讲义", "做题本", "真题", "题库", "笔记", "模拟卷", "冲刺资料", "其他"];
 const experiencePosts = [];
@@ -35,9 +24,12 @@ const resources = [
     id: "408-workbook",
     title: "408 做题本",
     description: "计算机 408 复习、刷题与知识点整理。",
-    category: "计算机",
-    subject: "408",
+    subjectName: "计算机学科专业基础",
+    subjectCode: "408",
+    subject: "计算机学科专业基础（408）",
     resourceType: "做题本",
+    releaseVersion: "v1.0",
+    publishedAt: "2026-09-19",
     updated: "2026-09-19",
     status: "整理中",
     versions: [
@@ -66,9 +58,12 @@ const resources = [
     id: "math2-workbook",
     title: "数学二做题本",
     description: "数学二刷题、复盘与错题整理。",
-    category: "公共课",
-    subject: "数学二",
+    subjectName: "数学二",
+    subjectCode: "302",
+    subject: "数学二（302）",
     resourceType: "做题本",
+    releaseVersion: "v1.0",
+    publishedAt: "2026-09-19",
     updated: "2026-09-19",
     status: "整理中",
     versions: [
@@ -195,35 +190,25 @@ function showToast(message) {
   window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
 }
 
-function categoryCount(category) {
-  if (category === "全部") return resources.length;
-  return resources.filter(item => item.category === category).length;
-}
-
-function getVisibleCategories() {
-  return catalog.map(item => item.name).filter(name => categoryCount(name) > 0);
+function getVisibleSubjects() {
+  return [...new Set(resources.map(item => item.subject))];
 }
 
 function subjectCount(subject) {
-  return resources.filter(item => {
-    const categoryMatch = state.category === "全部" || item.category === state.category;
-    const subjectMatch = subject === "全部科目" || item.subject === subject;
-    return categoryMatch && subjectMatch;
-  }).length;
+  return resources.filter(item => subject === "全部科目" || item.subject === subject).length;
 }
 
 function typeCount(type) {
   return resources.filter(item => {
-    const categoryMatch = state.category === "全部" || item.category === state.category;
     const subjectMatch = state.subject === "全部科目" || item.subject === state.subject;
     const typeMatch = type === "全部资源" || item.resourceType === type;
-    return categoryMatch && subjectMatch && typeMatch;
+    return subjectMatch && typeMatch;
   }).length;
 }
 
 function searchableText(item) {
   return [
-    item.title, item.description, item.category, item.subject, item.resourceType, item.status,
+    item.title, item.description, item.subjectName, item.subjectCode, item.subject, item.resourceType, item.releaseVersion, item.publishedAt, item.status,
     ...item.versions.flatMap(version => [
       version.name, version.note, ...version.meta,
       ...version.channels.flatMap(channel => [channel.label, channel.note, channel.code])
@@ -234,7 +219,6 @@ function searchableText(item) {
 function getFilteredResources() {
   const query = state.query.trim().toLowerCase();
   return resources
-    .filter(item => state.category === "全部" || item.category === state.category)
     .filter(item => state.subject === "全部科目" || item.subject === state.subject)
     .filter(item => state.resourceType === "全部资源" || item.resourceType === state.resourceType)
     .filter(item => !query || searchableText(item).includes(query))
@@ -264,9 +248,9 @@ function renderSections() {
 
     if (section.id === "resources" && state.section === "resources") {
       html += '<div class="nav-children">';
-      html += '<button class="nav-child' + (state.category === "全部" ? ' active' : '') + '" type="button" data-category="全部"><span>全部资料</span><b>' + resources.length + '</b></button>';
-      getVisibleCategories().forEach(category => {
-        html += '<button class="nav-child' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + esc(category) + '"><span>' + esc(category) + '</span><b>' + categoryCount(category) + '</b></button>';
+      html += '<button class="nav-child' + (state.subject === "全部科目" ? ' active' : '') + '" type="button" data-nav-subject="全部科目"><span>全部资料</span><b>' + resources.length + '</b></button>';
+      getVisibleSubjects().forEach(subject => {
+        html += '<button class="nav-child' + (state.subject === subject ? ' active' : '') + '" type="button" data-nav-subject="' + esc(subject) + '"><span>' + esc(subject) + '</span><b>' + subjectCount(subject) + '</b></button>';
       });
       html += '</div>';
     }
@@ -282,7 +266,6 @@ function renderSections() {
         state.query = "";
         searchInput.value = "";
         if (state.section !== "resources") {
-          state.category = "全部";
           state.subject = "全部科目";
           state.resourceType = "全部资源";
         }
@@ -290,14 +273,13 @@ function renderSections() {
     });
   });
 
-  sectionNav.querySelectorAll("[data-category]").forEach(button => {
+  sectionNav.querySelectorAll("[data-nav-subject]").forEach(button => {
     button.addEventListener("click", () => {
       closeMobileDrawer();
       closeAllPopovers();
       commitViewUpdate(() => {
         state.section = "resources";
-        state.category = button.dataset.category;
-        state.subject = "全部科目";
+        state.subject = button.dataset.navSubject;
       });
     });
   });
@@ -308,39 +290,15 @@ function renderCategories() {
   categoryNav.innerHTML = "";
 }
 
-function getSubjectGroups(query = "") {
-  const normalized = query.trim().toLowerCase();
-  const groups = state.category === "全部" ? catalog : catalog.filter(group => group.name === state.category);
-  return groups.map(group => ({
-    name: group.name,
-    subjects: group.subjects.filter(subject => subjectCount(subject) > 0 && (!normalized || subject.toLowerCase().includes(normalized)))
-  })).filter(group => group.subjects.length);
-}
-
 function renderSubjectOptions(query = "") {
   const normalized = query.trim().toLowerCase();
-  const showAll = !normalized || "全部科目".includes(query);
-  const groups = getSubjectGroups(query);
+  const subjects = getVisibleSubjects().filter(subject => !normalized || subject.toLowerCase().includes(normalized));
   let html = "";
-
-  if (showAll) {
-    html += `
-      <button class="command-item${state.subject === "全部科目" ? " selected" : ""}" type="button" data-subject="全部科目">
-        <span class="command-item-main"><span>全部科目</span><small>${subjectCount("全部科目")} 项</small></span>
-        ${state.subject === "全部科目" ? checkIcon() : ""}
-      </button>`;
+  if (!normalized || "全部科目".includes(query)) {
+    html += '<button class="command-item' + (state.subject === "全部科目" ? " selected" : "") + '" type="button" data-subject="全部科目"><span class="command-item-main"><span>全部科目</span><small>' + subjectCount("全部科目") + ' 项</small></span>' + (state.subject === "全部科目" ? checkIcon() : "") + '</button>';
   }
-
-  groups.forEach(group => {
-    html += `<div class="command-group-label">${esc(group.name)}</div>`;
-    html += group.subjects.map(subject => `
-      <button class="command-item${state.subject === subject ? " selected" : ""}" type="button" data-subject="${esc(subject)}">
-        <span class="command-item-main"><span>${esc(subject)}</span><small>${subjectCount(subject)} 项</small></span>
-        ${state.subject === subject ? checkIcon() : ""}
-      </button>`
-    ).join("");
-  });
-
+  if (subjects.length) html += '<div class="command-group-label">已收录科目</div>';
+  html += subjects.map(subject => '<button class="command-item' + (state.subject === subject ? " selected" : "") + '" type="button" data-subject="' + esc(subject) + '"><span class="command-item-main"><span>' + esc(subject) + '</span><small>' + subjectCount(subject) + ' 项</small></span>' + (state.subject === subject ? checkIcon() : "") + '</button>').join("");
   subjectOptions.innerHTML = html || '<div class="command-empty">没有匹配的已收录科目</div>';
   subjectOptions.querySelectorAll("[data-subject]").forEach(button => {
     button.addEventListener("click", () => {
@@ -627,11 +585,11 @@ function updatePageMode() {
     renderOverview();
   } else if (state.section === "resources") {
     eyebrow.textContent = "RESOURCE LIBRARY";
-    pageTitle.textContent = state.subject !== "全部科目" ? state.subject + "资源" : state.category !== "全部" ? state.category + "资源" : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
+    pageTitle.textContent = state.subject !== "全部科目" ? state.subject + "资源" : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
     contentDesc.textContent = "书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。";
     searchInput.placeholder = "搜索资源、科目、版本或关键词";
-    breadcrumb.innerHTML = esc(state.category) + ' <span>›</span> ' + esc(state.subject) + ' <span>›</span> ' + esc(state.resourceType);
-    clearFiltersButton.hidden = state.category === "全部" && state.subject === "全部科目" && state.resourceType === "全部资源";
+    breadcrumb.innerHTML = esc(state.subject) + ' <span>›</span> ' + esc(state.resourceType);
+    clearFiltersButton.hidden = state.subject === "全部科目" && state.resourceType === "全部资源";
   } else if (state.section === "experience") {
     eyebrow.textContent = "EXPERIENCE";
     pageTitle.textContent = "经验贴";
@@ -680,7 +638,7 @@ function initMobileDrawer() {
   mobileDrawerBackdrop?.addEventListener("click", closeMobileDrawer);
 
   mobileSidebar?.addEventListener("click", event => {
-    if (event.target.closest("[data-section], [data-category]")) {
+    if (event.target.closest("[data-section], [data-nav-subject]")) {
       closeMobileDrawer();
     }
   });
@@ -694,7 +652,7 @@ subjectPickerButton.addEventListener("click",() => subjectDropdown.hidden ? open
 resourceTypePickerButton.addEventListener("click",() => resourceTypeDropdown.hidden ? openResourceTypeDropdown() : closeResourceTypeDropdown());
 subjectSearchInput.addEventListener("input",e => renderSubjectOptions(e.target.value));
 clearFiltersButton.addEventListener("click",() => {
-  state.category = "全部"; state.subject = "全部科目"; state.resourceType = "全部资源";
+  state.subject = "全部科目"; state.resourceType = "全部资源";
   closeAllPopovers(); renderAll();
 });
 
