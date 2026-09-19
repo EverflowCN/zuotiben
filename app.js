@@ -1126,6 +1126,90 @@ document.addEventListener("keydown",e => {
   }
 });
 
+function initBitstreamBackground(){
+  const canvas=document.getElementById("bitstreamBackground");
+  if(!canvas)return;
+  const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  if(reduced?.matches){canvas.hidden=true;return}
+
+  const ctx=canvas.getContext("2d",{alpha:true});
+  if(!ctx)return;
+
+  let width=0,height=0,dpr=1,streams=[],frame=0,last=0;
+  const isPhone=()=>window.innerWidth<=560;
+
+  function makeStream(index,count){
+    const fontSize=isPhone()?10:11;
+    const length=Math.floor(5+Math.random()*7);
+    return {
+      x:((index+.5)/count)*width+(Math.random()-.5)*Math.min(54,width/count*.45),
+      y:Math.random()*height,
+      speed:(isPhone()?7:9)+Math.random()*(isPhone()?5:8),
+      fontSize,
+      length,
+      gap:fontSize*1.45,
+      alpha:.018+Math.random()*.022,
+      bits:Array.from({length},()=>Math.random()>.5?"1":"0")
+    };
+  }
+
+  function rebuild(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    width=window.innerWidth;
+    height=window.innerHeight;
+    canvas.width=Math.max(1,Math.floor(width*dpr));
+    canvas.height=Math.max(1,Math.floor(height*dpr));
+    canvas.style.width=width+"px";
+    canvas.style.height=height+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const count=Math.max(4,Math.min(isPhone()?7:13,Math.floor(width/(isPhone()?78:118))));
+    streams=Array.from({length:count},(_,i)=>makeStream(i,count));
+  }
+
+  function draw(now){
+    frame=requestAnimationFrame(draw);
+    if(document.hidden)return;
+    if(now-last<55)return;
+    const delta=Math.min((now-last||55)/1000,.12);
+    last=now;
+    ctx.clearRect(0,0,width,height);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.font='500 '+(isPhone()?10:11)+'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+
+    streams.forEach(stream=>{
+      stream.y+=stream.speed*delta;
+      if(stream.y-stream.length*stream.gap>height+32){
+        stream.y=-24;
+        stream.speed=(isPhone()?7:9)+Math.random()*(isPhone()?5:8);
+        stream.bits=stream.bits.map(()=>Math.random()>.5?"1":"0");
+      }
+      for(let i=0;i<stream.length;i++){
+        const y=stream.y-i*stream.gap;
+        if(y<-18||y>height+18)continue;
+        const tail=1-i/Math.max(1,stream.length);
+        ctx.fillStyle='rgba(83,105,92,'+(stream.alpha*(.38+.62*tail)).toFixed(4)+')';
+        ctx.fillText(stream.bits[i],stream.x,y);
+      }
+    });
+  }
+
+  let resizeTimer=0;
+  window.addEventListener("resize",()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(rebuild,120);
+  },{passive:true});
+  reduced?.addEventListener?.("change",event=>{
+    canvas.hidden=event.matches;
+    if(event.matches){cancelAnimationFrame(frame);ctx.clearRect(0,0,width,height)}
+    else{rebuild();last=0;frame=requestAnimationFrame(draw)}
+  });
+
+  rebuild();
+  frame=requestAnimationFrame(draw);
+}
+
+initBitstreamBackground();
 initMobileDrawer();
 renderAll();
 loadRemoteBootstrap();
