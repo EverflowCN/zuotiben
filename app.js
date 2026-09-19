@@ -4,10 +4,33 @@ const catalog = [];
 const resourceTypes = ["全部资源", "书籍", "讲义", "做题本", "真题", "题库", "笔记", "模拟卷", "冲刺资料", "其他"];
 const experiencePosts = [];
 const errataItems = [];
-const announcements = [
-  { id: "notice-update", type: "更新通知", title: "资源中心持续整理中", body: "资料会按标准版、平板版、打印专版等分别发布；经验贴与勘误栏目也会逐步补充。", date: "2026-09-19" },
-  { id: "notice-guide", type: "使用说明", title: "同一资源可能存在多个版本与入口", body: "标准版、平板版、打印专版会分别标注；百度网盘、夸克网盘、直链与打印入口以对应版本为准。发现题目、答案、排版或链接问题时，可在勘误中提交。", date: "2026-09-19" }
+const defaultAnnouncements = [
+  { id: "notice-update", type: "更新通知", title: "资源中心持续整理中", body: "资料会按标准版、平板版、打印专版等分别发布；经验贴与勘误栏目也会逐步补充。", date: "2026-09-19", visible: true, status: "published", audience: "所有访客", publishAt: "2026-09-19T00:00", expiresAt: "", ctaText: "", ctaUrl: "" },
+  { id: "notice-guide", type: "使用说明", title: "同一资源可能存在多个版本与入口", body: "标准版、平板版、打印专版会分别标注；不同获取入口以对应版本为准。", date: "2026-09-19", visible: true, status: "published", audience: "所有访客", publishAt: "2026-09-19T00:00", expiresAt: "", ctaText: "", ctaUrl: "" }
 ];
+const storedAnnouncements = JSON.parse(localStorage.getItem("yanku-announcements-v2") || "null");
+function announcementIsActive(item) {
+  if (item.visible === false) return false;
+  if ((item.audience || "所有访客") !== "所有访客") return false;
+  const status = item.status || "published";
+  if (status === "draft" || status === "expired") return false;
+  const now = Date.now();
+  if (item.publishAt && new Date(item.publishAt).getTime() > now) return false;
+  if (item.expiresAt && new Date(item.expiresAt).getTime() <= now) return false;
+  return true;
+}
+const announcements = (storedAnnouncements || defaultAnnouncements)
+  .filter(announcementIsActive)
+  .map(item => ({
+    id: String(item.id),
+    type: item.kind || item.type || "通知",
+    title: item.title,
+    body: item.body || "",
+    date: item.updated || item.date || "",
+    pinned: Boolean(item.pinned),
+    ctaText: item.ctaText || "",
+    ctaUrl: item.ctaUrl || ""
+  }));
 
 const siteSettings = {
   errataSubmitUrl: localStorage.getItem("yanku-errata-submit-url") || ""
@@ -17,7 +40,7 @@ const pinState = {
   announcements: new Set(JSON.parse(localStorage.getItem("yanku-pinned-announcement-titles") || "[]"))
 };
 function isResourcePinned(item){ return pinState.resources.has(item.title); }
-function isAnnouncementPinned(item){ return pinState.announcements.has(item.title); }
+function isAnnouncementPinned(item){ return item.pinned || pinState.announcements.has(item.title); }
 
 const resources = [
   {
@@ -536,6 +559,7 @@ function renderOverview() {
     document.getElementById("overviewNoticeTitle").textContent = notice.title;
     document.getElementById("overviewNoticeBody").textContent = notice.body;
     document.getElementById("overviewNoticeDate").textContent = notice.date;
+    document.getElementById("overviewNotice").dataset.announcementIndex = String(announcements.indexOf(notice));
   }
 
   document.getElementById("recentResources").innerHTML = resources
@@ -552,7 +576,8 @@ function openAnnouncementModal(index=0) {
   openUnifiedModal({
     kicker: item.type === "更新通知" ? "NOTICE" : "GUIDE",
     title: item.title,
-    body: '<div class="modal-article"><p>' + esc(item.body) + '</p><time>' + esc(item.date) + '</time></div>'
+    body: '<div class="modal-article"><p>' + esc(item.body) + '</p><time>' + esc(item.date) + '</time></div>',
+    actions: item.ctaUrl ? [{label:item.ctaText || "查看详情",primary:true,onClick:()=>window.open(item.ctaUrl,"_blank","noopener,noreferrer")}] : []
   });
 }
 function openAnnouncementListModal() {
