@@ -66,12 +66,12 @@ async function getPublicBootstrap(env) {
   const now = new Date().toISOString();
   const [subjectsQ, resourcesQ, versionsQ, linksQ, errataQ, experiencesQ, announcementsQ, settingsQ] = await Promise.all([
     env.DB.prepare("SELECT id,name,code,sort_order FROM subjects WHERE visible=1 ORDER BY sort_order,name").all(),
-    env.DB.prepare("SELECT r.id,r.slug,r.title,r.resource_type,r.description,r.release_version,r.published_at,r.updated_at,r.pinned,r.sort_order,s.name AS subject_name,s.code AS subject_code FROM resources r LEFT JOIN subjects s ON s.id=r.subject_id WHERE r.visible=1 AND r.status='published' ORDER BY r.pinned DESC,r.sort_order,r.updated_at DESC").all(),
+    env.DB.prepare("SELECT r.id,r.slug,r.title,r.resource_type,r.description,r.release_version,r.published_at,r.updated_at,r.pinned,r.sort_order,s.name AS subject_name,s.code AS subject_code FROM resources r LEFT JOIN subjects s ON s.id=r.subject_id WHERE r.visible=1 AND r.status='published' AND (r.subject_id IS NULL OR s.visible=1) ORDER BY r.pinned DESC,r.sort_order,r.updated_at DESC").all(),
     env.DB.prepare("SELECT id,resource_id,name,release_version,published_at,format,note,meta_json,current,sort_order FROM resource_versions WHERE visible=1 ORDER BY sort_order,name").all(),
     env.DB.prepare("SELECT id,version_id,label,kind,url,access_code,note,sort_order FROM resource_links WHERE visible=1 ORDER BY sort_order,label").all(),
     env.DB.prepare("SELECT id,resource_id,version_id,title,body,status,updated_at FROM errata WHERE visible=1 AND status IN ('fixed','已修正') ORDER BY updated_at DESC").all(),
     env.DB.prepare("SELECT id,title,source_url,school,major,year,stage,author,body,published_at,updated_at FROM experiences WHERE visible=1 AND status='published' ORDER BY published_at DESC,updated_at DESC").all(),
-    env.DB.prepare("SELECT id,title,kind,body,pinned,dismissible,publish_at,expires_at,cta_text,cta_url,updated_at FROM announcements WHERE visible=1 AND status='published' AND audience='所有访客' AND (publish_at IS NULL OR publish_at='' OR publish_at<=?) AND (expires_at IS NULL OR expires_at='' OR expires_at>?) ORDER BY pinned DESC,publish_at DESC,updated_at DESC").bind(now, now).all(),
+    env.DB.prepare("SELECT id,title,kind,body,pinned,dismissible,publish_at,expires_at,cta_text,cta_url,updated_at FROM announcements WHERE visible=1 AND status IN ('published','scheduled') AND audience='所有访客' AND (publish_at IS NULL OR publish_at='' OR publish_at<=?) AND (expires_at IS NULL OR expires_at='' OR expires_at>?) ORDER BY pinned DESC,publish_at DESC,updated_at DESC").bind(now, now).all(),
     env.DB.prepare("SELECT key,value_json,updated_at FROM site_settings WHERE key LIKE 'public.%' ORDER BY key").all()
   ]);
   const linksByVersion = groupBy(linksQ.results, 'version_id');
