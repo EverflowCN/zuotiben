@@ -107,6 +107,37 @@ const currentResourceType = document.getElementById("currentResourceType");
 const pageTitle = document.getElementById("pageTitle");
 const emptyState = document.getElementById("emptyState");
 const toast = document.getElementById("toast");
+const noticeCard = document.getElementById("noticeCard");
+const dismissNoticeButton = document.getElementById("dismissNoticeButton");
+
+function icon(name, className = "ui-icon") {
+  const paths = {
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/>',
+    file: '<path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h5"/>',
+    printer: '<path d="M7 8V3h10v5"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7Z"/>',
+    cloud: '<path d="M7 18h10a4 4 0 0 0 .7-7.94A6 6 0 0 0 6.2 8.2 4.5 4.5 0 0 0 7 18Z"/><path d="m12 11 0 6m-3-3 3 3 3-3"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.2-1.2"/>',
+    layers: '<path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+    archive: '<path d="M3 5h18v4H3Z"/><path d="M5 9h14v11H5Z"/><path d="M9 13h6"/>',
+    note: '<path d="M5 3h14v18H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>'
+  };
+  return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.file}</svg>`;
+}
+
+function resourceTypeIcon(type) {
+  if (type === "书籍") return "book";
+  if (type === "讲义" || type === "真题" || type === "题库") return "file";
+  if (type === "笔记") return "note";
+  if (type === "做题本" || type === "模拟卷" || type === "冲刺资料") return "layers";
+  return "archive";
+}
+
+function channelIcon(label) {
+  if (label.includes("打印")) return "printer";
+  if (label.includes("网盘")) return "cloud";
+  if (label.includes("直链")) return "link";
+  return "file";
+}
 
 function esc(text) {
   return String(text ?? "").replace(/[&<>'"]/g, ch => ({
@@ -119,11 +150,7 @@ function esc(text) {
 }
 
 function checkIcon() {
-  return `
-    <svg class="check-icon" viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m5.5 10.3 2.8 2.8 6.2-6.3"/>
-    </svg>
-  `;
+  return '<svg class="check-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 10.3 2.8 2.8 6.2-6.3"/></svg>';
 }
 
 function showToast(message) {
@@ -181,11 +208,7 @@ function searchableText(item) {
     version.name,
     version.note,
     ...version.meta,
-    ...version.channels.flatMap(channel => [
-      channel.label,
-      channel.note,
-      channel.code
-    ])
+    ...version.channels.flatMap(channel => [channel.label, channel.note, channel.code])
   ]).join(" ");
 
   return [
@@ -231,9 +254,7 @@ function copyText(text, message = "已复制") {
 
 function channelCopyText(channel) {
   if (!channel.url) return "";
-  return channel.code
-    ? `${channel.url}\n提取码：${channel.code}`
-    : channel.url;
+  return channel.code ? `${channel.url}\n提取码：${channel.code}` : channel.url;
 }
 
 function openChannel(resourceIndex, versionIndex, channelIndex) {
@@ -354,6 +375,7 @@ function renderResourceTypeOptions() {
     return `
       <button class="command-item${active ? " selected" : ""}" type="button" role="option" data-resource-type="${esc(type)}">
         <span class="command-item-main">
+          ${icon(resourceTypeIcon(type), "menu-icon")}
           <span>${esc(type)}</span>
           ${total ? `<small>${total} 项</small>` : ""}
         </span>
@@ -416,7 +438,10 @@ function renderChannel(channel, resourceIndex, versionIndex, channelIndex) {
 
   return `
     <div class="channel-row${statusClass}">
-      <div class="channel-name">${esc(channel.label)}</div>
+      <div class="channel-name">
+        ${icon(channelIcon(channel.label), "channel-icon")}
+        <span>${esc(channel.label)}</span>
+      </div>
       <div class="channel-extra">${code}${note}</div>
       <div class="channel-actions">
         <button type="button" onclick="openChannel(${resourceIndex}, ${versionIndex}, ${channelIndex})">${ready ? "打开" : "未添加"}</button>
@@ -427,10 +452,12 @@ function renderChannel(channel, resourceIndex, versionIndex, channelIndex) {
 }
 
 function renderVersion(version, resourceIndex, versionIndex) {
+  const isPrint = version.name.includes("打印");
   return `
     <details class="version" ${versionIndex === 0 ? "open" : ""}>
       <summary>
         <div class="version-summary-main">
+          ${icon(isPrint ? "printer" : "file", "version-icon")}
           <strong>${esc(version.name)}</strong>
           <div class="version-meta">
             ${version.meta.map(tag => `<span>${esc(tag)}</span>`).join("")}
@@ -461,7 +488,9 @@ function renderResources() {
     return `
       <article class="resource-item">
         <div class="resource-head">
-          <div class="resource-icon" aria-hidden="true">${esc(item.subject.slice(0, 2))}</div>
+          <div class="resource-icon" aria-hidden="true">
+            ${icon(resourceTypeIcon(item.resourceType), "resource-type-icon")}
+          </div>
           <div class="resource-main">
             <div class="resource-title-line">
               <h2>${esc(item.title)}</h2>
@@ -494,6 +523,20 @@ function renderAll() {
   renderSubjectPicker();
   renderResourceTypePicker();
   renderResources();
+}
+
+function initNotice() {
+  if (!noticeCard || !dismissNoticeButton) return;
+  const version = noticeCard.dataset.noticeVersion || "";
+  const dismissed = localStorage.getItem("yanku-notice-dismissed");
+  if (dismissed === version) {
+    noticeCard.hidden = true;
+  }
+
+  dismissNoticeButton.addEventListener("click", () => {
+    localStorage.setItem("yanku-notice-dismissed", version);
+    noticeCard.hidden = true;
+  });
 }
 
 subjectPickerButton.addEventListener("click", () => {
@@ -551,4 +594,5 @@ document.addEventListener("keydown", event => {
   }
 });
 
+initNotice();
 renderAll();
