@@ -35,6 +35,118 @@ const announcements = (storedAnnouncements || defaultAnnouncements)
 const siteSettings = {
   errataSubmitUrl: localStorage.getItem("yanku-errata-submit-url") || ""
 };
+
+const siteCopyDefaults = {
+  brandName: "研库",
+  mobileBrandSubtitle: "资源导航",
+  sidebarColumnsTitle: "栏目",
+  sidebarSubjectsTitle: "科目",
+  navOverview: "总览",
+  navResources: "资料",
+  navExperience: "经验贴",
+  overviewEyebrow: "OVERVIEW",
+  overviewTitle: "总览",
+  overviewDesc: "快速查看最近更新、公告、勘误与资源收录情况。",
+  overviewSearchPlaceholder: "搜索资源、科目、经验或勘误",
+  resourcesEyebrow: "RESOURCE LIBRARY",
+  resourcesTitle: "全部资源",
+  resourcesDesc: "书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。",
+  resourcesSearchPlaceholder: "搜索资源、科目、版本或关键词",
+  experienceEyebrow: "EXPERIENCE",
+  experienceTitle: "经验贴",
+  experienceDesc: "围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。",
+  experienceSearchPlaceholder: "搜索经验贴、院校或专业",
+  allResourcesLabel: "全部资料",
+  allSubjectsLabel: "全部科目",
+  subjectGroupLabel: "已收录科目",
+  noSubjectMatch: "没有匹配的已收录科目",
+  filterHint: "支持搜索",
+  toolbarSort: "最近更新",
+  viewNote: "资源 · 版本 · 渠道",
+  freeTitle: "全部资源免费公开",
+  freeBody: "本站收录与整理的资源均免费公开，不设置付费门槛。",
+  qqTitle: "更多资料在 QQ 群",
+  qqBody: "更多资料、更新与交流可加入 QQ 群。",
+  qqNumber: "1032998814",
+  qqCopyButton: "复制群号",
+  progressTitle: "功能持续添加中",
+  progressBody: "资料、经验贴、勘误和后台功能会持续补充与完善。",
+  showFreeInfo: true,
+  showQQInfo: true,
+  showProgressInfo: true,
+  recentTitle: "最近更新",
+  recentAction: "查看全部",
+  maintenanceTitle: "资源维护",
+  maintenanceAction: "使用说明",
+  maintenanceEntryLabel: "获取入口",
+  maintenanceEntryTitle: "网盘 · 直链 · 打印",
+  maintenanceEntryBody: "按具体版本分别提供",
+  maintenanceErrataLabel: "勘误提交",
+  maintenanceErrataTitle: "发现问题可申请提交",
+  maintenanceErrataBody: "提交地址由后台单独配置",
+  metricResourcesLabel: "已收录资料",
+  metricResourcesNote: "查看全部资源",
+  metricVersionsLabel: "资源版本",
+  metricVersionsNote: "标准版 / 打印版等",
+  metricExperienceLabel: "经验贴",
+  metricExperienceNote: "备考经验整理",
+  metricErrataLabel: "公开勘误",
+  metricErrataNote: "随对应版本查看",
+  resourceEmptyTitle: "暂时没有收录资源",
+  resourceEmptyBody: "有内容后才会显示对应科目。",
+  experienceSectionTitle: "经验贴",
+  experienceSectionBody: "后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。",
+  experienceEmptyTitle: "暂未收录经验贴",
+  experienceEmptyBody: "后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。",
+  siteNoteTitle: "说明",
+  siteNoteBody: "资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。",
+  footerLeft: "研库 · 考研学习资源索引与分发",
+  footerRight: "zuotiben.top",
+  copySuccessText: "QQ群号已复制"
+};
+function readStoredJson(key,fallback){
+  try{
+    const value=JSON.parse(localStorage.getItem(key)||"null");
+    return value && typeof value==="object" ? value : fallback;
+  }catch{return fallback;}
+}
+const siteCopy = {...siteCopyDefaults,...readStoredJson("yanku-site-copy-v1",{})};
+
+function setText(id,value){
+  const el=document.getElementById(id);
+  if(el) el.textContent=value ?? "";
+}
+function applyStaticCopy(){
+  setText("brandName",siteCopy.brandName);
+  setText("mobileBrandName",siteCopy.brandName);
+  setText("mobileBrandSubtitle",siteCopy.mobileBrandSubtitle);
+  setText("sidebarColumnsTitle",siteCopy.sidebarColumnsTitle);
+  setText("sidebarSubjectsTitle",siteCopy.sidebarSubjectsTitle);
+  setText("filterHint",siteCopy.filterHint);
+  setText("toolbarSort",siteCopy.toolbarSort);
+  setText("viewNote",siteCopy.viewNote);
+  setText("freeInfoTitle",siteCopy.freeTitle);
+  setText("freeInfoBody",siteCopy.freeBody);
+  setText("qqInfoTitle",siteCopy.qqTitle);
+  setText("qqInfoBody",siteCopy.qqBody);
+  setText("qqNumber",siteCopy.qqNumber);
+  setText("copyQqButton",siteCopy.qqCopyButton);
+  setText("progressInfoTitle",siteCopy.progressTitle);
+  setText("progressInfoBody",siteCopy.progressBody);
+  setText("resourceEmptyTitle",siteCopy.resourceEmptyTitle);
+  setText("resourceEmptyBody",siteCopy.resourceEmptyBody);
+  setText("experienceSectionTitle",siteCopy.experienceSectionTitle);
+  setText("experienceSectionBody",siteCopy.experienceSectionBody);
+  setText("experienceEmptyTitle",siteCopy.experienceEmptyTitle);
+  setText("experienceEmptyBody",siteCopy.experienceEmptyBody);
+  setText("siteNoteTitle",siteCopy.siteNoteTitle);
+  setText("siteNoteBody",siteCopy.siteNoteBody);
+  setText("footerLeft",siteCopy.footerLeft);
+  setText("footerRight",siteCopy.footerRight);
+  document.getElementById("freeInfoCard")?.toggleAttribute("hidden",!siteCopy.showFreeInfo);
+  document.getElementById("qqInfoCard")?.toggleAttribute("hidden",!siteCopy.showQQInfo);
+  document.getElementById("progressInfoCard")?.toggleAttribute("hidden",!siteCopy.showProgressInfo);
+}
 const pinState = {
   resources: new Set(JSON.parse(localStorage.getItem("yanku-pinned-resource-titles") || "[]")),
   announcements: new Set(JSON.parse(localStorage.getItem("yanku-pinned-announcement-titles") || "[]"))
