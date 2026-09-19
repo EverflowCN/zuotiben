@@ -21,7 +21,7 @@ const announcements = [
 ];
 
 const siteSettings = {
-  errataSubmitUrl: ""
+  errataSubmitUrl: localStorage.getItem("yanku-errata-submit-url") || ""
 };
 
 const resources = [
