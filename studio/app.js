@@ -58,7 +58,7 @@ const siteCopyDefaults={
   qqJoinUrl:'',
   showQQJoinButton:false,
   progressTitle:'功能持续添加中',
-  progressBody:'资料、经验贴、勘误和后台功能会持续补充与完善。',
+  progressBody:'资料、经验贴、勘误与更多实用功能会持续补充与完善。',
   showFreeInfo:true,
   showQQInfo:true,
   showProgressInfo:true,
@@ -71,7 +71,7 @@ const siteCopyDefaults={
   maintenanceEntryBody:'按具体版本分别提供',
   maintenanceErrataLabel:'勘误提交',
   maintenanceErrataTitle:'发现问题可申请提交',
-  maintenanceErrataBody:'提交地址由后台单独配置',
+  maintenanceErrataBody:'提交入口开放后可直接在这里反馈',
   metricResourcesLabel:'已收录资料',
   metricResourcesNote:'查看全部资源',
   metricVersionsLabel:'资源版本',
@@ -87,7 +87,7 @@ const siteCopyDefaults={
   experienceEmptyTitle:'暂未收录经验贴',
   experienceEmptyBody:'后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。',
   siteNoteTitle:'说明',
-  siteNoteBody:'资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。',
+  siteNoteBody:'本站用于整理和索引公开学习资源、经验与勘误。涉及第三方内容时，请遵守相应版权、授权与平台规则。',
   footerLeft:'研库 · 考研学习资源索引与分发',
   footerRight:'zuotiben.top',
   copySuccessText:'QQ群号已复制'
@@ -423,7 +423,7 @@ function openResource(id){
     '<div class="version-admin-card"><div class="version-admin-head"><span class="pill blue">PDF</span><div class="grow"><strong>标准版</strong><small>下载渠道与勘误</small></div><div class="version-head-actions"><button class="btn small" data-add-custom-link>＋ 链接</button><button class="btn small">编辑版本</button></div></div><div class="version-admin-links"><button class="admin-subitem" data-open-channel><span>百度网盘</span><small>链接 / 提取码</small></button><button class="admin-subitem" data-open-channel><span>夸克网盘</span><small>链接 / 提取码</small></button><button class="admin-subitem" data-open-channel><span>直链</span><small>URL</small></button><button class="admin-subitem errata-admin-item" data-open-errata><span>勘误</span><small>0 条 · 待核对 / 已修正</small></button></div></div>'+
     '<div class="version-admin-card"><div class="version-admin-head"><span class="pill">PRINT</span><div class="grow"><strong>打印专版</strong><small>A4 · 双面 · 留空白页</small></div><div class="version-head-actions"><button class="btn small" data-add-custom-link>＋ 链接</button><button class="btn small">编辑版本</button></div></div><div class="version-admin-links"><button class="admin-subitem" data-open-channel><span>打印链接</span><small>在线打印 / 下载</small></button><button class="admin-subitem errata-admin-item" data-open-errata><span>勘误</span><small>0 条 · 待核对 / 已修正</small></button></div></div>'
   ):'';
-  const customVersionCards=x.extraVersions.map(v=>'<div class="version-admin-card"><div class="version-admin-head"><span class="pill blue">'+v.format+'</span><div class="grow"><strong>'+v.name+'</strong><small>'+(v.note||'自定义版本')+'</small></div><button class="btn small" data-add-custom-link>＋ 链接</button></div></div>').join('');
+  const customVersionCards=x.extraVersions.map(v=>'<div class="version-admin-card"><div class="version-admin-head"><span class="pill blue">'+v.format+'</span><div class="grow"><strong>'+v.name+'</strong><small>'+(v.releaseVersion||x.releaseVersion||'')+' · '+(v.publishedAt||x.publishedAt||'')+(v.note?' · '+v.note:'')+'</small></div><button class="btn small" data-add-custom-link>＋ 链接</button></div></div>').join('');
   const versions=(defaultVersionCards+customVersionCards)||'<div class="empty compact-empty"><strong>还没有版本</strong><p>先添加标准版、打印版或其他版本。</p></div>';
 
   const body=
@@ -582,8 +582,8 @@ function ensureResourceRecord(x){
 }
 function openVersionEditor(resourceId){
   const resource=state.resources.find(x=>x.id===resourceId);if(!resource)return;
-  openDrawer('新增版本','<div class="form-grid"><label class="field wide"><span>版本名称</span><input id="vName" placeholder="如：平板版 / 打印专版"></label><label class="field"><span>格式</span><select id="vFormat"><option>PDF</option><option>HTML</option><option>ZIP</option><option>其他</option></select></label><label class="field"><span>排序</span><input id="vOrder" type="number" value="100"></label><label class="field wide"><span>版本说明</span><textarea id="vNote"></textarea></label></div>',()=>{
-    resource.extraVersions=resource.extraVersions||[];resource.extraVersions.push({id:Date.now(),name:$('#vName').value.trim()||'未命名版本',format:$('#vFormat').value,order:Number($('#vOrder').value)||100,note:$('#vNote').value.trim()});resource.versions=(resource.defaultVersions||[1,2].includes(Number(resource.id))?2:0)+resource.extraVersions.length;saveStudioCollections();openResource(resource.id);toast('版本已创建')
+  openDrawer('新增版本','<div class="form-grid"><label class="field wide"><span>版本名称</span><input id="vName" placeholder="如：平板版 / 打印专版"></label><label class="field"><span>发布版本</span><input id="vReleaseVersion" value="'+(resource.releaseVersion||'v1.0')+'" placeholder="如：v1.2"></label><label class="field"><span>发布日期</span><input id="vPublishedAt" type="date" value="'+(resource.publishedAt||'2026-09-20')+'"></label><label class="field"><span>格式</span><select id="vFormat"><option>PDF</option><option>HTML</option><option>ZIP</option><option>其他</option></select></label><label class="field"><span>排序</span><input id="vOrder" type="number" value="100"></label><label class="field wide"><span>版本说明</span><textarea id="vNote"></textarea></label></div>',()=>{
+    resource.extraVersions=resource.extraVersions||[];resource.extraVersions.push({id:Date.now(),name:$('#vName').value.trim()||'未命名版本',releaseVersion:$('#vReleaseVersion').value.trim()||resource.releaseVersion||'v1.0',publishedAt:$('#vPublishedAt').value||resource.publishedAt||'2026-09-20',format:$('#vFormat').value,order:Number($('#vOrder').value)||100,note:$('#vNote').value.trim()});resource.versions=(resource.defaultVersions||[1,2].includes(Number(resource.id))?2:0)+resource.extraVersions.length;saveStudioCollections();openResource(resource.id);toast('版本已创建')
   })
 }
 function openCustomLink(resourceId,title='新增自定义链接'){
