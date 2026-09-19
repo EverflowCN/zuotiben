@@ -14,7 +14,7 @@ Public visitors only use:
 - `GET /health`
 - `GET /public/bootstrap`
 
-All `/admin/*` routes fail closed unless both `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` are configured and a valid Cloudflare Access JWT is present. The Worker verifies the Access JWT signature, issuer, audience and expiry before any admin data is returned or changed.
+All `/admin/*` routes fail closed unless Cloudflare Access authenticated the Worker request. The Worker reads the authenticated identity from native `ctx.access`; unauthenticated admin requests are rejected.
 
 Do **not** expose Cloudflare API tokens or admin credentials to the browser. Public file downloads are stored as ordinary version/channel URLs in D1; file bytes remain on the external provider.
 
@@ -66,15 +66,15 @@ zuotiben.top/studio/*
 
 Recommended login method for a small team: Cloudflare identity provider restricted to your Cloudflare account members. Alternatively, use One-time PIN and explicitly allow only administrator email addresses.
 
-After creating the Access application, set these Worker variables:
+Use a hostname/path-based Access application for:
 
-```bash
-npx wrangler secret put ACCESS_TEAM_DOMAIN
-npx wrangler secret put ACCESS_AUD
+```text
+zuotiben-api.bm9h54b4t9.workers.dev/admin/*
 ```
 
-`ACCESS_TEAM_DOMAIN` is the team name from `<team>.cloudflareaccess.com`.
-`ACCESS_AUD` is the Access application Audience (AUD) tag.
+Do not protect the entire Worker, because `/public/bootstrap` and `/health` must remain public.
+
+Modern Workers Access exposes the signed-in identity through `ctx.access`, so no manual Access audience/team variables are required for this deployment.
 
 ## File delivery
 
