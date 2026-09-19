@@ -367,6 +367,7 @@ const categoryNav = document.getElementById("categoryNav");
 const overviewView = document.getElementById("overviewView");
 const resourceView = document.getElementById("resourceView");
 const experienceView = document.getElementById("experienceView");
+const aboutView = document.getElementById("aboutView");
 const experienceList = document.getElementById("experienceList");
 const experienceEmptyState = document.getElementById("experienceEmptyState");
 const subjectPicker = document.getElementById("subjectPicker");
@@ -425,6 +426,7 @@ function icon(name, className = "ui-icon") {
     article: '<path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     errata: '<path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/>',
     bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.4h.01"/>',
     chevron: '<path d="m8 9 4 4 4-4"/>'
   };
   return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.file}</svg>`;
@@ -505,7 +507,8 @@ function renderSections() {
   const sections = [
     { id: "overview", label: siteCopy.navOverview, icon: "home", count: 0, enabled: true },
     { id: "resources", label: siteCopy.navResources, icon: "book", count: resources.length, enabled: siteSettings.resources !== false },
-    { id: "experience", label: siteCopy.navExperience, icon: "article", count: experiencePosts.length, enabled: siteSettings.experience !== false }
+    { id: "experience", label: siteCopy.navExperience, icon: "article", count: experiencePosts.length, enabled: siteSettings.experience !== false },
+    { id: "about", label: "关于", icon: "info", count: 0, enabled: true }
   ].filter(section=>section.enabled);
 
   let html = "";
@@ -957,9 +960,11 @@ function updatePageMode() {
   overviewView.hidden = state.section !== "overview";
   resourceView.hidden = state.section !== "resources";
   experienceView.hidden = state.section !== "experience";
+  aboutView.hidden = state.section !== "about";
   breadcrumb.hidden = state.section !== "resources";
 
   if (state.section === "overview") {
+    searchInput.disabled = false;
     eyebrow.textContent = siteCopy.overviewEyebrow;
     pageTitle.textContent = siteCopy.overviewTitle;
     contentDesc.textContent = siteCopy.overviewDesc;
@@ -967,6 +972,7 @@ function updatePageMode() {
     count.textContent = "";
     renderOverview();
   } else if (state.section === "resources") {
+    searchInput.disabled = false;
     eyebrow.textContent = siteCopy.resourcesEyebrow;
     pageTitle.textContent = state.subject !== "全部科目" ? state.subject + siteCopy.navResources : state.resourceType !== "全部资源" ? state.resourceType : siteCopy.resourcesTitle;
     contentDesc.textContent = siteCopy.resourcesDesc;
@@ -977,8 +983,18 @@ function updatePageMode() {
     eyebrow.textContent = siteCopy.experienceEyebrow;
     pageTitle.textContent = siteCopy.experienceTitle;
     contentDesc.textContent = siteCopy.experienceDesc;
+    searchInput.disabled = false;
     searchInput.placeholder = siteCopy.experienceSearchPlaceholder;
     count.textContent = experiencePosts.length ? experiencePosts.length + " 篇" : "";
+  } else if (state.section === "about") {
+    eyebrow.textContent = "ABOUT";
+    pageTitle.textContent = "关于研库";
+    contentDesc.textContent = "感谢每一位提供资料、提出建议、反馈问题和帮助完善这个站点的群友。";
+    searchInput.value = "";
+    state.query = "";
+    searchInput.disabled = true;
+    searchInput.placeholder = "关于研库";
+    count.textContent = "";
   }
 }
 
@@ -1058,7 +1074,7 @@ document.addEventListener("click", event => {
     openErrataSubmit();
     return;
   }
-  const qqCopy = event.target.closest("#copyQqButton, #qqNumber");
+  const qqCopy = event.target.closest("#copyQqButton, #qqNumber, [data-copy-qq]");
   if (qqCopy) {
     copyText(siteCopy.qqNumber,siteCopy.copySuccessText);
     return;
