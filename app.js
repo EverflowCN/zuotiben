@@ -33,6 +33,10 @@ const announcements = (storedAnnouncements || defaultAnnouncements)
   }));
 
 const siteSettings = {
+  resources: true,
+  experience: true,
+  siteName: "研库",
+  siteDescription: "考研学习资源索引与分发",
   errataSubmitUrl: localStorage.getItem("yanku-errata-submit-url") || ""
 };
 
@@ -262,7 +266,7 @@ function mapApiResource(item) {
     updated: item.updated_at || item.published_at || "",
     status: "已发布",
     pinned: Boolean(item.pinned),
-    versions: (item.versions || []).map(version => ({
+    versions: (item.versions || []).map((version,versionIndex) => ({
       id: version.id,
       name: version.name,
       releaseVersion: version.release_version || item.release_version || "",
@@ -277,8 +281,23 @@ function mapApiResource(item) {
         note: link.note || "",
         kind: link.kind || "link"
       })),
-      errata: version.errata || []
+      errata: [...(version.errata || []), ...(versionIndex === 0 ? (item.errata || []) : [])]
     }))
+  };
+}
+
+function mapApiExperience(item) {
+  return {
+    id: String(item.id || ""),
+    title: item.title || "",
+    sourceUrl: item.source_url || "",
+    school: item.school || "",
+    major: item.major || "",
+    year: item.year || "",
+    stage: item.stage || "",
+    author: item.author || "",
+    body: item.body || "",
+    publishedAt: item.published_at || item.updated_at || ""
   };
 }
 
@@ -299,7 +318,7 @@ async function loadRemoteBootstrap() {
       resources.splice(0, resources.length, ...data.resources.map(mapApiResource));
     }
     if (Array.isArray(data.experiences)) {
-      experiencePosts.splice(0, experiencePosts.length, ...data.experiences);
+      experiencePosts.splice(0, experiencePosts.length, ...data.experiences.map(mapApiExperience));
     }
     if (Array.isArray(data.announcements)) {
       announcements.splice(0, announcements.length, ...data.announcements.map(item => ({
@@ -315,6 +334,13 @@ async function loadRemoteBootstrap() {
     }
     const remoteCopy = data.settings?.["public.copy"];
     if (remoteCopy && typeof remoteCopy === "object") Object.assign(siteCopy, remoteCopy);
+    const remoteSettings = data.settings?.["public.settings"];
+    if (remoteSettings && typeof remoteSettings === "object") Object.assign(siteSettings, remoteSettings);
+    if (siteSettings.siteName) siteCopy.brandName = siteSettings.siteName;
+    if (siteSettings.siteDescription) siteCopy.siteNoteBody = siteSettings.siteDescription;
+    const metaDescription=document.querySelector('meta[name="description"]');
+    if(metaDescription&&siteSettings.siteDescription)metaDescription.setAttribute("content",siteSettings.siteDescription);
+    if(siteSettings.siteName)document.title=siteSettings.siteName+" · 考研资源库";
 
     window.__ZUOTIBEN_DATA_SOURCE__ = "cloudflare";
     renderAll();
@@ -339,6 +365,8 @@ const categoryNav = document.getElementById("categoryNav");
 const overviewView = document.getElementById("overviewView");
 const resourceView = document.getElementById("resourceView");
 const experienceView = document.getElementById("experienceView");
+const experienceList = document.getElementById("experienceList");
+const experienceEmptyState = document.getElementById("experienceEmptyState");
 const subjectPicker = document.getElementById("subjectPicker");
 const subjectPickerButton = document.getElementById("subjectPickerButton");
 const subjectPickerText = document.getElementById("subjectPickerText");
@@ -461,17 +489,22 @@ function getFilteredResources() {
     .sort((a,b) => Number(isResourcePinned(b)) - Number(isResourcePinned(a)) || b.updated.localeCompare(a.updated));
 }
 
+function normalizeEnabledSection(){
+  if(state.section==="resources"&&siteSettings.resources===false)state.section="overview";
+  if(state.section==="experience"&&siteSettings.experience===false)state.section="overview";
+}
 function commitViewUpdate(update) {
   update();
+  normalizeEnabledSection();
   renderAll();
 }
 
 function renderSections() {
   const sections = [
-    { id: "overview", label: siteCopy.navOverview, icon: "home", count: 0 },
-    { id: "resources", label: siteCopy.navResources, icon: "book", count: resources.length },
-    { id: "experience", label: siteCopy.navExperience, icon: "article", count: experiencePosts.length }
-  ];
+    { id: "overview", label: siteCopy.navOverview, icon: "home", count: 0, enabled: true },
+    { id: "resources", label: siteCopy.navResources, icon: "book", count: resources.length, enabled: siteSettings.resources !== false },
+    { id: "experience", label: siteCopy.navExperience, icon: "article", count: experiencePosts.length, enabled: siteSettings.experience !== false }
+  ].filter(section=>section.enabled);
 
   let html = "";
   sections.forEach(section => {
@@ -868,6 +901,18 @@ function openAnnouncementListModal() {
   });
 }
 
+function renderExperience(){
+  if(!experienceList||!experienceEmptyState)return;
+  const q=state.query.trim().toLowerCase();
+  const items=experiencePosts.filter(item=>!q||[item.title,item.school,item.major,item.stage,item.author,item.body].some(v=>String(v||"").toLowerCase().includes(q)));
+  experienceEmptyState.hidden=items.length>0;
+  experienceList.innerHTML=items.map(item=>{
+    const meta=[item.school,item.major,item.year,item.stage].filter(Boolean).map(esc).join(" · ");
+    const source=item.sourceUrl?'<a class="experience-source" href="'+esc(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">查看来源</a>':'';
+    return '<article class="experience-card"><div class="experience-card-head"><div><span class="pill">'+esc(item.stage||"经验")+'</span><h3>'+esc(item.title||"未命名经验贴")+'</h3></div>'+source+'</div><div class="experience-meta">'+meta+(item.author?' · '+esc(item.author):'')+'</div><p>'+esc(item.body||"暂无正文")+'</p>'+(item.publishedAt?'<time>'+esc(String(item.publishedAt).slice(0,10))+'</time>':'')+'</article>';
+  }).join("");
+}
+
 function updatePageMode() {
   overviewView.hidden = state.section !== "overview";
   resourceView.hidden = state.section !== "resources";
@@ -898,6 +943,7 @@ function updatePageMode() {
 }
 
 function renderAll() {
+  normalizeEnabledSection();
   applyStaticCopy();
   renderSections();
   renderCategories();
@@ -905,6 +951,7 @@ function renderAll() {
   renderResourceTypePicker();
   updatePageMode();
   if (state.section === "resources") renderResources();
+  if (state.section === "experience") renderExperience();
 }
 
 function openMobileDrawer() {
@@ -1006,6 +1053,7 @@ document.addEventListener("click",e => {
 searchInput.addEventListener("input",e => {
   state.query = e.target.value;
   if (state.section === "resources") renderResources();
+  if (state.section === "experience") renderExperience();
 });
 document.addEventListener("keydown",e => {
   if (e.key === "Escape" && !unifiedModal.hidden) {
