@@ -160,5 +160,4 @@ $('#sideOpen').onclick=openSide;$('#sideClose').onclick=closeSide;$('#sideBackdr
 $('#openPublic').onclick=()=>window.open('../','_blank','noopener');
 $('#quickCreate').onclick=()=>{state.section='resources';render();setTimeout(()=>openResource(),0)};
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape'){closeDrawer();closeConfirm();closeSide()}});
-const preview=new URLSearchParams(location.search).get('preview')==='1';
-if(preview){$('#gate').hidden=true;$('#app').hidden=false;render()}else{$('#verifyButton').onclick=()=>{$('#gateStatus').textContent='身份服务尚未接入；当前不会开放管理数据。'}};
+render();
