@@ -152,6 +152,32 @@ const state={
   account:{displayName:'主管理员',username:'owner',email:'',role:'Owner',mfa:false,lastLogin:'当前会话'},
   settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:localStorage.getItem('yanku-errata-submit-url')||''}
 };
+function loadStudioCollections(){
+  try{return JSON.parse(localStorage.getItem('yanku-studio-collections-v1')||'null')}
+  catch{return null}
+}
+function saveStudioCollections(){
+  const data={
+    resources:state.resources,
+    experiences:state.experiences,
+    categories:state.categories,
+    files:state.files,
+    admins:state.admins
+  };
+  localStorage.setItem('yanku-studio-collections-v1',JSON.stringify(data));
+}
+const persistedCollections=loadStudioCollections();
+if(persistedCollections){
+  if(Array.isArray(persistedCollections.resources)) state.resources=persistedCollections.resources;
+  if(Array.isArray(persistedCollections.experiences)) state.experiences=persistedCollections.experiences;
+  if(Array.isArray(persistedCollections.categories)) state.categories=persistedCollections.categories;
+  if(Array.isArray(persistedCollections.files)) state.files=persistedCollections.files;
+  if(Array.isArray(persistedCollections.admins)){
+    const owner=state.admins.find(x=>x.locked);
+    state.admins=persistedCollections.admins.filter(x=>!x.locked);
+    if(owner) state.admins.unshift(owner);
+  }
+}
 const navGroups=[
   {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article'],['announcements','公告','bell'],['copy','文案与说明','text']]},
   {label:'资源管理',items:[['taxonomy','科目管理','tag'],['files','文件','folder']]},
@@ -325,26 +351,26 @@ function render(){
   $('#panelHost').innerHTML=r(); bind();
 }
 function bind(){
-  $('[data-pin]').forEach(button=>button.onclick=event=>{event.stopPropagation();const scope=button.dataset.pin,id=button.dataset.id;if(scope==='resource'){const item=state.resources.find(x=>x.id==id);if(item){item.pinned=!item.pinned;savePinnedResources()}}if(scope==='announcement'){const item=state.announcements.find(x=>x.id==id);if(item){item.pinned=!item.pinned;saveAnnouncements()}}render();toast('置顶状态已更新（预览）')});
-  $('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='copy-visibility')return;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible}render();toast('状态已更新（预览）')});
+  $$('[data-pin]').forEach(button=>button.onclick=event=>{event.stopPropagation();const scope=button.dataset.pin,id=button.dataset.id;if(scope==='resource'){const item=state.resources.find(x=>x.id==id);if(item){item.pinned=!item.pinned;savePinnedResources()}}if(scope==='announcement'){const item=state.announcements.find(x=>x.id==id);if(item){item.pinned=!item.pinned;saveAnnouncements()}}render();toast('置顶状态已更新（预览）')});
+  $$('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='copy-visibility')return;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible}render();toast('状态已更新（预览）')});
   $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(Number(b.dataset.editResource)));
   $('[data-new-resource]')?.addEventListener('click',()=>openResource());
   $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);render();toast('已删除（预览）')}));
-  $('[data-select-announcement]').forEach(b=>b.onchange=()=>{const id=Number(b.dataset.selectAnnouncement);b.checked?state.announcementSelection.add(id):state.announcementSelection.delete(id);render()});
+  $$('[data-select-announcement]').forEach(b=>b.onchange=()=>{const id=Number(b.dataset.selectAnnouncement);b.checked?state.announcementSelection.add(id):state.announcementSelection.delete(id);render()});
   $('#selectAllAnnouncements')?.addEventListener('change',e=>{state.announcementSelection=new Set(e.target.checked?state.announcements.map(x=>x.id):[]);render()});
-  $('[data-announcement-bulk]').forEach(b=>b.onclick=()=>{
+  $$('[data-announcement-bulk]').forEach(b=>b.onclick=()=>{
     const action=b.dataset.announcementBulk;
     if(action==='delete'){state.announcements=state.announcements.filter(x=>!state.announcementSelection.has(x.id))}
     else state.announcements.forEach(x=>{if(state.announcementSelection.has(x.id)){if(action==='show')x.visible=true;if(action==='hide')x.visible=false;if(action==='publish'){x.status='published';x.visible=true}}});
     state.announcementSelection.clear();saveAnnouncements();render();toast('批量操作已完成（预览）')
   });
-  $('[data-edit-announcement]').forEach(b=>b.onclick=()=>openAnnouncement(Number(b.dataset.editAnnouncement)));
-  $('[data-preview-announcement]').forEach(b=>b.onclick=()=>previewAnnouncement(Number(b.dataset.previewAnnouncement)));
-  $('[data-duplicate-announcement]').forEach(b=>b.onclick=()=>duplicateAnnouncement(Number(b.dataset.duplicateAnnouncement)));
+  $$('[data-edit-announcement]').forEach(b=>b.onclick=()=>openAnnouncement(Number(b.dataset.editAnnouncement)));
+  $$('[data-preview-announcement]').forEach(b=>b.onclick=()=>previewAnnouncement(Number(b.dataset.previewAnnouncement)));
+  $$('[data-duplicate-announcement]').forEach(b=>b.onclick=()=>duplicateAnnouncement(Number(b.dataset.duplicateAnnouncement)));
   $('[data-new-announcement]')?.addEventListener('click',()=>openAnnouncement());
   $$('[data-delete-announcement]').forEach(b=>b.onclick=()=>confirmDelete('删除公告','该公告将不再出现在前台。',()=>{state.announcements=state.announcements.filter(x=>x.id!=b.dataset.deleteAnnouncement);saveAnnouncements();render();toast('已删除（预览）')}));
   $('[data-copy-save]')?.addEventListener('click',()=>{
-    $('[data-copy-input]').forEach(input=>state.copy[input.dataset.copyInput]=input.value);
+    $$('[data-copy-input]').forEach(input=>state.copy[input.dataset.copyInput]=input.value);
     saveSiteCopy();toast('前台文案已保存（预览）')
   });
   $('[data-copy-reset]')?.addEventListener('click',()=>confirmDelete('恢复默认文案','将恢复所有前台文案和说明卡默认值。',()=>{state.copy={...siteCopyDefaults};saveSiteCopy();render();toast('已恢复默认文案')}));
@@ -352,7 +378,7 @@ function bind(){
     const text=JSON.stringify(state.copy,null,2);
     navigator.clipboard?.writeText(text).then(()=>toast('文案 JSON 已复制')).catch(()=>toast('复制失败'))
   });
-  $('[data-toggle="copy-visibility"]').forEach(button=>button.onclick=()=>{
+  $$('[data-toggle="copy-visibility"]').forEach(button=>button.onclick=()=>{
     const key=button.dataset.id;state.copy[key]=!state.copy[key];saveSiteCopy();render();toast('显示设置已更新')
   });
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
