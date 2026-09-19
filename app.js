@@ -121,6 +121,10 @@ const toast = document.getElementById("toast");
 const noticeCard = document.getElementById("noticeCard");
 const dismissNoticeButton = document.getElementById("dismissNoticeButton");
 const submitErrataButton = document.getElementById("submitErrataButton");
+const mobileMenuButton = document.getElementById("mobileMenuButton");
+const mobileMenuClose = document.getElementById("mobileMenuClose");
+const mobileSidebar = document.getElementById("mobileSidebar");
+const mobileDrawerBackdrop = document.getElementById("mobileDrawerBackdrop");
 
 function esc(text) {
   return String(text ?? "").replace(/[&<>'"]/g, ch => ({
@@ -485,6 +489,44 @@ function renderAll() {
   if (state.section === "resources") renderResources();
 }
 
+function openMobileDrawer() {
+  if (!mobileSidebar || !mobileDrawerBackdrop || !mobileMenuButton) return;
+  mobileSidebar.classList.add("mobile-open");
+  mobileDrawerBackdrop.hidden = false;
+  requestAnimationFrame(() => mobileDrawerBackdrop.classList.add("show"));
+  mobileMenuButton.setAttribute("aria-expanded", "true");
+  document.body.classList.add("drawer-open");
+}
+
+function closeMobileDrawer() {
+  if (!mobileSidebar || !mobileDrawerBackdrop || !mobileMenuButton) return;
+  mobileSidebar.classList.remove("mobile-open");
+  mobileDrawerBackdrop.classList.remove("show");
+  mobileMenuButton.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("drawer-open");
+  setTimeout(() => {
+    if (!mobileDrawerBackdrop.classList.contains("show")) {
+      mobileDrawerBackdrop.hidden = true;
+    }
+  }, 220);
+}
+
+function initMobileDrawer() {
+  mobileMenuButton?.addEventListener("click", openMobileDrawer);
+  mobileMenuClose?.addEventListener("click", closeMobileDrawer);
+  mobileDrawerBackdrop?.addEventListener("click", closeMobileDrawer);
+
+  mobileSidebar?.addEventListener("click", event => {
+    if (event.target.closest("[data-section], [data-category]")) {
+      closeMobileDrawer();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 560) closeMobileDrawer();
+  });
+}
+
 function initNotice() {
   const version = noticeCard?.dataset.noticeVersion || "";
   if (noticeCard && localStorage.getItem("yanku-notice-dismissed") === version) noticeCard.hidden = true;
@@ -511,11 +553,16 @@ searchInput.addEventListener("input",e => {
   if (state.section === "resources") renderResources();
 });
 document.addEventListener("keydown",e => {
+  if (e.key === "Escape" && mobileSidebar?.classList.contains("mobile-open")) {
+    closeMobileDrawer();
+    return;
+  }
   if (e.key === "Escape" && (!subjectDropdown.hidden || !resourceTypeDropdown.hidden)) return closeAllPopovers();
   if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement?.tagName)) {
     e.preventDefault(); searchInput.focus();
   }
 });
 
+initMobileDrawer();
 initNotice();
 renderAll();
