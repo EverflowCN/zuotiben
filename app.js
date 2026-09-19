@@ -69,6 +69,9 @@ const siteCopyDefaults = {
   qqBody: "更多资料、更新与交流可加入 QQ 群。",
   qqNumber: "1032998814",
   qqCopyButton: "复制群号",
+  qqJoinButton: "加入群",
+  qqJoinUrl: "",
+  showQQJoinButton: false,
   progressTitle: "功能持续添加中",
   progressBody: "资料、经验贴、勘误和后台功能会持续补充与完善。",
   showFreeInfo: true,
@@ -131,6 +134,9 @@ function applyStaticCopy(){
   setText("qqInfoBody",siteCopy.qqBody);
   setText("qqNumber",siteCopy.qqNumber);
   setText("copyQqButton",siteCopy.qqCopyButton);
+  setText("joinQqButton",siteCopy.qqJoinButton);
+  const joinQqButton=document.getElementById("joinQqButton");
+  if(joinQqButton) joinQqButton.hidden=!siteCopy.showQQJoinButton || !siteCopy.qqJoinUrl;
   setText("progressInfoTitle",siteCopy.progressTitle);
   setText("progressInfoBody",siteCopy.progressBody);
   setText("resourceEmptyTitle",siteCopy.resourceEmptyTitle);
@@ -528,15 +534,33 @@ unifiedModalBackdrop?.addEventListener("click", closeUnifiedModal);
 
 function copyText(text, message="已复制") {
   if (!text) return showToast("暂无可复制内容");
-  navigator.clipboard?.writeText(text).then(() => showToast(message)).catch(() => {
+
+  const fallbackCopy = () => {
     const ta = document.createElement("textarea");
     ta.value = text;
+    ta.setAttribute("readonly","");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "0";
+    ta.style.opacity = "0";
     document.body.appendChild(ta);
+    ta.focus();
     ta.select();
-    document.execCommand("copy");
+    ta.setSelectionRange(0, ta.value.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch {}
     ta.remove();
-    showToast(message);
-  });
+    showToast(ok ? message : "复制失败，请长按群号复制");
+    return ok;
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast(message))
+      .catch(fallbackCopy);
+    return;
+  }
+  fallbackCopy();
 }
 
 function openChannel(resourceIndex,versionIndex,channelIndex) {
@@ -826,9 +850,15 @@ document.addEventListener("click", event => {
     openErrataSubmit();
     return;
   }
-  const qqCopy = event.target.closest("#copyQqButton");
+  const qqCopy = event.target.closest("#copyQqButton, #qqNumber");
   if (qqCopy) {
     copyText(siteCopy.qqNumber,siteCopy.copySuccessText);
+    return;
+  }
+  const qqJoin = event.target.closest("#joinQqButton");
+  if (qqJoin) {
+    if (!siteCopy.qqJoinUrl) return showToast("后台尚未配置QQ群加入链接");
+    window.open(siteCopy.qqJoinUrl,"_blank","noopener,noreferrer");
     return;
   }
   const go = event.target.closest("[data-go]");
