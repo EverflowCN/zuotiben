@@ -388,8 +388,8 @@ function bind(){
     const key=button.dataset.id;state.copy[key]=!state.copy[key];saveSiteCopy();render();toast('显示设置已更新')
   });
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
-  $('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(Number(b.dataset.editAdmin)));
-  $('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员将从当前预览权限列表移除。',()=>{state.admins=state.admins.filter(x=>x.id!=b.dataset.deleteAdmin);saveStudioCollections();render();toast('成员已删除')})});
+  $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(Number(b.dataset.editAdmin)));
+  $$('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员将从当前预览权限列表移除。',()=>{state.admins=state.admins.filter(x=>x.id!=b.dataset.deleteAdmin);saveStudioCollections();render();toast('成员已删除')})});
   $('[data-save-settings]')?.addEventListener('click',()=>{
     const input=$('#errataSubmitUrlInput');
     if(input){
@@ -399,15 +399,15 @@ function bind(){
     toast('设置已保存（预览）');
   });
   $('[data-new-experience]')?.addEventListener('click',()=>openExperience());
-  $('[data-edit-experience]').forEach(b=>b.onclick=()=>openExperience(Number(b.dataset.editExperience)));
-  $('[data-delete-experience]').forEach(b=>b.onclick=()=>confirmDelete('删除经验贴','删除后将从后台列表移除。',()=>{state.experiences=state.experiences.filter(x=>x.id!=b.dataset.deleteExperience);saveStudioCollections();render();toast('经验贴已删除')}));
+  $$('[data-edit-experience]').forEach(b=>b.onclick=()=>openExperience(Number(b.dataset.editExperience)));
+  $$('[data-delete-experience]').forEach(b=>b.onclick=()=>confirmDelete('删除经验贴','删除后将从后台列表移除。',()=>{state.experiences=state.experiences.filter(x=>x.id!=b.dataset.deleteExperience);saveStudioCollections();render();toast('经验贴已删除')}));
   $('[data-new-errata]')?.addEventListener('click',()=>openSimple('新建勘误','关联资源、版本、页码/题号、问题类型、说明、状态、是否公开'));
   $('[data-new-category]')?.addEventListener('click',()=>openCategory());
-  $('[data-edit-category]').forEach(b=>b.onclick=()=>openCategory(Number(b.dataset.editCategory)));
-  $('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料，但会移除该科目记录。',()=>{state.categories=state.categories.filter(x=>x.id!=b.dataset.deleteCategory);saveStudioCollections();render();toast('科目已删除')}));
+  $$('[data-edit-category]').forEach(b=>b.onclick=()=>openCategory(Number(b.dataset.editCategory)));
+  $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料，但会移除该科目记录。',()=>{state.categories=state.categories.filter(x=>x.id!=b.dataset.deleteCategory);saveStudioCollections();render();toast('科目已删除')}));
   $('[data-upload]')?.addEventListener('click',()=>openFile());
-  $('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(Number(b.dataset.editFile)));
-  $('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','当前只删除后台登记记录。',()=>{state.files=state.files.filter(x=>x.id!=b.dataset.deleteFile);saveStudioCollections();render();toast('文件记录已删除')}));
+  $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(Number(b.dataset.editFile)));
+  $$('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','当前只删除后台登记记录。',()=>{state.files=state.files.filter(x=>x.id!=b.dataset.deleteFile);saveStudioCollections();render();toast('文件记录已删除')}));
   $('[data-jump-resources]')?.addEventListener('click',()=>{state.section='resources';render()});
   $('[data-jump-announcements]')?.addEventListener('click',()=>{state.section='announcements';render()});
   $('[data-jump-taxonomy]')?.addEventListener('click',()=>{state.section='taxonomy';render()});
@@ -468,7 +468,7 @@ function openResource(id){
     $$('[data-resource-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.resourcePanel===button.dataset.resourceTab));
   });
   $$('[data-open-channel]').forEach(button=>button.onclick=()=>openCustomLink('编辑获取入口'));
-  $('[data-add-custom-link]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增自定义链接')});
+  $$('[data-add-custom-link]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增自定义链接')});
   $$('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
   $('[data-add-version]')?.addEventListener('click',()=>{const rid=ensureResourceRecord(x);openVersionEditor(rid)});
   $('#previewResourceButton')?.addEventListener('click',()=>window.open('../','_blank','noopener'));
