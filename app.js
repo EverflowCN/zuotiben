@@ -73,7 +73,7 @@ const siteCopyDefaults = {
   qqJoinUrl: "",
   showQQJoinButton: false,
   progressTitle: "功能持续添加中",
-  progressBody: "资料、经验贴、勘误和后台功能会持续补充与完善。",
+  progressBody: "资料、经验贴、勘误与更多实用功能会持续补充与完善。",
   showFreeInfo: true,
   showQQInfo: true,
   showProgressInfo: true,
@@ -86,7 +86,7 @@ const siteCopyDefaults = {
   maintenanceEntryBody: "按具体版本分别提供",
   maintenanceErrataLabel: "勘误提交",
   maintenanceErrataTitle: "发现问题可申请提交",
-  maintenanceErrataBody: "提交地址由后台单独配置",
+  maintenanceErrataBody: "提交入口开放后可直接在这里反馈",
   metricResourcesLabel: "已收录资料",
   metricResourcesNote: "查看全部资源",
   metricVersionsLabel: "资源版本",
@@ -102,7 +102,7 @@ const siteCopyDefaults = {
   experienceEmptyTitle: "暂未收录经验贴",
   experienceEmptyBody: "后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。",
   siteNoteTitle: "说明",
-  siteNoteBody: "资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。",
+  siteNoteBody: "本站用于整理和索引公开学习资源、经验与勘误。涉及第三方内容时，请遵守相应版权、授权与平台规则。",
   footerLeft: "研库 · 考研学习资源索引与分发",
   footerRight: "zuotiben.top",
   copySuccessText: "QQ群号已复制"
@@ -114,6 +114,15 @@ function readStoredJson(key,fallback){
   }catch{return fallback;}
 }
 const siteCopy = {...siteCopyDefaults,...readStoredJson("yanku-site-copy-v1",{})};
+const legacyVisitorCopy = {
+  progressBody: "资料、经验贴、勘误和后台功能会持续补充与完善。",
+  maintenanceErrataBody: "提交地址由后台单独配置",
+  siteNoteBody: "资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。"
+};
+if (siteCopy.progressBody === legacyVisitorCopy.progressBody) siteCopy.progressBody = siteCopyDefaults.progressBody;
+if (siteCopy.maintenanceErrataBody === legacyVisitorCopy.maintenanceErrataBody) siteCopy.maintenanceErrataBody = siteCopyDefaults.maintenanceErrataBody;
+if (siteCopy.siteNoteBody === legacyVisitorCopy.siteNoteBody) siteCopy.siteNoteBody = siteCopyDefaults.siteNoteBody;
+try { localStorage.setItem("yanku-site-copy-v1", JSON.stringify(siteCopy)); } catch {}
 
 function setText(id,value){
   const el=document.getElementById(id);
@@ -176,6 +185,9 @@ const resources = [
     versions: [
       {
         name: "标准版",
+        releaseVersion: "v1.0",
+        publishedAt: "2026-09-19",
+        current: true,
         meta: ["PDF", "适合平板", "普通打印"],
         note: "常规阅读与书写版本。",
         channels: [
@@ -186,6 +198,9 @@ const resources = [
       },
       {
         name: "打印专版",
+        releaseVersion: "v1.0",
+        publishedAt: "2026-09-19",
+        current: true,
         meta: ["A4", "双面印刷", "留空白页"],
         note: "针对双面打印重新安排分页，需要的位置保留空白页。",
         channels: [
@@ -210,6 +225,9 @@ const resources = [
     versions: [
       {
         name: "标准版",
+        releaseVersion: "v1.0",
+        publishedAt: "2026-09-19",
+        current: true,
         meta: ["PDF", "通用"],
         note: "适合平板阅读、书写与常规打印。",
         channels: [
@@ -219,6 +237,9 @@ const resources = [
       },
       {
         name: "打印专版",
+        releaseVersion: "v1.0",
+        publishedAt: "2026-09-19",
+        current: true,
         meta: ["A4", "双面印刷", "留空白页"],
         note: "针对纸质双面打印优化分页与留白。",
         channels: [
@@ -351,7 +372,7 @@ function searchableText(item) {
   return [
     item.title, item.description, item.subjectName, item.subjectCode, item.subject, item.resourceType, item.releaseVersion, item.publishedAt, item.status,
     ...item.versions.flatMap(version => [
-      version.name, version.note, ...version.meta,
+      version.name, version.releaseVersion, version.publishedAt, version.note, ...version.meta,
       ...version.channels.flatMap(channel => [channel.label, channel.note, channel.code])
     ])
   ].join(" ").toLowerCase();
@@ -564,10 +585,14 @@ function copyText(text, message="已复制") {
 }
 
 function openChannel(resourceIndex,versionIndex,channelIndex) {
-  const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
+  const resource = resources[resourceIndex];
+  const version = resource?.versions?.[versionIndex];
+  const channel = version?.channels?.[channelIndex];
   if (!channel) return;
   const ready = Boolean(channel.url);
   const body = [
+    '<div class="modal-detail-row"><span>对应版本</span><strong>' + esc(version.name) + ' · ' + esc(version.releaseVersion || resource.releaseVersion || "") + '</strong></div>',
+    '<div class="modal-detail-row"><span>发布日期</span><strong>' + esc(version.publishedAt || resource.publishedAt || "") + '</strong></div>',
     channel.note ? '<div class="modal-detail-row"><span>说明</span><strong>' + esc(channel.note) + '</strong></div>' : '',
     channel.code ? '<div class="modal-detail-row"><span>提取码</span><strong class="mono">' + esc(channel.code) + '</strong></div>' : '',
     ready ? '<div class="modal-link-box">' + esc(channel.url) + '</div>' : '<div class="modal-empty"><strong>暂未开放</strong><p>这个获取入口还没有添加链接。</p></div>'
@@ -605,7 +630,7 @@ function openErrataSubmit(resourceIndex,versionIndex) {
   const version = resource?.versions?.[versionIndex];
   const raw = siteSettings.errataSubmitUrl?.trim();
   if (!raw) {
-    showToast("后台尚未配置勘误提交链接");
+    showToast("勘误提交入口暂未开放");
     return;
   }
   try {
@@ -625,7 +650,7 @@ function openErrata(resourceIndex,versionIndex) {
   const items = version.errata || [];
   const body = items.length
     ? '<div class="modal-stack">' + items.map(item => '<article class="modal-errata-item"><div><span class="pill">' + esc(item.status || "已记录") + '</span><strong>' + esc(item.title || "勘误") + '</strong></div><p>' + esc(item.body || "") + '</p></article>').join("") + '</div>'
-    : '<div class="modal-empty"><strong>暂无公开勘误</strong><p>如果发现题目、答案、排版或链接问题，可以提交反馈；接入后台后这里会显示核对与修正状态。</p></div>';
+    : '<div class="modal-empty"><strong>暂无公开勘误</strong><p>如果发现题目、答案、排版或链接问题，可以通过公开提交入口反馈；已核对的修正记录会在这里展示。</p></div>';
   openUnifiedModal({
     kicker: "ERRATA",
     title: resource.title + " · " + version.name,
@@ -641,6 +666,11 @@ function renderVersion(version,resourceIndex,versionIndex) {
         <div class="version-summary-main">
           ${icon(version.name.includes("打印") ? "printer" : "file","version-icon")}
           <strong>${esc(version.name)}</strong>
+          <div class="version-release-meta">
+            <span class="version-number">${esc(version.releaseVersion || resources[resourceIndex]?.releaseVersion || "")}</span>
+            <time datetime="${esc(version.publishedAt || resources[resourceIndex]?.publishedAt || "")}">${esc(version.publishedAt || resources[resourceIndex]?.publishedAt || "")}</time>
+            ${version.current ? '<span class="current-release">当前发布</span>' : ""}
+          </div>
           <div class="version-meta">${version.meta.map(tag => `<span>${esc(tag)}</span>`).join("")}</div>
         </div>
         <span class="version-toggle">查看获取方式</span>
@@ -659,6 +689,22 @@ function renderVersion(version,resourceIndex,versionIndex) {
     </details>`;
 }
 
+function renderPublishedVersions(item) {
+  return '<div class="published-versions" aria-label="已发布版本">' +
+    '<div class="published-versions-head"><span>已发布版本</span><small>下载前请核对版本名称与日期</small></div>' +
+    '<div class="published-version-list">' +
+      item.versions.map(version =>
+        '<div class="published-version-item">' +
+          '<span class="published-version-name">' + esc(version.name) + '</span>' +
+          '<strong>' + esc(version.releaseVersion || item.releaseVersion || "") + '</strong>' +
+          '<time datetime="' + esc(version.publishedAt || item.publishedAt || "") + '">' + esc(version.publishedAt || item.publishedAt || "") + '</time>' +
+          (version.current ? '<span class="published-current">当前</span>' : '') +
+        '</div>'
+      ).join("") +
+    '</div>' +
+  '</div>';
+}
+
 function renderResources() {
   const items = getFilteredResources();
   count.textContent = `${items.length} 项已收录`;
@@ -673,8 +719,9 @@ function renderResources() {
             <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
             <div class="resource-tags">\n              <span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${esc(item.releaseVersion)}</span><span>${item.versions.length} 个版本</span>\n            </div>
+            ${renderPublishedVersions(item)}
           </div>
-          <time datetime="${esc(item.publishedAt)}">${esc(item.releaseVersion)} · 发布于 ${esc(item.publishedAt)}</time>
+          <time datetime="${esc(item.publishedAt)}">当前发布 ${esc(item.releaseVersion)} · ${esc(item.publishedAt)}</time>
         </div>
         <div class="versions">${item.versions.map((version,i) => renderVersion(version,sourceIndex,i)).join("")}</div>
       </article>`;
@@ -857,7 +904,7 @@ document.addEventListener("click", event => {
   }
   const qqJoin = event.target.closest("#joinQqButton");
   if (qqJoin) {
-    if (!siteCopy.qqJoinUrl) return showToast("后台尚未配置QQ群加入链接");
+    if (!siteCopy.qqJoinUrl) return showToast("QQ群快捷加入暂未开放，请复制群号添加");
     window.open(siteCopy.qqJoinUrl,"_blank","noopener,noreferrer");
     return;
   }
