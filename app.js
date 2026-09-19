@@ -824,12 +824,11 @@ function findQuickChannel(item,keyword){
 }
 function renderQuickChannel(item,sourceIndex,keyword,label){
   const ref=findQuickChannel(item,keyword);
-  if(!ref){
-    return '<span class="quick-channel unavailable"><span>'+label+'</span><small>未添加</small></span>';
-  }
-  const ready=Boolean(ref.channel.url);
+  const ready=Boolean(ref?.channel?.url);
   return '<span class="quick-channel '+(ready?'ready':'unavailable')+'">'+
-    '<button type="button" '+(ready?'onclick="openChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+'>'+label+'</button>'+
+    '<button type="button" class="quick-open" '+(ready?'onclick="openChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+'>'+
+      icon("cloud","quick-channel-icon")+'<span>'+label+'</span>'+(ready?'':'<small>未添加</small>')+
+    '</button>'+
     '<button type="button" class="quick-copy" '+(ready?'onclick="copyChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+' aria-label="复制'+label+'链接">复制</button>'+
   '</span>';
 }
@@ -844,20 +843,20 @@ function renderResources() {
         <div class="compact-resource-main">
           <div class="compact-resource-icon">${icon(resourceTypeIcon(item.resourceType),"resource-type-icon")}</div>
           <div class="compact-resource-copy">
-            <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="status">${esc(item.status)}</span></div>
+            <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="compact-status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
             <div class="compact-resource-meta">
               <span>${esc(item.subject || "未分类")}</span>
               <span>${esc(item.releaseVersion || "未标版本")}</span>
               <span>${item.versions.length} 个版本</span>
-              <time datetime="${esc(item.updated || item.publishedAt || "")}">更新 ${esc(item.updated || item.publishedAt || "")}</time>
+              <time datetime="${esc(item.updated || item.publishedAt || "")}">${esc(item.updated || item.publishedAt || "")}</time>
             </div>
           </div>
-        </div>
-        <div class="compact-resource-actions">
-          ${renderQuickChannel(item,sourceIndex,"百度","百度网盘")}
-          ${renderQuickChannel(item,sourceIndex,"夸克","夸克网盘")}
-          <button class="resource-detail-toggle" type="button" data-resource-detail="${sourceIndex}">详情</button>
+          <div class="compact-resource-actions">
+            ${renderQuickChannel(item,sourceIndex,"百度","百度网盘")}
+            ${renderQuickChannel(item,sourceIndex,"夸克","夸克网盘")}
+            <button class="resource-detail-toggle" type="button" data-resource-detail="${sourceIndex}">详情 <span>›</span></button>
+          </div>
         </div>
         <div class="resource-detail-panel" id="resource-detail-${sourceIndex}" hidden>
           ${renderPublishedVersions(item)}
@@ -871,7 +870,7 @@ function renderResources() {
       if(!panel)return;
       panel.hidden=!panel.hidden;
       button.classList.toggle("active",!panel.hidden);
-      button.textContent=panel.hidden?"详情":"收起";
+      button.innerHTML=panel.hidden?'详情 <span>›</span>':'收起 <span>⌃</span>';
     });
   });
 }
