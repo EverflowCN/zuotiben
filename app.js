@@ -98,8 +98,6 @@ const categoryNav = document.getElementById("categoryNav");
 const overviewView = document.getElementById("overviewView");
 const resourceView = document.getElementById("resourceView");
 const experienceView = document.getElementById("experienceView");
-const errataView = document.getElementById("errataView");
-const announcementsView = document.getElementById("announcementsView");
 const subjectPicker = document.getElementById("subjectPicker");
 const subjectPickerButton = document.getElementById("subjectPickerButton");
 const subjectPickerText = document.getElementById("subjectPickerText");
@@ -124,14 +122,17 @@ const pageTitle = document.getElementById("pageTitle");
 const contentDesc = document.getElementById("contentDesc");
 const emptyState = document.getElementById("emptyState");
 const toast = document.getElementById("toast");
-const noticeCard = document.getElementById("noticeCard");
-const dismissNoticeButton = document.getElementById("dismissNoticeButton");
-const submitErrataButton = document.getElementById("submitErrataButton");
 const mobileMenuButton = document.getElementById("mobileMenuButton");
 const mobileMenuClose = document.getElementById("mobileMenuClose");
 const mobileSidebar = document.getElementById("mobileSidebar");
 const mobileDrawerBackdrop = document.getElementById("mobileDrawerBackdrop");
-const sidebarNotice = document.getElementById("sidebarNotice");
+const unifiedModalBackdrop = document.getElementById("unifiedModalBackdrop");
+const unifiedModal = document.getElementById("unifiedModal");
+const unifiedModalClose = document.getElementById("unifiedModalClose");
+const unifiedModalKicker = document.getElementById("unifiedModalKicker");
+const unifiedModalTitle = document.getElementById("unifiedModalTitle");
+const unifiedModalBody = document.getElementById("unifiedModalBody");
+const unifiedModalActions = document.getElementById("unifiedModalActions");
 
 function esc(text) {
   return String(text ?? "").replace(/[&<>'"]/g, ch => ({
@@ -234,9 +235,7 @@ function renderSections() {
   const sections = [
     { id: "overview", label: "总览", icon: "home", count: 0 },
     { id: "resources", label: "资料", icon: "book", count: resources.length },
-    { id: "experience", label: "经验贴", icon: "article", count: experiencePosts.length },
-    { id: "errata", label: "勘误", icon: "errata", count: errataItems.length },
-    { id: "announcements", label: "公告", icon: "bell", count: announcements.length }
+    { id: "experience", label: "经验贴", icon: "article", count: experiencePosts.length }
   ];
 
   let html = "";
@@ -393,6 +392,28 @@ function closeAllPopovers() {
   closeResourceTypeDropdown();
 }
 
+function openUnifiedModal({ kicker="DETAIL", title="详情", body="", actions=[] } = {}) {
+  unifiedModalKicker.textContent = kicker;
+  unifiedModalTitle.textContent = title;
+  unifiedModalBody.innerHTML = body;
+  unifiedModalActions.innerHTML = actions.map((action,index) =>
+    '<button type="button" class="modal-action ' + (action.primary ? 'primary' : '') + '" data-modal-action="' + index + '">' + esc(action.label) + '</button>'
+  ).join("");
+  unifiedModal.hidden = false;
+  unifiedModalBackdrop.hidden = false;
+  document.body.classList.add("modal-open");
+  unifiedModalActions.querySelectorAll("[data-modal-action]").forEach(button => {
+    button.addEventListener("click", () => actions[Number(button.dataset.modalAction)]?.onClick?.());
+  });
+}
+function closeUnifiedModal() {
+  unifiedModal.hidden = true;
+  unifiedModalBackdrop.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+unifiedModalClose?.addEventListener("click", closeUnifiedModal);
+unifiedModalBackdrop?.addEventListener("click", closeUnifiedModal);
+
 function copyText(text, message="已复制") {
   if (!text) return showToast("暂无可复制内容");
   navigator.clipboard?.writeText(text).then(() => showToast(message)).catch(() => {
@@ -408,8 +429,18 @@ function copyText(text, message="已复制") {
 
 function openChannel(resourceIndex,versionIndex,channelIndex) {
   const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
-  if (!channel?.url) return showToast("该入口尚未添加");
-  window.open(channel.url,"_blank","noopener,noreferrer");
+  if (!channel) return;
+  const ready = Boolean(channel.url);
+  const body = [
+    channel.note ? '<div class="modal-detail-row"><span>说明</span><strong>' + esc(channel.note) + '</strong></div>' : '',
+    channel.code ? '<div class="modal-detail-row"><span>提取码</span><strong class="mono">' + esc(channel.code) + '</strong></div>' : '',
+    ready ? '<div class="modal-link-box">' + esc(channel.url) + '</div>' : '<div class="modal-empty"><strong>暂未开放</strong><p>这个获取入口还没有添加链接。</p></div>'
+  ].join("");
+  const actions = ready ? [
+    { label: "复制", onClick: () => copyChannel(resourceIndex,versionIndex,channelIndex) },
+    { label: "打开链接", primary: true, onClick: () => window.open(channel.url,"_blank","noopener,noreferrer") }
+  ] : [];
+  openUnifiedModal({ kicker: "RESOURCE LINK", title: channel.label, body, actions });
 }
 function copyChannel(resourceIndex,versionIndex,channelIndex) {
   const channel = resources[resourceIndex]?.versions[versionIndex]?.channels[channelIndex];
@@ -433,6 +464,22 @@ function renderChannel(channel,resourceIndex,versionIndex,channelIndex) {
     </div>`;
 }
 
+function openErrata(resourceIndex,versionIndex) {
+  const resource = resources[resourceIndex];
+  const version = resource?.versions?.[versionIndex];
+  if (!resource || !version) return;
+  const items = version.errata || [];
+  const body = items.length
+    ? '<div class="modal-stack">' + items.map(item => '<article class="modal-errata-item"><div><span class="pill">' + esc(item.status || "已记录") + '</span><strong>' + esc(item.title || "勘误") + '</strong></div><p>' + esc(item.body || "") + '</p></article>').join("") + '</div>'
+    : '<div class="modal-empty"><strong>暂无公开勘误</strong><p>如果发现题目、答案、排版或链接问题，可以提交反馈；接入后台后这里会显示核对与修正状态。</p></div>';
+  openUnifiedModal({
+    kicker: "ERRATA",
+    title: resource.title + " · " + version.name,
+    body,
+    actions: [{ label: "提交勘误", primary: true, onClick: () => showToast("接入后台后开放勘误提交") }]
+  });
+}
+
 function renderVersion(version,resourceIndex,versionIndex) {
   return `
     <details class="version" ${versionIndex === 0 ? "open" : ""}>
@@ -448,6 +495,11 @@ function renderVersion(version,resourceIndex,versionIndex) {
         <p class="version-note">${esc(version.note)}</p>
         <div class="channel-list">
           ${version.channels.map((channel,channelIndex) => renderChannel(channel,resourceIndex,versionIndex,channelIndex)).join("")}
+          <div class="channel-row errata-channel">
+            <div class="channel-name">${icon("errata","channel-icon")}<span>勘误</span></div>
+            <div class="channel-extra"><span>${(version.errata || []).length ? (version.errata || []).length + " 条公开记录" : "暂无公开勘误"}</span></div>
+            <div class="channel-actions"><button type="button" onclick="openErrata(${resourceIndex},${versionIndex})">查看</button></div>
+          </div>
         </div>
       </div>
     </details>`;
@@ -491,22 +543,36 @@ function renderOverview() {
     .join("");
 
   document.getElementById("overviewAnnouncements").innerHTML = announcements
-    .map(item => '<button class="notice-row" type="button" data-go="announcements"><small>' + esc(item.type) + '</small><strong>' + esc(item.title) + '</strong><em>' + esc(item.date) + '</em></button>')
+    .map((item,index) => '<button class="notice-row" type="button" data-announcement-index="' + index + '"><small>' + esc(item.type) + '</small><strong>' + esc(item.title) + '</strong><em>' + esc(item.date) + '</em></button>')
     .join("");
 }
 
-function renderAnnouncements() {
-  document.getElementById("announcementList").innerHTML = announcements.map(item =>
-    '<article class="announcement-card"><span class="announcement-icon">' + icon(item.type === "更新通知" ? "bell" : "note") + '</span><div><div class="announcement-meta"><span>' + esc(item.type) + '</span><time>' + esc(item.date) + '</time></div><h2>' + esc(item.title) + '</h2><p>' + esc(item.body) + '</p></div></article>'
-  ).join("");
+function openAnnouncementModal(index=0) {
+  const item = announcements[index];
+  if (!item) return;
+  openUnifiedModal({
+    kicker: item.type === "更新通知" ? "NOTICE" : "GUIDE",
+    title: item.title,
+    body: '<div class="modal-article"><p>' + esc(item.body) + '</p><time>' + esc(item.date) + '</time></div>'
+  });
+}
+function openAnnouncementListModal() {
+  openUnifiedModal({
+    kicker: "NOTICE",
+    title: "公告",
+    body: '<div class="modal-stack">' + announcements.map((item,index) =>
+      '<button class="modal-list-button" type="button" data-modal-notice-index="' + index + '"><span>' + esc(item.type) + '</span><strong>' + esc(item.title) + '</strong><small>' + esc(item.date) + '</small></button>'
+    ).join("") + '</div>'
+  });
+  unifiedModalBody.querySelectorAll("[data-modal-notice-index]").forEach(button => {
+    button.addEventListener("click", () => openAnnouncementModal(Number(button.dataset.modalNoticeIndex)));
+  });
 }
 
 function updatePageMode() {
   overviewView.hidden = state.section !== "overview";
   resourceView.hidden = state.section !== "resources";
   experienceView.hidden = state.section !== "experience";
-  errataView.hidden = state.section !== "errata";
-  announcementsView.hidden = state.section !== "announcements";
   breadcrumb.hidden = state.section !== "resources";
 
   if (state.section === "overview") {
@@ -529,19 +595,6 @@ function updatePageMode() {
     contentDesc.textContent = "围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。";
     searchInput.placeholder = "搜索经验贴、院校或专业";
     count.textContent = experiencePosts.length ? experiencePosts.length + " 篇" : "";
-  } else if (state.section === "errata") {
-    eyebrow.textContent = "ERRATA";
-    pageTitle.textContent = "勘误";
-    contentDesc.textContent = "集中记录资源中的题目、答案、排版、链接与版本问题，并跟踪核对和修正状态。";
-    searchInput.placeholder = "搜索勘误、资源或题目";
-    count.textContent = errataItems.length ? errataItems.length + " 条" : "";
-  } else {
-    eyebrow.textContent = "ANNOUNCEMENTS";
-    pageTitle.textContent = "公告";
-    contentDesc.textContent = "集中查看资源更新、使用说明与维护通知。";
-    searchInput.placeholder = "搜索公告";
-    count.textContent = announcements.length + " 条";
-    renderAnnouncements();
   }
 }
 
@@ -592,15 +645,6 @@ function initMobileDrawer() {
   });
 }
 
-function initNotice() {
-  const version = noticeCard?.dataset.noticeVersion || "";
-  if (noticeCard && localStorage.getItem("yanku-notice-dismissed") === version) noticeCard.hidden = true;
-  dismissNoticeButton?.addEventListener("click",() => {
-    localStorage.setItem("yanku-notice-dismissed",version);
-    noticeCard.hidden = true;
-  });
-}
-
 subjectPickerButton.addEventListener("click",() => subjectDropdown.hidden ? openSubjectDropdown() : closeSubjectDropdown());
 resourceTypePickerButton.addEventListener("click",() => resourceTypeDropdown.hidden ? openResourceTypeDropdown() : closeResourceTypeDropdown());
 subjectSearchInput.addEventListener("input",e => renderSubjectOptions(e.target.value));
@@ -608,14 +652,18 @@ clearFiltersButton.addEventListener("click",() => {
   state.category = "全部"; state.subject = "全部科目"; state.resourceType = "全部资源";
   closeAllPopovers(); renderAll();
 });
-submitErrataButton.addEventListener("click",() => showToast("接入管理后台后开放勘误提交"));
-sidebarNotice?.addEventListener("click", () => {
-  state.section = "announcements";
-  renderAll();
-  closeMobileDrawer();
-});
 
 document.addEventListener("click", event => {
+  const announcement = event.target.closest("[data-announcement-index]");
+  if (announcement) {
+    openAnnouncementModal(Number(announcement.dataset.announcementIndex));
+    return;
+  }
+  const announcementList = event.target.closest("[data-open-announcements]");
+  if (announcementList) {
+    openAnnouncementListModal();
+    return;
+  }
   const go = event.target.closest("[data-go]");
   if (go) {
     state.section = go.dataset.go;
@@ -641,6 +689,10 @@ searchInput.addEventListener("input",e => {
   if (state.section === "resources") renderResources();
 });
 document.addEventListener("keydown",e => {
+  if (e.key === "Escape" && !unifiedModal.hidden) {
+    closeUnifiedModal();
+    return;
+  }
   if (e.key === "Escape" && mobileSidebar?.classList.contains("mobile-open")) {
     closeMobileDrawer();
     return;
@@ -652,5 +704,4 @@ document.addEventListener("keydown",e => {
 });
 
 initMobileDrawer();
-initNotice();
 renderAll();
