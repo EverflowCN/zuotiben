@@ -1,0 +1,4 @@
+# Admin endpoints intentionally fail closed until these are configured.
+# ACCESS_TEAM_DOMAIN is the left side of <team>.cloudflareaccess.com
+ACCESS_TEAM_DOMAIN="your-team-name"
+ACCESS_AUD="your-access-application-aud-tag"
