@@ -1,4 +1,5 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const sameId=(a,b)=>String(a)===String(b);
 const ICONS={
   x:'<path d="M18 6 6 18M6 6l12 12"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/>',home:'<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
@@ -492,7 +493,7 @@ function renderAnnouncements(){
   const scheduled=state.announcements.filter(x=>x.status==='scheduled').length;
   const rows=state.announcements.slice().sort((a,b)=>Number(b.pinned)-Number(a.pinned)||String(b.updated).localeCompare(String(a.updated))).map(x=>
     '<tr>'+
-      '<td class="select-cell"><input class="row-check" type="checkbox" data-select-announcement="'+x.id+'" '+(state.announcementSelection.has(x.id)?'checked':'')+'></td>'+
+      '<td class="select-cell"><input class="row-check" type="checkbox" data-select-announcement="'+x.id+'" '+(state.announcementSelection.has(String(x.id))?'checked':'')+'></td>'+
       '<td><div class="title-cell"><strong>'+x.title+(x.pinned?' <span class="mini-pin">置顶</span>':'')+'</strong><small>'+x.kind+' · '+x.audience+'</small></div></td>'+
       '<td><span class="pill '+(x.status==='published'?'green':x.status==='scheduled'?'blue':x.status==='draft'?'':'orange')+'">'+announcementStatusLabel(x)+'</span></td>'+
       '<td>'+pinButton('announcement',x.id,x.pinned)+'</td>'+
@@ -586,20 +587,20 @@ function render(){
 function bind(){
   $$('[data-pin]').forEach(button=>button.onclick=event=>{event.stopPropagation();const scope=button.dataset.pin,id=button.dataset.id;if(scope==='resource'){const item=state.resources.find(x=>x.id==id);if(item){item.pinned=!item.pinned;savePinnedResources();saveStudioCollections()}}if(scope==='announcement'){const item=state.announcements.find(x=>x.id==id);if(item){item.pinned=!item.pinned;saveAnnouncements()}}render();toast('置顶状态已更新（预览）')});
   $$('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='copy-visibility')return;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='experience'){const x=state.experiences.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}render();toast('状态已更新（预览）')});
-  $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(Number(b.dataset.editResource)));
+  $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(b.dataset.editResource));
   $('[data-new-resource]')?.addEventListener('click',()=>openResource());
   $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);saveStudioCollections();render();toast('已删除（预览）')}));
-  $$('[data-select-announcement]').forEach(b=>b.onchange=()=>{const id=Number(b.dataset.selectAnnouncement);b.checked?state.announcementSelection.add(id):state.announcementSelection.delete(id);render()});
-  $('#selectAllAnnouncements')?.addEventListener('change',e=>{state.announcementSelection=new Set(e.target.checked?state.announcements.map(x=>x.id):[]);render()});
+  $$('[data-select-announcement]').forEach(b=>b.onchange=()=>{const id=String(b.dataset.selectAnnouncement);b.checked?state.announcementSelection.add(id):state.announcementSelection.delete(id);render()});
+  $('#selectAllAnnouncements')?.addEventListener('change',e=>{state.announcementSelection=new Set(e.target.checked?state.announcements.map(x=>String(x.id)):[]);render()});
   $$('[data-announcement-bulk]').forEach(b=>b.onclick=()=>{
     const action=b.dataset.announcementBulk;
-    if(action==='delete'){state.announcements=state.announcements.filter(x=>!state.announcementSelection.has(x.id))}
-    else state.announcements.forEach(x=>{if(state.announcementSelection.has(x.id)){if(action==='show')x.visible=true;if(action==='hide')x.visible=false;if(action==='publish'){x.status='published';x.visible=true}}});
+    if(action==='delete'){state.announcements=state.announcements.filter(x=>!state.announcementSelection.has(String(x.id)))}
+    else state.announcements.forEach(x=>{if(state.announcementSelection.has(String(x.id))){if(action==='show')x.visible=true;if(action==='hide')x.visible=false;if(action==='publish'){x.status='published';x.visible=true}}});
     state.announcementSelection.clear();saveAnnouncements();render();toast('批量操作已完成（预览）')
   });
-  $$('[data-edit-announcement]').forEach(b=>b.onclick=()=>openAnnouncement(Number(b.dataset.editAnnouncement)));
-  $$('[data-preview-announcement]').forEach(b=>b.onclick=()=>previewAnnouncement(Number(b.dataset.previewAnnouncement)));
-  $$('[data-duplicate-announcement]').forEach(b=>b.onclick=()=>duplicateAnnouncement(Number(b.dataset.duplicateAnnouncement)));
+  $$('[data-edit-announcement]').forEach(b=>b.onclick=()=>openAnnouncement(b.dataset.editAnnouncement));
+  $$('[data-preview-announcement]').forEach(b=>b.onclick=()=>previewAnnouncement(b.dataset.previewAnnouncement));
+  $$('[data-duplicate-announcement]').forEach(b=>b.onclick=()=>duplicateAnnouncement(b.dataset.duplicateAnnouncement));
   $('[data-new-announcement]')?.addEventListener('click',()=>openAnnouncement());
   $$('[data-delete-announcement]').forEach(b=>b.onclick=()=>confirmDelete('删除公告','该公告将不再出现在前台。',()=>{state.announcements=state.announcements.filter(x=>x.id!=b.dataset.deleteAnnouncement);saveAnnouncements();render();toast('已删除（预览）')}));
   $('[data-copy-save]')?.addEventListener('click',()=>{
@@ -627,24 +628,23 @@ function bind(){
     toast('设置已保存（预览）');
   });
   $('[data-new-experience]')?.addEventListener('click',()=>openExperience());
-  $$('[data-edit-experience]').forEach(b=>b.onclick=()=>openExperience(Number(b.dataset.editExperience)));
+  $$('[data-edit-experience]').forEach(b=>b.onclick=()=>openExperience(b.dataset.editExperience));
   $$('[data-delete-experience]').forEach(b=>b.onclick=()=>confirmDelete('删除经验贴','删除后将从后台列表移除。',()=>{state.experiences=state.experiences.filter(x=>x.id!=b.dataset.deleteExperience);saveStudioCollections();render();toast('经验贴已删除')}));
   $('[data-new-errata]')?.addEventListener('click',()=>openSimple('新建勘误','关联资源、版本、页码/题号、问题类型、说明、状态、是否公开'));
   $('[data-new-category]')?.addEventListener('click',()=>openCategory());
-  $$('[data-edit-category]').forEach(b=>b.onclick=()=>openCategory(Number(b.dataset.editCategory)));
+  $$('[data-edit-category]').forEach(b=>b.onclick=()=>openCategory(b.dataset.editCategory));
   $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料，但会移除该科目记录。',()=>{state.categories=state.categories.filter(x=>x.id!=b.dataset.deleteCategory);saveStudioCollections();render();toast('科目已删除')}));
   $('[data-upload]')?.addEventListener('click',()=>openFile());
-  $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(Number(b.dataset.editFile)));
+  $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.editFile));
   $$('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','当前只删除后台登记记录。',()=>{state.files=state.files.filter(x=>x.id!=b.dataset.deleteFile);saveStudioCollections();render();toast('文件记录已删除')}));
   $('[data-jump-resources]')?.addEventListener('click',()=>{state.section='resources';render()});
   $('[data-jump-announcements]')?.addEventListener('click',()=>{state.section='announcements';render()});
   $('[data-jump-taxonomy]')?.addEventListener('click',()=>{state.section='taxonomy';render()});
   $('[data-jump-settings]')?.addEventListener('click',()=>{state.section='settings';render()});
   $('[data-save-account]')?.addEventListener('click',()=>{state.account.displayName=$('#accountDisplayName')?.value.trim()||state.account.displayName;state.account.username=$('#accountUsername')?.value.trim()||state.account.username;state.account.email=$('#accountEmail')?.value.trim()||state.account.email;render();toast('账号资料已保存（预览）')});
-  $('[data-account-password]')?.addEventListener('click',()=>openSimple('修改密码','当前密码、新密码、确认新密码；正式接入身份服务后启用'));
 }
 function openResource(id){
-  const x=state.resources.find(x=>x.id===id)||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:'2026-09-19',updated:'2026-09-19'};
+  const x=state.resources.find(x=>sameId(x.id,id))||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:'2026-09-19',updated:'2026-09-19'};
   x.extraVersions=x.extraVersions||[];x.customLinks=x.customLinks||[];
   const hasDefaultVersions=x.defaultVersions ?? [1,2].includes(Number(x.id));
   const defaultVersionCards=hasDefaultVersions?(
@@ -712,7 +712,7 @@ function openResource(id){
   });
 }
 function openAnnouncement(id){
-  const x=state.announcements.find(x=>x.id===id)||{id:null,title:'',kind:'更新通知',body:'',status:'draft',visible:true,pinned:false,dismissible:true,audience:'所有访客',publishAt:'',expiresAt:'',ctaText:'',ctaUrl:'',updated:'2026-09-19'};
+  const x=state.announcements.find(x=>sameId(x.id,id))||{id:null,title:'',kind:'更新通知',body:'',status:'draft',visible:true,pinned:false,dismissible:true,audience:'所有访客',publishAt:'',expiresAt:'',ctaText:'',ctaUrl:'',updated:'2026-09-19'};
   const body=
     '<div class="announcement-editor-head"><span class="pill '+(x.status==='published'?'green':x.status==='scheduled'?'blue':'')+'">'+announcementStatusLabel(x)+'</span><span>'+(x.pinned?'已置顶':'普通公告')+'</span></div>'+
     '<div class="form-grid">'+
@@ -765,17 +765,17 @@ function openAnnouncement(id){
   });
 }
 function previewAnnouncement(id){
-  const x=state.announcements.find(x=>x.id===id);if(!x)return;
+  const x=state.announcements.find(x=>sameId(x.id,id));if(!x)return;
   openDrawer('公告预览','<article class="announcement-preview"><div class="announcement-preview-meta"><span class="pill blue">'+x.kind+'</span>'+(x.pinned?'<span class="mini-pin">置顶</span>':'')+'</div><h2>'+x.title+'</h2><p>'+(x.body||'暂无正文')+'</p>'+(x.ctaText?'<button class="btn primary">'+x.ctaText+'</button>':'')+'<small>发布时间：'+(x.publishAt||'立即')+(x.expiresAt?' · 失效：'+x.expiresAt:'')+'</small></article>',null,true)
 }
 function duplicateAnnouncement(id){
-  const source=state.announcements.find(x=>x.id===id);if(!source)return;
+  const source=state.announcements.find(x=>sameId(x.id,id));if(!source)return;
   const copy={...source,id:Date.now(),title:source.title+'（副本）',status:'draft',pinned:false,visible:false,updated:'2026-09-19'};
   state.announcements.unshift(copy);saveAnnouncements();render();toast('已复制为草稿（预览）')
 }
 
 function openExperience(id){
-  const x=state.experiences.find(x=>x.id===id)||{id:null,title:'',sourceUrl:'',school:'',major:'',year:'2026',stage:'初试',author:'',body:'',visible:true};
+  const x=state.experiences.find(x=>sameId(x.id,id))||{id:null,title:'',sourceUrl:'',school:'',major:'',year:'2026',stage:'初试',author:'',body:'',visible:true};
   const body='<div class="form-grid"><label class="field wide"><span>标题</span><input id="eTitle" value="'+x.title+'"></label><label class="field wide"><span>来源链接</span><input id="eSource" type="url" value="'+x.sourceUrl+'" placeholder="https://..."></label><label class="field"><span>院校</span><input id="eSchool" value="'+x.school+'"></label><label class="field"><span>专业</span><input id="eMajor" value="'+x.major+'"></label><label class="field"><span>年份</span><input id="eYear" value="'+x.year+'"></label><label class="field"><span>阶段</span><select id="eStage"><option>'+x.stage+'</option><option>初试</option><option>复试</option><option>择校</option><option>时间规划</option></select></label><label class="field wide"><span>作者 / 来源名</span><input id="eAuthor" value="'+x.author+'"></label><label class="field wide"><span>正文 / 摘要</span><textarea id="eBody">'+x.body+'</textarea></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>前台显示</strong><small>关闭后仅后台可见</small></div>'+toggle('draft-experience-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑经验贴':'新建经验贴',body,()=>{
     x.title=$('#eTitle').value.trim()||'未命名经验贴';x.sourceUrl=$('#eSource').value.trim();x.school=$('#eSchool').value.trim();x.major=$('#eMajor').value.trim();x.year=$('#eYear').value.trim();x.stage=$('#eStage').value;x.author=$('#eAuthor').value.trim();x.body=$('#eBody').value.trim();
@@ -784,7 +784,7 @@ function openExperience(id){
   $('#drawer [data-toggle="draft-experience-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
 }
 function openCategory(id){
-  const x=state.categories.find(x=>x.id===id)||{id:null,name:'',code:'',order:state.categories.length+1,visible:true,count:0};
+  const x=state.categories.find(x=>sameId(x.id,id))||{id:null,name:'',code:'',order:state.categories.length+1,visible:true,count:0};
   const body='<div class="form-grid"><label class="field wide"><span>科目名称</span><input id="cName" value="'+x.name+'" placeholder="如：数学二"></label><label class="field"><span>科目代码</span><input id="cCode" value="'+x.code+'" placeholder="如：302"></label><label class="field"><span>排序</span><input id="cOrder" type="number" value="'+x.order+'"></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>前台显示</strong><small>关闭后不显示该科目</small></div>'+toggle('draft-category-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑科目':'新建科目',body,()=>{
     x.name=$('#cName').value.trim()||'未命名科目';x.code=$('#cCode').value.trim();x.order=Number($('#cOrder').value)||1;
@@ -793,7 +793,7 @@ function openCategory(id){
   $('#drawer [data-toggle="draft-category-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
 }
 function openFile(id){
-  const x=state.files.find(x=>x.id===id)||{id:null,name:'',kind:'PDF',url:'',usage:'',size:'',visible:true};
+  const x=state.files.find(x=>sameId(x.id,id))||{id:null,name:'',kind:'PDF',url:'',usage:'',size:'',visible:true};
   const body='<div class="form-grid"><label class="field wide"><span>选择本地文件</span><input id="fLocal" type="file"></label><label class="field wide"><span>或外部文件 URL</span><input id="fUrl" type="url" value="'+x.url+'" placeholder="https://..."></label><label class="field wide"><span>显示名称</span><input id="fName" value="'+x.name+'" placeholder="留空时使用文件名"></label><label class="field"><span>类型</span><select id="fKind"><option>'+x.kind+'</option><option>PDF</option><option>图片</option><option>压缩包</option><option>其他</option></select></label><label class="field"><span>用途 / 关联资源</span><input id="fUsage" value="'+x.usage+'"></label></div><div class="design-note" style="margin-top:12px">当前没有文件服务器：本地文件只登记名称、类型和大小，不会上传文件内容；填外部 URL 可保存链接。</div><div class="setting-tile" style="margin-top:12px"><div><strong>公开</strong><small>控制后台登记状态</small></div>'+toggle('draft-file-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑文件':'上传 / 登记文件',body,()=>{
     const file=$('#fLocal').files?.[0];x.url=$('#fUrl').value.trim();x.name=$('#fName').value.trim()||file?.name||x.name||'未命名文件';x.kind=$('#fKind').value;x.usage=$('#fUsage').value.trim();if(file)x.size=(file.size/1024/1024).toFixed(2)+' MB';
