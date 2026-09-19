@@ -1645,3 +1645,9 @@ a,
   display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;
   background:rgba(64,120,168,.10);color:var(--blue);font-size:9px;font-weight:700
 }
+
+/* subject-code resource metadata */
+.resource-tags span:first-child{font-weight:650}
+@media(max-width:560px){
+  .resource-head>time{white-space:nowrap}
+}
