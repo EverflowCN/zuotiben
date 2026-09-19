@@ -6,7 +6,7 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-notice7" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-dashboard8" />
 </head>
 <body>
   <header class="topbar">
@@ -63,10 +63,16 @@
         <nav id="categoryNav" class="category-nav" aria-label="资料分类"></nav>
       </div>
 
-      <div class="sidebar-section sidebar-info">
-        <div class="sidebar-title">研库</div>
-        <p>资料、经验与勘误统一整理；只展示已经有内容的分类。</p>
-      </div>
+      <button id="sidebarNotice" class="sidebar-notice" type="button" aria-label="查看公告">
+        <span class="sidebar-notice-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+        </span>
+        <span class="sidebar-notice-copy">
+          <small>最新公告</small>
+          <strong>资源中心持续整理中</strong>
+          <em>2026-09-19</em>
+        </span>
+      </button>
     </aside>
 
     <section class="content">
@@ -123,6 +129,31 @@
           <h2>同一资源可能存在多个版本与入口</h2>
           <p>标准版、平板版、打印专版会分别标注；百度网盘、夸克网盘、直链与打印入口以对应版本为准。经验贴会尽量保留来源信息；发现题目、答案、排版或链接问题时，可在「勘误」中提交并查看处理状态。</p>
         </div>
+      </section>
+
+      <section id="overviewView" class="overview-view" hidden>
+        <div class="overview-metrics">
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small>已收录资料</small><strong id="metricResources">0</strong><em>查看全部资源</em></span></button>
+          <button class="metric-card" type="button" data-go="announcements"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span><span><small>公告</small><strong id="metricAnnouncements">0</strong><em>更新与使用说明</em></span></button>
+          <button class="metric-card" type="button" data-go="errata"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small>公开勘误</small><strong id="metricErrata">0</strong><em>查看修正状态</em></span></button>
+          <button class="metric-card" type="button" data-go="experience"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span><small>经验贴</small><strong id="metricExperience">0</strong><em>备考经验整理</em></span></button>
+        </div>
+
+        <div class="overview-grid">
+          <section class="overview-card">
+            <div class="overview-card-head"><div><span>RECENT</span><h2>最近更新</h2></div><button type="button" data-go="resources">查看全部</button></div>
+            <div id="recentResources" class="overview-list"></div>
+          </section>
+          <section class="overview-card">
+            <div class="overview-card-head"><div><span>NOTICE</span><h2>公告</h2></div><button type="button" data-go="announcements">全部公告</button></div>
+            <div id="overviewAnnouncements" class="overview-list"></div>
+          </section>
+        </div>
+
+        <section class="overview-card overview-wide">
+          <div class="overview-card-head"><div><span>ERRATA</span><h2>勘误状态</h2></div><button type="button" data-go="errata">进入勘误</button></div>
+          <div class="overview-errata"><div><span>待核对</span><strong>0</strong></div><div><span>已确认</span><strong>0</strong></div><div><span>已修正</span><strong>0</strong></div></div>
+        </section>
       </section>
 
       <section id="resourceView">
@@ -242,6 +273,10 @@
         </div>
       </section>
 
+      <section id="announcementsView" class="secondary-view" hidden>
+        <div id="announcementList" class="announcement-page-list"></div>
+      </section>
+
       <section class="site-note">
         <h2>说明</h2>
         <p>资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
@@ -255,6 +290,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260919-drawer6"></script>
+  <script src="./app.js?v=20260919-dashboard8"></script>
 </body>
 </html>
