@@ -1723,3 +1723,11 @@ a,
   .community-icon svg{width:17px;height:17px}
   .community-action{padding:0 8px}
 }
+
+.community-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.community-action.primary{background:rgba(18,145,255,.10);border-color:rgba(18,145,255,.16);color:#276f9f}
+#qqNumber{cursor:pointer;user-select:all;-webkit-user-select:all}
+@media(max-width:560px){
+  .community-actions{grid-column:2/-1;justify-content:flex-start}
+  .qq-card{grid-template-columns:34px minmax(0,1fr)}
+}
