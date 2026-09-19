@@ -201,18 +201,25 @@ function refreshCloudStatus(){
   }
 }
 async function studioApi(path,options={}){
-  const init={credentials:'include',cache:'no-store',...options};
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  const init={credentials:'include',cache:'no-store',signal:controller.signal,...options};
   init.headers={Accept:'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})};
-  const response=await fetch(STUDIO_API_BASE+path,init);
-  const type=response.headers.get('content-type')||'';
-  const data=type.includes('application/json')?await response.json():null;
-  if(!response.ok){
-    const error=new Error(data?.error||('http_'+response.status));
-    error.status=response.status;
-    error.code=data?.error||'';
+  try{
+    const response=await fetch(STUDIO_API_BASE+path,init);
+    const type=response.headers.get('content-type')||'';
+    const data=type.includes('application/json')?await response.json():null;
+    if(!response.ok){
+      const error=new Error(data?.error||('http_'+response.status));
+      error.status=response.status;
+      error.code=data?.error||'';
+      throw error;
+    }
+    return data;
+  }catch(error){
+    if(error?.name==='AbortError'){const timeoutError=new Error('request_timeout');timeoutError.code='request_timeout';throw timeoutError}
     throw error;
-  }
-  return data;
+  }finally{clearTimeout(timeout)}
 }
 function dbId(prefix,value){return prefix+'-'+String(value??crypto.randomUUID()).replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)}
 function resourceDbStatus(value){return value==='已发布'||value==='published'?'published':'draft'}
