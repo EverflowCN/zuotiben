@@ -223,7 +223,7 @@ function renderOverview(){
   '<section class="card quick-card"><div class="card-head"><div><h2>快捷操作</h2><p>常用管理入口</p></div></div><div class="quick-actions-grid">'+
     '<button type="button" data-new-resource>'+icon('plus')+'<span><strong>新建资料</strong><small>创建资源与版本</small></span></button>'+
     '<button type="button" data-new-announcement>'+icon('bell')+'<span><strong>发布公告</strong><small>显示在前台总览</small></span></button>'+
-    '<button type="button" data-jump-taxonomy>'+icon('tag')+'<span><strong>分类与科目</strong><small>管理目录层级</small></span></button>'+
+    '<button type="button" data-jump-taxonomy>'+icon('tag')+'<span><strong>科目管理</strong><small>管理科目名称与代码</small></span></button>'+
     '<button type="button" data-jump-settings>'+icon('settings')+'<span><strong>站点设置</strong><small>链接与显示策略</small></span></button>'+
   '</div></section>'
 }
@@ -467,7 +467,7 @@ function openResource(id){
     $$('[data-resource-tab]').forEach(el=>el.classList.toggle('active',el===button));
     $$('[data-resource-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.resourcePanel===button.dataset.resourceTab));
   });
-  $$('[data-open-channel]').forEach(button=>button.onclick=()=>openCustomLink('编辑获取入口'));
+  $('[data-open-channel]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'编辑获取入口')});
   $$('[data-add-custom-link]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增自定义链接')});
   $$('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
   $('[data-add-version]')?.addEventListener('click',()=>{const rid=ensureResourceRecord(x);openVersionEditor(rid)});
