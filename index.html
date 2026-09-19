@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Everflow 免费做题本与学习资料分享页" />
+  <title>Everflow · 免费做题本</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">EVERFLOW · OPEN STUDY RESOURCES</div>
+      <h1>免费做题本</h1>
+      <p class="lead">把整理好的学习资料继续传下去。这里收录可公开获取的做题本与学习资源，支持一键打开与复制链接。</p>
+      <div class="thanks-card">
+        <div class="thanks-label">特别鸣谢</div>
+        <p>感谢 <strong>Everflow 团队</strong>、资料整理者、校对者，以及每一位愿意参与免费传播与持续修正的贡献者。</p>
+        <p class="thanks-note">后续可在这里展示具体贡献者、资料整理者或团队成员。</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section-head">
+      <div>
+        <span class="kicker">RESOURCE LIBRARY</span>
+        <h2>做题本资源</h2>
+      </div>
+      <p id="resourceCount" class="count"></p>
+    </section>
+
+    <section id="resourceGrid" class="resource-grid" aria-live="polite"></section>
+
+    <section class="notice">
+      <h3>传播说明</h3>
+      <p>本页面用于免费学习资料的公开分享。请尊重原作者、整理者与资料来源；涉及第三方版权的内容请仅在获得授权或符合法律规定的前提下传播。</p>
+    </section>
+  </main>
+
+  <footer>
+    <div>Everflow · 彼时流年若水</div>
+    <div>Free to learn · Free to share responsibly</div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">链接已复制</div>
+  <script src="./app.js"></script>
+</body>
+</html>
