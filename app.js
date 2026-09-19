@@ -15,6 +15,10 @@ const catalog = [
 const resourceTypes = ["全部资源", "书籍", "讲义", "做题本", "真题", "题库", "笔记", "模拟卷", "冲刺资料", "其他"];
 const experiencePosts = [];
 const errataItems = [];
+const announcements = [
+  { id: "notice-update", type: "更新通知", title: "资源中心持续整理中", body: "资料会按标准版、平板版、打印专版等分别发布；经验贴与勘误栏目也会逐步补充。", date: "2026-09-19" },
+  { id: "notice-guide", type: "使用说明", title: "同一资源可能存在多个版本与入口", body: "标准版、平板版、打印专版会分别标注；百度网盘、夸克网盘、直链与打印入口以对应版本为准。发现题目、答案、排版或链接问题时，可在勘误中提交。", date: "2026-09-19" }
+];
 
 const resources = [
   {
@@ -81,7 +85,7 @@ const resources = [
 ];
 
 const state = {
-  section: "resources",
+  section: "overview",
   category: "全部",
   subject: "全部科目",
   resourceType: "全部资源",
@@ -91,9 +95,11 @@ const state = {
 const sectionNav = document.getElementById("sectionNav");
 const categorySection = document.getElementById("categorySection");
 const categoryNav = document.getElementById("categoryNav");
+const overviewView = document.getElementById("overviewView");
 const resourceView = document.getElementById("resourceView");
 const experienceView = document.getElementById("experienceView");
 const errataView = document.getElementById("errataView");
+const announcementsView = document.getElementById("announcementsView");
 const subjectPicker = document.getElementById("subjectPicker");
 const subjectPickerButton = document.getElementById("subjectPickerButton");
 const subjectPickerText = document.getElementById("subjectPickerText");
@@ -125,6 +131,7 @@ const mobileMenuButton = document.getElementById("mobileMenuButton");
 const mobileMenuClose = document.getElementById("mobileMenuClose");
 const mobileSidebar = document.getElementById("mobileSidebar");
 const mobileDrawerBackdrop = document.getElementById("mobileDrawerBackdrop");
+const sidebarNotice = document.getElementById("sidebarNotice");
 
 function esc(text) {
   return String(text ?? "").replace(/[&<>'"]/g, ch => ({
@@ -141,7 +148,12 @@ function icon(name, className = "ui-icon") {
     link: '<path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.2-1.2"/>',
     layers: '<path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
     archive: '<path d="M3 5h18v4H3Z"/><path d="M5 9h14v11H5Z"/><path d="M9 13h6"/>',
-    note: '<path d="M5 3h14v18H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>'
+    note: '<path d="M5 3h14v18H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+    article: '<path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    errata: '<path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+    chevron: '<path d="m8 9 4 4 4-4"/>'
   };
   return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.file}</svg>`;
 }
@@ -220,45 +232,62 @@ function getFilteredResources() {
 
 function renderSections() {
   const sections = [
-    { id: "resources", label: "资料", count: resources.length },
-    { id: "experience", label: "经验贴", count: experiencePosts.length },
-    { id: "errata", label: "勘误", count: errataItems.length }
+    { id: "overview", label: "总览", icon: "home", count: 0 },
+    { id: "resources", label: "资料", icon: "book", count: resources.length },
+    { id: "experience", label: "经验贴", icon: "article", count: experiencePosts.length },
+    { id: "errata", label: "勘误", icon: "errata", count: errataItems.length },
+    { id: "announcements", label: "公告", icon: "bell", count: announcements.length }
   ];
 
-  sectionNav.innerHTML = sections.map(section => `
-    <button class="section-item${state.section === section.id ? " active" : ""}" type="button" data-section="${section.id}">
-      <span>${section.label}</span>
-      ${section.count ? `<span class="section-count">${section.count}</span>` : ""}
-    </button>
-  `).join("");
+  let html = "";
+  sections.forEach(section => {
+    html += '<div class="nav-block">';
+    html += '<button class="nav-main' + (state.section === section.id ? ' active' : '') + '" type="button" data-section="' + section.id + '">';
+    html += icon(section.icon, "nav-icon") + '<span>' + section.label + '</span>';
+    if (section.count) html += '<b>' + section.count + '</b>';
+    if (section.id === "resources") html += icon("chevron", "nav-chevron");
+    html += '</button>';
 
-  sectionNav.querySelectorAll(".section-item").forEach(button => {
+    if (section.id === "resources" && state.section === "resources") {
+      html += '<div class="nav-children">';
+      html += '<button class="nav-child' + (state.category === "全部" ? ' active' : '') + '" type="button" data-category="全部"><span>全部资料</span><b>' + resources.length + '</b></button>';
+      getVisibleCategories().forEach(category => {
+        html += '<button class="nav-child' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + esc(category) + '"><span>' + esc(category) + '</span><b>' + categoryCount(category) + '</b></button>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  sectionNav.innerHTML = html;
+
+  sectionNav.querySelectorAll("[data-section]").forEach(button => {
     button.addEventListener("click", () => {
       state.section = button.dataset.section;
       state.query = "";
       searchInput.value = "";
+      if (state.section !== "resources") {
+        state.category = "全部";
+        state.subject = "全部科目";
+        state.resourceType = "全部资源";
+      }
       renderAll();
     });
   });
-}
 
-function renderCategories() {
-  const categories = ["全部", ...getVisibleCategories()];
-  categoryNav.innerHTML = categories.map(category => `
-    <button class="category-item${state.category === category ? " active" : ""}" type="button" data-category="${esc(category)}">
-      <span>${esc(category)}</span>
-      <span class="category-count">${categoryCount(category)}</span>
-    </button>
-  `).join("");
-
-  categoryNav.querySelectorAll(".category-item").forEach(button => {
+  sectionNav.querySelectorAll("[data-category]").forEach(button => {
     button.addEventListener("click", () => {
+      state.section = "resources";
       state.category = button.dataset.category;
       state.subject = "全部科目";
       closeAllPopovers();
       renderAll();
     });
   });
+}
+
+function renderCategories() {
+  categorySection.hidden = true;
+  categoryNav.innerHTML = "";
 }
 
 function getSubjectGroups(query = "") {
@@ -448,35 +477,71 @@ function renderResources() {
   }).join("");
 }
 
+function renderOverview() {
+  document.getElementById("metricResources").textContent = resources.length;
+  document.getElementById("metricAnnouncements").textContent = announcements.length;
+  document.getElementById("metricErrata").textContent = errataItems.length;
+  document.getElementById("metricExperience").textContent = experiencePosts.length;
+
+  document.getElementById("recentResources").innerHTML = resources
+    .slice()
+    .sort((a,b) => b.updated.localeCompare(a.updated))
+    .slice(0,4)
+    .map(item => '<button class="overview-row" type="button" data-resource-category="' + esc(item.category) + '"><span class="overview-row-icon">' + icon(resourceTypeIcon(item.resourceType)) + '</span><span><strong>' + esc(item.title) + '</strong><small>' + esc(item.category) + ' · ' + esc(item.subject) + ' · ' + item.versions.length + ' 个版本</small></span><time>' + esc(item.updated) + '</time></button>')
+    .join("");
+
+  document.getElementById("overviewAnnouncements").innerHTML = announcements
+    .map(item => '<button class="notice-row" type="button" data-go="announcements"><small>' + esc(item.type) + '</small><strong>' + esc(item.title) + '</strong><em>' + esc(item.date) + '</em></button>')
+    .join("");
+}
+
+function renderAnnouncements() {
+  document.getElementById("announcementList").innerHTML = announcements.map(item =>
+    '<article class="announcement-card"><span class="announcement-icon">' + icon(item.type === "更新通知" ? "bell" : "note") + '</span><div><div class="announcement-meta"><span>' + esc(item.type) + '</span><time>' + esc(item.date) + '</time></div><h2>' + esc(item.title) + '</h2><p>' + esc(item.body) + '</p></div></article>'
+  ).join("");
+}
+
 function updatePageMode() {
-  const isResources = state.section === "resources";
-  resourceView.hidden = !isResources;
+  overviewView.hidden = state.section !== "overview";
+  resourceView.hidden = state.section !== "resources";
   experienceView.hidden = state.section !== "experience";
   errataView.hidden = state.section !== "errata";
-  categorySection.hidden = !isResources;
-  breadcrumb.hidden = !isResources;
+  announcementsView.hidden = state.section !== "announcements";
+  breadcrumb.hidden = state.section !== "resources";
 
-  if (state.section === "resources") {
+  if (state.section === "overview") {
+    eyebrow.textContent = "OVERVIEW";
+    pageTitle.textContent = "总览";
+    contentDesc.textContent = "快速查看最近更新、公告、勘误与资源收录情况。";
+    searchInput.placeholder = "搜索资源、科目、经验或勘误";
+    count.textContent = "";
+    renderOverview();
+  } else if (state.section === "resources") {
     eyebrow.textContent = "RESOURCE LIBRARY";
-    pageTitle.textContent = state.subject !== "全部科目" ? `${state.subject}资源` : state.category !== "全部" ? `${state.category}资源` : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
+    pageTitle.textContent = state.subject !== "全部科目" ? state.subject + "资源" : state.category !== "全部" ? state.category + "资源" : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
     contentDesc.textContent = "书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。";
     searchInput.placeholder = "搜索资源、科目、版本或关键词";
-    currentCategory.textContent = state.category;
-    currentSubject.textContent = state.subject;
-    currentResourceType.textContent = state.resourceType;
+    breadcrumb.innerHTML = esc(state.category) + ' <span>›</span> ' + esc(state.subject) + ' <span>›</span> ' + esc(state.resourceType);
     clearFiltersButton.hidden = state.category === "全部" && state.subject === "全部科目" && state.resourceType === "全部资源";
   } else if (state.section === "experience") {
     eyebrow.textContent = "EXPERIENCE";
     pageTitle.textContent = "经验贴";
     contentDesc.textContent = "围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。";
     searchInput.placeholder = "搜索经验贴、院校或专业";
-    count.textContent = experiencePosts.length ? `${experiencePosts.length} 篇` : "";
-  } else {
+    count.textContent = experiencePosts.length ? experiencePosts.length + " 篇" : "";
+  } else if (state.section === "errata") {
     eyebrow.textContent = "ERRATA";
     pageTitle.textContent = "勘误";
     contentDesc.textContent = "集中记录资源中的题目、答案、排版、链接与版本问题，并跟踪核对和修正状态。";
     searchInput.placeholder = "搜索勘误、资源或题目";
-    count.textContent = errataItems.length ? `${errataItems.length} 条` : "";
+    count.textContent = errataItems.length ? errataItems.length + " 条" : "";
+  } else {
+    eyebrow.textContent = "ANNOUNCEMENTS";
+    pageTitle.textContent = "公告";
+    contentDesc.textContent = "集中查看资源更新、使用说明与维护通知。";
+    searchInput.placeholder = "搜索公告";
+    count.textContent = announcements.length + " 条";
+    renderAnnouncements();
   }
 }
 
@@ -544,6 +609,29 @@ clearFiltersButton.addEventListener("click",() => {
   closeAllPopovers(); renderAll();
 });
 submitErrataButton.addEventListener("click",() => showToast("接入管理后台后开放勘误提交"));
+sidebarNotice?.addEventListener("click", () => {
+  state.section = "announcements";
+  renderAll();
+  closeMobileDrawer();
+});
+
+document.addEventListener("click", event => {
+  const go = event.target.closest("[data-go]");
+  if (go) {
+    state.section = go.dataset.go;
+    renderAll();
+    closeMobileDrawer();
+    return;
+  }
+  const resourceJump = event.target.closest("[data-resource-category]");
+  if (resourceJump) {
+    state.section = "resources";
+    state.category = resourceJump.dataset.resourceCategory;
+    state.subject = "全部科目";
+    renderAll();
+    closeMobileDrawer();
+  }
+});
 
 document.addEventListener("click",e => {
   if (!subjectPicker.contains(e.target) && !resourceTypePicker.contains(e.target)) closeAllPopovers();
