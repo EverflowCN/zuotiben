@@ -3,52 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Everflow 免费做题本与学习资料分享页" />
-  <title>Everflow · 免费做题本</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="免费做题本与学习资料索引" />
+  <title>做题本 · 资料索引</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="paper-noise" aria-hidden="true"></div>
-
-  <header class="hero">
-    <div class="hero-inner">
-      <div class="brand-row">
-        <div class="brand-mark">E</div>
-        <div class="eyebrow">EVERFLOW · OPEN RESOURCES</div>
-      </div>
-      <h1>免费做题本</h1>
-      <p class="lead">集中收录可公开获取的做题本与学习资料。无需登录，直接打开；需要转发时，可一键复制资源链接。</p>
-      <div class="hero-meta">
-        <span>公开访问</span>
-        <span>持续更新</span>
-        <span>免费使用</span>
-      </div>
-    </div>
+  <header class="site-header">
+    <div class="site-title">做题本</div>
+    <div class="site-domain">zuotiben.top</div>
   </header>
 
-  <main class="container">
-    <section class="section-head">
-      <div>
-        <span class="kicker">RESOURCE LIBRARY</span>
-        <h2>资源列表</h2>
-      </div>
-      <p id="resourceCount" class="count"></p>
+  <main class="page">
+    <section class="intro">
+      <p class="section-label">OPEN WORKBOOK ARCHIVE</p>
+      <h1>免费做题本资料索引</h1>
+      <p class="intro-text">这里集中放置公开分享的做题本与学习资料。页面只保留必要信息，点开即可使用；需要转发时可直接复制地址。</p>
     </section>
 
-    <section id="resourceGrid" class="resource-grid" aria-live="polite"></section>
+    <section class="archive">
+      <div class="archive-head">
+        <h2>全部资料</h2>
+        <span id="resourceCount"></span>
+      </div>
+      <div id="resourceList" class="resource-list" aria-live="polite"></div>
+    </section>
 
-    <section class="notice">
-      <h3>使用说明</h3>
-      <p>页面仅用于学习资料索引与公开分享。资源如涉及第三方内容，请遵守相应版权、授权与平台规则。</p>
+    <section class="notes">
+      <h2>说明</h2>
+      <p>本站只作为资料索引页使用。资源如涉及第三方内容，请遵守相应授权、版权与平台规则。</p>
     </section>
   </main>
 
-  <footer>
-    <div>Everflow · 彼时流年若水</div>
-    <div>zuotiben.top</div>
+  <footer class="site-footer">
+    <span>Everflow · 彼时流年若水</span>
+    <span>2026</span>
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite">链接已复制</div>
