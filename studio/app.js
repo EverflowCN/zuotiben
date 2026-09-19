@@ -611,8 +611,8 @@ function bind(){
   });
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
   $('[data-account-password]')?.addEventListener('click',openPasswordEditor);
-  $('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(b.dataset.editAdmin));
-  $('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员的云端登录权限和会话都会失效。',async()=>{try{await studioApi('/admin/accounts/'+encodeURIComponent(b.dataset.deleteAdmin),{method:'DELETE'});toast('成员已删除');await bootstrapStudioCloud()}catch(error){toast(authErrorText(error.code||error.message))}})});
+  $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(b.dataset.editAdmin));
+  $$('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员的云端登录权限和会话都会失效。',async()=>{try{await studioApi('/admin/accounts/'+encodeURIComponent(b.dataset.deleteAdmin),{method:'DELETE'});toast('成员已删除');await bootstrapStudioCloud()}catch(error){toast(authErrorText(error.code||error.message))}})});
   $('[data-save-settings]')?.addEventListener('click',()=>{
     const input=$('#errataSubmitUrlInput');
     if(input){
