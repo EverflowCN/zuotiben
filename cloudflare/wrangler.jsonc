@@ -18,11 +18,5 @@
       "database_id": "801f870c-f481-4dfa-b1ac-c0f9045aae7e",
       "migrations_dir": "migrations"
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "FILES",
-      "bucket_name": "zuotiben-api-files"
-    }
   ]
 }
