@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="研库 - 考研学习资源索引与分发" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#f5f5f7" />
   <title>研库 · 考研资源库</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -20,7 +20,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
         </svg>
-        <input id="searchInput" type="search" placeholder="搜索科目、书名、做题本、真题、版本……" autocomplete="off" />
+        <input id="searchInput" type="search" placeholder="搜索资源、科目、版本或关键词" autocomplete="off" />
         <kbd>/</kbd>
       </label>
 
@@ -31,29 +31,29 @@
   <main class="shell">
     <aside class="sidebar" aria-label="考试分类">
       <div class="sidebar-section">
-        <div class="sidebar-title">考试分类</div>
+        <div class="sidebar-title">分类</div>
         <nav id="categoryNav" class="category-nav"></nav>
       </div>
 
       <div class="sidebar-section sidebar-info">
         <div class="sidebar-title">研库</div>
-        <p>考研学习资源索引与分发。书籍、讲义、真题、做题本及其不同版本统一在这里管理。</p>
+        <p>书籍、讲义、真题、做题本与打印专版统一归档。</p>
       </div>
     </aside>
 
     <section class="content">
       <div class="content-head">
         <div>
-          <div class="eyebrow">EVERFLOW LIBRARY</div>
+          <div class="eyebrow">RESOURCE LIBRARY</div>
+          <h1 id="pageTitle">全部资源</h1>
+          <p class="content-desc">书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。</p>
           <div class="breadcrumb">
             <span id="currentCategory">全部</span>
-            <span class="crumb-sep">/</span>
+            <span class="crumb-sep">›</span>
             <span id="currentSubject">全部科目</span>
-            <span class="crumb-sep">/</span>
+            <span class="crumb-sep">›</span>
             <span id="currentResourceType">全部资源</span>
           </div>
-          <h1 id="pageTitle">全部资源</h1>
-          <p class="content-desc">书籍、讲义、真题、做题本与打印专版统一索引；同一份资料可提供多个版本和多个获取入口。</p>
         </div>
         <div id="resourceCount" class="result-count"></div>
       </div>
@@ -61,17 +61,17 @@
       <section id="noticeCard" class="notice-card" data-notice-version="2026-09-19">
         <div class="notice-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
-            <path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h3l-2-5h2l7 3V6l-7 3H5a2 2 0 0 0-2 2Z"/>
-            <path d="M21 9v6"/>
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+            <path d="M10 19a2 2 0 0 0 4 0"/>
           </svg>
         </div>
         <div class="notice-body">
           <div class="notice-topline">
-            <span class="notice-badge">NOTICE</span>
+            <span class="notice-label">通知</span>
             <span class="notice-date">2026-09-19</span>
           </div>
-          <h2>资源中心正在持续整理</h2>
-          <p>不同资料会按标准版、平板版、打印专版等分别发布；百度网盘、夸克网盘、直链与打印入口会在对应版本下独立展示。失效链接与版本更新会继续补充。</p>
+          <h2>资源中心持续更新中</h2>
+          <p>资料会按标准版、平板版、打印专版等分别发布；百度网盘、夸克网盘、直链与打印入口会在对应版本中单独展示。</p>
         </div>
         <button id="dismissNoticeButton" class="notice-close" type="button" aria-label="关闭公告">
           <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -131,7 +131,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
           </svg>
-          支持科目搜索
+          支持搜索
         </div>
       </div>
 
@@ -141,7 +141,7 @@
             <path d="M8 6h12M8 12h9M8 18h6"/>
             <path d="M4 5v14"/>
           </svg>
-          按最近更新排列
+          最近更新
         </div>
         <div class="view-note">资源 · 版本 · 渠道</div>
       </div>
@@ -155,7 +155,7 @@
             <path d="M9 13h6"/>
           </svg>
         </div>
-        <div class="empty-title">这个分类暂时没有已收录资源</div>
+        <div class="empty-title">暂时没有收录资源</div>
         <p>目录已经保留，之后加入对应资料时会自动归类。</p>
       </div>
 
