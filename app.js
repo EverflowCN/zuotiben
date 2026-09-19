@@ -89,11 +89,15 @@ const categoryNav = document.getElementById("categoryNav");
 const subjectPicker = document.getElementById("subjectPicker");
 const subjectPickerButton = document.getElementById("subjectPickerButton");
 const subjectPickerText = document.getElementById("subjectPickerText");
-const subjectPickerCount = document.getElementById("subjectPickerCount");
 const subjectDropdown = document.getElementById("subjectDropdown");
 const subjectSearchInput = document.getElementById("subjectSearchInput");
 const subjectOptions = document.getElementById("subjectOptions");
-const resourceTypeNav = document.getElementById("resourceTypeNav");
+const resourceTypePicker = document.getElementById("resourceTypePicker");
+const resourceTypePickerButton = document.getElementById("resourceTypePickerButton");
+const resourceTypePickerText = document.getElementById("resourceTypePickerText");
+const resourceTypeDropdown = document.getElementById("resourceTypeDropdown");
+const resourceTypeOptions = document.getElementById("resourceTypeOptions");
+const clearFiltersButton = document.getElementById("clearFiltersButton");
 const list = document.getElementById("resourceList");
 const count = document.getElementById("resourceCount");
 const searchInput = document.getElementById("searchInput");
@@ -114,6 +118,14 @@ function esc(text) {
   }[ch]));
 }
 
+function checkIcon() {
+  return `
+    <svg class="check-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="m5.5 10.3 2.8 2.8 6.2-6.3"/>
+    </svg>
+  `;
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
@@ -124,15 +136,6 @@ function showToast(message) {
 function categoryCount(category) {
   if (category === "全部") return resources.length;
   return resources.filter(item => item.category === category).length;
-}
-
-function getSubjects() {
-  if (state.category === "全部") {
-    return ["全部科目", ...Array.from(new Set(catalog.flatMap(group => group.subjects)))];
-  }
-
-  const group = catalog.find(item => item.name === state.category);
-  return ["全部科目", ...(group?.subjects || [])];
 }
 
 function subjectCount(subject) {
@@ -166,6 +169,11 @@ function updateHeadings() {
   } else {
     pageTitle.textContent = "全部资源";
   }
+
+  clearFiltersButton.hidden =
+    state.category === "全部" &&
+    state.subject === "全部科目" &&
+    state.resourceType === "全部资源";
 }
 
 function searchableText(item) {
@@ -255,7 +263,7 @@ function renderCategories() {
     return `
       <button class="category-item${active}" type="button" data-category="${esc(category)}">
         <span>${esc(category)}</span>
-        <span class="category-count">${categoryCount(category)}</span>
+        <span class="category-count">${categoryCount(category) || ""}</span>
       </button>
     `;
   }).join("");
@@ -264,21 +272,116 @@ function renderCategories() {
     button.addEventListener("click", () => {
       state.category = button.dataset.category;
       state.subject = "全部科目";
-      closeSubjectDropdown();
-      updateHeadings();
-      renderCategories();
-      renderSubjects();
-      renderResourceTypes();
-      renderResources();
+      closeAllPopovers();
+      renderAll();
     });
   });
 }
 
+function getSubjectGroups(query = "") {
+  const normalized = query.trim().toLowerCase();
+  const groups = state.category === "全部"
+    ? catalog
+    : catalog.filter(group => group.name === state.category);
+
+  return groups
+    .map(group => ({
+      name: group.name,
+      subjects: group.subjects.filter(subject =>
+        !normalized || subject.toLowerCase().includes(normalized)
+      )
+    }))
+    .filter(group => group.subjects.length);
+}
+
+function renderSubjectOptions(query = "") {
+  const normalized = query.trim().toLowerCase();
+  const showAll = !normalized || "全部科目".includes(query);
+  const allCount = subjectCount("全部科目");
+  const groups = getSubjectGroups(query);
+
+  let html = "";
+
+  if (showAll) {
+    html += `
+      <button class="command-item${state.subject === "全部科目" ? " selected" : ""}" type="button" role="option" data-subject="全部科目">
+        <span class="command-item-main">
+          <span>全部科目</span>
+          ${allCount ? `<small>${allCount} 项</small>` : ""}
+        </span>
+        ${state.subject === "全部科目" ? checkIcon() : ""}
+      </button>
+    `;
+  }
+
+  groups.forEach(group => {
+    html += `<div class="command-group-label">${esc(group.name)}</div>`;
+    html += group.subjects.map(subject => {
+      const active = subject === state.subject;
+      const subjectResources = subjectCount(subject);
+      return `
+        <button class="command-item${active ? " selected" : ""}" type="button" role="option" data-subject="${esc(subject)}">
+          <span class="command-item-main">
+            <span>${esc(subject)}</span>
+            ${subjectResources ? `<small>${subjectResources} 项</small>` : ""}
+          </span>
+          ${active ? checkIcon() : ""}
+        </button>
+      `;
+    }).join("");
+  });
+
+  subjectOptions.innerHTML = html || '<div class="command-empty">没有匹配的科目</div>';
+
+  subjectOptions.querySelectorAll("[data-subject]").forEach(button => {
+    button.addEventListener("click", () => {
+      state.subject = button.dataset.subject;
+      closeSubjectDropdown();
+      renderAll();
+    });
+  });
+}
+
+function renderSubjectPicker() {
+  subjectPickerText.textContent = state.subject;
+  renderSubjectOptions(subjectSearchInput.value);
+}
+
+function renderResourceTypeOptions() {
+  resourceTypeOptions.innerHTML = resourceTypes.map(type => {
+    const active = type === state.resourceType;
+    const total = typeCount(type);
+    return `
+      <button class="command-item${active ? " selected" : ""}" type="button" role="option" data-resource-type="${esc(type)}">
+        <span class="command-item-main">
+          <span>${esc(type)}</span>
+          ${total ? `<small>${total} 项</small>` : ""}
+        </span>
+        ${active ? checkIcon() : ""}
+      </button>
+    `;
+  }).join("");
+
+  resourceTypeOptions.querySelectorAll("[data-resource-type]").forEach(button => {
+    button.addEventListener("click", () => {
+      state.resourceType = button.dataset.resourceType;
+      closeResourceTypeDropdown();
+      renderAll();
+    });
+  });
+}
+
+function renderResourceTypePicker() {
+  resourceTypePickerText.textContent = state.resourceType;
+  renderResourceTypeOptions();
+}
+
 function openSubjectDropdown() {
+  closeResourceTypeDropdown();
   subjectDropdown.hidden = false;
   subjectPickerButton.setAttribute("aria-expanded", "true");
   subjectSearchInput.value = "";
-  renderSubjectOptions();
+  renderSubjectOptions("");
   requestAnimationFrame(() => subjectSearchInput.focus());
 }
 
@@ -288,61 +391,21 @@ function closeSubjectDropdown() {
   subjectSearchInput.value = "";
 }
 
-function renderSubjectOptions(query = "") {
-  const normalized = query.trim().toLowerCase();
-  const subjects = getSubjects().filter(subject =>
-    !normalized || subject.toLowerCase().includes(normalized)
-  );
-
-  subjectOptions.innerHTML = subjects.length
-    ? subjects.map(subject => {
-        const active = subject === state.subject ? " active" : "";
-        return `
-          <button class="subject-option${active}" type="button" role="option" aria-selected="${subject === state.subject}" data-subject="${esc(subject)}">
-            <span>${esc(subject)}</span>
-            <small>${subjectCount(subject)}</small>
-          </button>
-        `;
-      }).join("")
-    : '<div class="subject-no-result">没有匹配的科目</div>';
-
-  subjectOptions.querySelectorAll(".subject-option").forEach(button => {
-    button.addEventListener("click", () => {
-      state.subject = button.dataset.subject;
-      closeSubjectDropdown();
-      updateHeadings();
-      renderSubjects();
-      renderResourceTypes();
-      renderResources();
-    });
-  });
+function openResourceTypeDropdown() {
+  closeSubjectDropdown();
+  resourceTypeDropdown.hidden = false;
+  resourceTypePickerButton.setAttribute("aria-expanded", "true");
+  renderResourceTypeOptions();
 }
 
-function renderSubjects() {
-  subjectPickerText.textContent = state.subject;
-  subjectPickerCount.textContent = subjectCount(state.subject);
-  renderSubjectOptions(subjectSearchInput.value);
+function closeResourceTypeDropdown() {
+  resourceTypeDropdown.hidden = true;
+  resourceTypePickerButton.setAttribute("aria-expanded", "false");
 }
 
-function renderResourceTypes() {
-  resourceTypeNav.innerHTML = resourceTypes.map(type => {
-    const active = type === state.resourceType ? " active" : "";
-    return `
-      <button class="filter-chip${active}" type="button" data-resource-type="${esc(type)}">
-        <span>${esc(type)}</span>
-        <small>${typeCount(type)}</small>
-      </button>
-    `;
-  }).join("");
-
-  resourceTypeNav.querySelectorAll(".filter-chip").forEach(button => {
-    button.addEventListener("click", () => {
-      state.resourceType = button.dataset.resourceType;
-      updateHeadings();
-      renderResourceTypes();
-      renderResources();
-    });
-  });
+function closeAllPopovers() {
+  closeSubjectDropdown();
+  closeResourceTypeDropdown();
 }
 
 function renderChannel(channel, resourceIndex, versionIndex, channelIndex) {
@@ -425,21 +488,37 @@ function renderResources() {
   }).join("");
 }
 
+function renderAll() {
+  updateHeadings();
+  renderCategories();
+  renderSubjectPicker();
+  renderResourceTypePicker();
+  renderResources();
+}
+
 subjectPickerButton.addEventListener("click", () => {
-  if (subjectDropdown.hidden) {
-    openSubjectDropdown();
-  } else {
-    closeSubjectDropdown();
-  }
+  subjectDropdown.hidden ? openSubjectDropdown() : closeSubjectDropdown();
+});
+
+resourceTypePickerButton.addEventListener("click", () => {
+  resourceTypeDropdown.hidden ? openResourceTypeDropdown() : closeResourceTypeDropdown();
 });
 
 subjectSearchInput.addEventListener("input", event => {
   renderSubjectOptions(event.target.value);
 });
 
+clearFiltersButton.addEventListener("click", () => {
+  state.category = "全部";
+  state.subject = "全部科目";
+  state.resourceType = "全部资源";
+  closeAllPopovers();
+  renderAll();
+});
+
 document.addEventListener("click", event => {
-  if (!subjectPicker.contains(event.target)) {
-    closeSubjectDropdown();
+  if (!subjectPicker.contains(event.target) && !resourceTypePicker.contains(event.target)) {
+    closeAllPopovers();
   }
 });
 
@@ -449,9 +528,8 @@ searchInput.addEventListener("input", event => {
 });
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !subjectDropdown.hidden) {
-    closeSubjectDropdown();
-    subjectPickerButton.focus();
+  if (event.key === "Escape" && (!subjectDropdown.hidden || !resourceTypeDropdown.hidden)) {
+    closeAllPopovers();
     return;
   }
 
@@ -473,8 +551,4 @@ document.addEventListener("keydown", event => {
   }
 });
 
-updateHeadings();
-renderCategories();
-renderSubjects();
-renderResourceTypes();
-renderResources();
+renderAll();
