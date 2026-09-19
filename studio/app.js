@@ -300,6 +300,16 @@ function openResource(id){
   $$('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
   $('[data-add-version]')?.addEventListener('click',()=>openSimple('新增版本','版本名称、格式、适用场景、版本说明、默认展开、排序'));
   $('#previewResourceButton')?.addEventListener('click',()=>window.open('../','_blank','noopener'));
+  $('#drawer [data-pin="resource"]')?.addEventListener('click',event=>{
+    event.preventDefault();
+    x.pinned=!x.pinned;
+    event.currentTarget.classList.toggle('active',x.pinned);
+  });
+  $('#drawer [data-toggle="preview-resource-visible"]')?.addEventListener('click',event=>{
+    event.preventDefault();
+    x.visible=!x.visible;
+    event.currentTarget.classList.toggle('on',x.visible);
+  });
 }
 function openCustomLink(title='新增自定义链接'){
   openDrawer(title,
@@ -345,6 +355,21 @@ function openAnnouncement(id){
     saveAnnouncements();render();toast(id?'公告已保存（预览）':'公告已创建（预览）')
   };
   openDrawer(id?'编辑公告':'新建公告',body,save);
+  $('#drawer [data-pin="announcement"]')?.addEventListener('click',event=>{
+    event.preventDefault();
+    x.pinned=!x.pinned;
+    event.currentTarget.classList.toggle('active',x.pinned);
+  });
+  $('#drawer [data-toggle="preview-announcement-visible"]')?.addEventListener('click',event=>{
+    event.preventDefault();
+    x.visible=!x.visible;
+    event.currentTarget.classList.toggle('on',x.visible);
+  });
+  $('#drawer [data-toggle="preview-announcement-dismiss"]')?.addEventListener('click',event=>{
+    event.preventDefault();
+    x.dismissible=!x.dismissible;
+    event.currentTarget.classList.toggle('on',x.dismissible);
+  });
 }
 function previewAnnouncement(id){
   const x=state.announcements.find(x=>x.id===id);if(!x)return;
