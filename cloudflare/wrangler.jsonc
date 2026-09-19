@@ -12,6 +12,9 @@
     "PUBLIC_CACHE_SECONDS": "60",
     "BACKEND_MODE": "d1-only"
   },
+  "secrets": {
+    "required": ["ADMIN_SETUP_TOKEN"]
+  },
   "d1_databases": [
     {
       "binding": "DB",
