@@ -23,6 +23,12 @@ const announcements = [
 const siteSettings = {
   errataSubmitUrl: localStorage.getItem("yanku-errata-submit-url") || ""
 };
+const pinState = {
+  resources: new Set(JSON.parse(localStorage.getItem("yanku-pinned-resource-titles") || "[]")),
+  announcements: new Set(JSON.parse(localStorage.getItem("yanku-pinned-announcement-titles") || "[]"))
+};
+function isResourcePinned(item){ return pinState.resources.has(item.title); }
+function isAnnouncementPinned(item){ return pinState.announcements.has(item.title); }
 
 const resources = [
   {
@@ -232,7 +238,7 @@ function getFilteredResources() {
     .filter(item => state.subject === "全部科目" || item.subject === state.subject)
     .filter(item => state.resourceType === "全部资源" || item.resourceType === state.resourceType)
     .filter(item => !query || searchableText(item).includes(query))
-    .sort((a,b) => b.updated.localeCompare(a.updated));
+    .sort((a,b) => Number(isResourcePinned(b)) - Number(isResourcePinned(a)) || b.updated.localeCompare(a.updated));
 }
 
 function commitViewUpdate(update) {
@@ -547,7 +553,7 @@ function renderResources() {
         <div class="resource-head">
           <div class="resource-icon">${icon(resourceTypeIcon(item.resourceType),"resource-type-icon")}</div>
           <div class="resource-main">
-            <div class="resource-title-line"><h2>${esc(item.title)}</h2><span class="status">${esc(item.status)}</span></div>
+            <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
             <div class="resource-tags">
               <span>${esc(item.category)}</span><span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${item.versions.length} 个版本</span>
@@ -563,7 +569,7 @@ function renderResources() {
 function renderOverview() {
   const versionCount = resources.reduce((sum,item) => sum + item.versions.length,0);
   const errataCount = resources.reduce((sum,item) => sum + item.versions.reduce((n,version) => n + (version.errata || []).length,0),0);
-  const notice = announcements[0];
+  const notice = announcements.find(isAnnouncementPinned) || announcements[0];
 
   document.getElementById("metricResources").textContent = resources.length;
   document.getElementById("metricVersions").textContent = versionCount;
@@ -578,7 +584,7 @@ function renderOverview() {
 
   document.getElementById("recentResources").innerHTML = resources
     .slice()
-    .sort((a,b) => b.updated.localeCompare(a.updated))
+    .sort((a,b) => Number(isResourcePinned(b)) - Number(isResourcePinned(a)) || b.updated.localeCompare(a.updated))
     .slice(0,4)
     .map(item => '<button class="overview-row" type="button" data-resource-category="' + esc(item.category) + '"><span class="overview-row-icon">' + icon(resourceTypeIcon(item.resourceType)) + '</span><span><strong>' + esc(item.title) + '</strong><small>' + esc(item.category) + ' · ' + esc(item.subject) + ' · ' + item.versions.length + ' 个版本</small></span><time>' + esc(item.updated) + '</time></button>')
     .join("");
