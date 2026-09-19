@@ -1173,17 +1173,17 @@ function initBitstreamBackground(){
     const sequence=Array.from({length:48},()=>Math.random()>.5?"1":"0");
 
     if(phone){
-      const laneWidth=width/(count+1);
+      const laneWidth=width/count;
       return {
         mode:"vertical",
-        baseX:laneWidth*(index+1),
-        speed:18+Math.random()*10,
-        spacing:29+Math.random()*3,
-        offset:Math.random()*32,
-        alpha:.96+Math.random()*.12,
-        sequence:Array.from({length:96},()=>Math.random()>.5?"1":"0"),
-        flipElapsed:Math.random()*.06,
-        flipEvery:.055+Math.random()*.035
+        baseX:laneWidth*(index+.5),
+        speed:34+Math.random()*20,
+        spacing:20+Math.random()*2,
+        offset:Math.random()*22,
+        alpha:.90+Math.random()*.18,
+        sequence:Array.from({length:128},()=>Math.random()>.5?"1":"0"),
+        flipElapsed:Math.random()*.045,
+        flipEvery:.040+Math.random()*.020
       };
     }
 
@@ -1217,7 +1217,7 @@ function initBitstreamBackground(){
     canvas.style.width=width+"px";
     canvas.style.height=height+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    const count=isPhone()?Math.max(4,Math.min(5,Math.round(width/88))):Math.max(6,Math.min(9,Math.round(height/130)));
+    const count=isPhone()?Math.max(8,Math.min(12,Math.round(width/34))):Math.max(6,Math.min(9,Math.round(height/130)));
     streams=Array.from({length:count},(_,i)=>makeStream(i,count));
   }
 
@@ -1234,9 +1234,9 @@ function initBitstreamBackground(){
     stream.flipElapsed+=delta;
     if(stream.flipElapsed>=stream.flipEvery){
       stream.flipElapsed=0;
-      stream.flipEvery=(stream.mode==="vertical"?.055:.14)+Math.random()*(stream.mode==="vertical"?.035:.20);
+      stream.flipEvery=(stream.mode==="vertical"?.040:.14)+Math.random()*(stream.mode==="vertical"?.020:.20);
       const changes=stream.mode==="vertical"
-        ? Math.max(8,Math.floor(stream.sequence.length*(.24+Math.random()*.18)))
+        ? Math.max(24,Math.floor(stream.sequence.length*(.42+Math.random()*.28)))
         : 1+Math.floor(Math.random()*2);
       for(let n=0;n<changes;n++){
         const bitIndex=Math.floor(Math.random()*stream.sequence.length);
@@ -1248,8 +1248,10 @@ function initBitstreamBackground(){
       const pad=stream.spacing*2;
       let index=0;
       for(let y=-pad+stream.offset;y<=height+pad;y+=stream.spacing){
-        const alpha=tone.bit*stream.alpha*1.72;
-        ctx.fillStyle='rgba('+tone.rgb+','+Math.min(alpha,.36).toFixed(4)+')';
+        const row=Math.max(0,Math.floor((y+pad)/stream.spacing));
+        const pulse=.84+.16*Math.sin((row+stream.offset*.08)*.72);
+        const alpha=tone.bit*stream.alpha*1.58*pulse;
+        ctx.fillStyle='rgba('+tone.rgb+','+Math.min(alpha,.30).toFixed(4)+')';
         ctx.fillText(stream.sequence[index%stream.sequence.length],stream.baseX,y);
         index++;
       }
@@ -1282,13 +1284,13 @@ function initBitstreamBackground(){
   function draw(now){
     frame=requestAnimationFrame(draw);
     if(document.hidden)return;
-    if(now-last<(isPhone()?34:55))return;
+    if(now-last<(isPhone()?30:55))return;
     const delta=Math.min((now-last||55)/1000,.12);
     last=now;
     ctx.clearRect(0,0,width,height);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.font=(isPhone()?'700 22px':'500 11px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.font=(isPhone()?'650 16px':'500 11px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
     const tone=themeTone();
     streams.forEach(stream=>drawStream(stream,tone,delta));
   }
