@@ -186,8 +186,8 @@ const cloudState={status:'checking',message:'正在检测 D1',syncTimer:null,las
 function cloudStatusLabel(){
   if(cloudState.status==='connected') return 'D1 已连接';
   if(cloudState.status==='syncing') return '正在同步 D1';
-  if(cloudState.status==='needs-access') return '待配置 Access';
-  if(cloudState.status==='auth') return '等待登录';
+  if(cloudState.status==='setup') return '等待初始化';
+  if(cloudState.status==='auth') return '未登录';
   if(cloudState.status==='error') return '云端暂不可用';
   return '检测云端中';
 }
@@ -281,20 +281,101 @@ function applyCloudBootstrap(data){
   const copyRow=(data.site_settings||[]).find(x=>x.key==='public.copy');
   if(copyRow){try{state.copy={...siteCopyDefaults,...JSON.parse(copyRow.value_json||'{}')}}catch{}}
   const profiles=data.admin_profiles||[];
-  if(profiles.length)state.admins=profiles.map((x,index)=>({id:x.email||index+1,name:x.display_name||x.email,identifier:x.email,role:x.role||'admin',status:x.status||'active',last:'Cloudflare Access',locked:x.role==='owner'}));
+  if(profiles.length)state.admins=profiles.map((x,index)=>({id:x.email||index+1,name:x.display_name||x.email,identifier:x.email,role:x.role||'admin',status:x.status||'active',last:'云端账号',locked:x.role==='owner'}));
   state.audit=data.audit_logs||[];
   savePinnedResources();savePinnedAnnouncements();
+}
+function authErrorText(code){
+  return ({
+    invalid_credentials:'邮箱或密码错误',
+    too_many_attempts:'登录尝试过多，请稍后再试',
+    invalid_setup_token:'初始化口令错误',
+    setup_not_configured:'还没有配置首次初始化口令',
+    setup_complete:'主管理员已经初始化',
+    weak_password:'密码至少 12 位',
+    invalid_email:'邮箱格式不正确',
+    auth_required:'请先登录',
+    invalid_session:'登录已失效，请重新登录'
+  })[code]||'操作失败，请检查后重试';
+}
+function ensureAuthGate(){
+  let gate=document.getElementById('authGate');
+  if(!gate){
+    gate=document.createElement('section');
+    gate.id='authGate';gate.className='auth-gate';gate.hidden=true;
+    document.body.appendChild(gate);
+  }
+  return gate;
+}
+function hideAuthGate(){
+  const gate=ensureAuthGate();gate.hidden=true;document.body.classList.remove('auth-locked');
+}
+function renderAuthGate(mode,setupStatus={},message=''){
+  const gate=ensureAuthGate();
+  document.body.classList.add('auth-locked');gate.hidden=false;
+  const setup=mode==='setup';
+  gate.innerHTML='<div class="auth-card"><div class="auth-brand"><span class="brand-mark">研</span><div><strong>Studio</strong><small>'+(setup?'首次初始化':'管理员登录')+'</small></div></div>'+
+    '<h1>'+(setup?'创建主管理员':'进入管理后台')+'</h1>'+
+    '<p>'+(setup?'首次初始化只执行一次。账号和密码会存入 Cloudflare D1。':'使用云端管理员账号登录。')+'</p>'+
+    (message?'<div class="auth-error">'+message+'</div>':'')+
+    '<form id="authForm" class="auth-form">'+
+      (setup?'<label><span>初始化口令</span><input id="authSetupToken" type="password" autocomplete="off" required placeholder="Cloudflare 中设置的 ADMIN_SETUP_TOKEN"></label>':'')+
+      (setup?'<label><span>显示名称</span><input id="authDisplayName" autocomplete="name" value="主管理员" maxlength="80"></label>':'')+
+      '<label><span>管理员邮箱</span><input id="authEmail" type="email" autocomplete="username" required></label>'+
+      '<label><span>密码</span><input id="authPassword" type="password" autocomplete="'+(setup?'new-password':'current-password')+'" minlength="12" required></label>'+
+      (setup?'<label><span>确认密码</span><input id="authPassword2" type="password" autocomplete="new-password" minlength="12" required></label>':'')+
+      '<button class="btn primary auth-submit" type="submit">'+(setup?'创建 Owner':'登录')+'</button>'+
+    '</form>'+
+    (setup&&!setupStatus.setup_token_configured?'<div class="auth-hint"><strong>还差一步：</strong>先在 Worker 的变量与机密里添加 <code>ADMIN_SETUP_TOKEN</code>，类型选 Secret。</div>':'')+
+    '<a class="auth-public-link" href="../">返回公开站点</a></div>';
+  $('#authForm').onsubmit=async event=>{
+    event.preventDefault();
+    const button=gate.querySelector('.auth-submit');button.disabled=true;button.textContent=setup?'正在创建…':'正在登录…';
+    try{
+      const password=$('#authPassword').value;
+      if(setup&&password!==$('#authPassword2').value)throw Object.assign(new Error('password_mismatch'),{code:'password_mismatch'});
+      const payload=setup?{
+        setup_token:$('#authSetupToken').value,
+        display_name:$('#authDisplayName').value.trim(),
+        email:$('#authEmail').value.trim(),
+        password
+      }:{email:$('#authEmail').value.trim(),password};
+      await studioApi(setup?'/auth/setup':'/auth/login',{method:'POST',body:JSON.stringify(payload)});
+      hideAuthGate();await bootstrapStudioCloud();
+    }catch(error){
+      renderAuthGate(mode,setupStatus,error.code==='password_mismatch'?'两次密码不一致':authErrorText(error.code||error.message));
+    }
+  };
 }
 async function bootstrapStudioCloud(){
   try{
     const data=await studioApi('/admin/bootstrap');
     applyCloudBootstrap(data);
+    if(data.identity){
+      state.account.displayName=data.identity.display_name||data.identity.email||'管理员';
+      state.account.username=data.identity.email||'';
+      state.account.email=data.identity.email||'';
+      state.account.role=({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'})[data.identity.role]||data.identity.role;
+      state.account.lastLogin='当前云端会话';
+    }
     cloudState.status='connected';cloudState.lastError='';
     localStorage.setItem('yanku-studio-cloud-ready','1');
-    render();refreshCloudStatus();
+    hideAuthGate();render();refreshCloudStatus();
   }catch(error){
     cloudState.lastError=error.code||error.message||'unknown';
-    cloudState.status=error.code==='access_not_configured'?'needs-access':(error.status===401||error.code==='access_required'||error.code==='invalid_access_token'?'auth':'error');
+    if(error.status===401||error.code==='auth_required'||error.code==='invalid_session'){
+      try{
+        const status=await studioApi('/auth/setup/status');
+        cloudState.status=status.needs_setup?'setup':'auth';
+        renderAuthGate(status.needs_setup?'setup':'login',status);
+      }catch(statusError){
+        cloudState.status='error';
+        renderAuthGate('login',{},'认证服务暂不可用，请确认 Worker 已部署最新版本。');
+      }
+    }else{
+      cloudState.status='error';
+      renderAuthGate('login',{},'云端服务暂不可用，请稍后刷新。');
+    }
     refreshCloudStatus();
   }
 }
@@ -457,19 +538,19 @@ function renderAccount(){
   return head('账号中心','管理当前账号资料、安全选项与会话。','<button class="btn primary" data-save-account>保存账号</button>')+
   '<div class="grid two account-grid">'+
     '<section class="card"><div class="card-head"><div><h2>账号资料</h2><p>当前工作台身份</p></div></div><div class="card-body"><div class="account-profile"><span class="account-avatar">主</span><div><strong>'+a.displayName+'</strong><small>'+a.role+' · '+a.username+'</small></div></div><div class="form-grid" style="margin-top:14px"><label class="field wide"><span>显示名称</span><input id="accountDisplayName" value="'+a.displayName+'"></label><label class="field"><span>用户名</span><input id="accountUsername" value="'+a.username+'"></label><label class="field"><span>邮箱</span><input id="accountEmail" type="email" placeholder="name@example.com" value="'+a.email+'"></label></div></div></section>'+
-    '<section class="card"><div class="card-head"><div><h2>安全</h2><p>正式接入身份服务后生效</p></div></div><div class="card-body"><div class="list"><div class="list-row"><div><strong>修改密码</strong><small>设置新的后台访问密码</small></div><button class="btn small" data-account-password>修改</button></div><div class="list-row"><div><strong>两步验证</strong><small>建议主管理员开启</small></div>'+toggle('preview-account-mfa','mfa',a.mfa)+'</div><div class="list-row"><div><strong>恢复代码</strong><small>用于无法使用验证器时恢复账号</small></div><button class="btn small">生成</button></div></div></div></section>'+
+    '<section class="card"><div class="card-head"><div><h2>安全</h2><p>Cloudflare D1 云端认证</p></div></div><div class="card-body"><div class="list"><div class="list-row"><div><strong>修改密码</strong><small>设置新的后台访问密码</small></div><button class="btn small" data-account-password>修改</button></div><div class="list-row"><div><strong>两步验证</strong><small>建议主管理员开启</small></div>'+toggle('preview-account-mfa','mfa',a.mfa)+'</div><div class="list-row"><div><strong>恢复代码</strong><small>用于无法使用验证器时恢复账号</small></div><button class="btn small">生成</button></div></div></div></section>'+
   '</div>'+
   '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>登录会话</h2><p>查看并管理已登录设备</p></div><button class="btn small danger">退出其他会话</button></div><div class="card-body"><div class="session-row"><span class="session-device">'+icon('account')+'</span><div><strong>当前设备</strong><small>当前会话 · 最近活动刚刚</small></div><span class="pill green">当前</span></div></div></section>'+
-  '<div class="design-note" style="margin-top:14px">当前仍为无验证预览版。接入服务器后，这里将与登录、密码哈希、会话、2FA 和管理员权限系统连接。</div>'
+  '<div class="design-note" style="margin-top:14px">账号、密码哈希与登录会话均由 Worker + D1 管理；浏览器不会保存管理员密码。</div>'
 }
 function renderAdmins(){
-  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+(x.role==='owner'?'Owner':'Admin')+'</span></td><td><span class="pill green">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+x.last+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+x.id+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+x.id+'">删除</button></div></td></tr>').join('');
+  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role)+'</span></td><td><span class="pill green">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+x.last+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+x.id+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+x.id+'">删除</button></div></td></tr>').join('');
   return head('成员与权限','主管理员拥有全部权限，可创建多个管理员并逐项授权。','<button class="btn primary" data-new-admin>＋ 新增成员</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>成员</th><th>角色</th><th>状态</th><th>最近活动</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
   '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>权限矩阵</h2><p>Owner 始终拥有全部权限，不允许其他角色修改 Owner。</p></div></div><div class="card-body">'+permissionMatrix()+'</div></section>'
 }
 function permissionMatrix(){
-  const rows=[['资料 / 渠道 / 勘误',1,1,1,1],['经验贴管理',1,1,1,0],['公告管理',1,1,0,0],['文件管理',1,1,1,0],['分类管理',1,1,0,0],['成员与权限',1,0,0,0],['站点设置',1,0,0,0],['审计日志',1,1,0,1]];
+  const rows=[['资料 / 渠道 / 勘误',1,1,1,0],['经验贴管理',1,1,1,0],['公告管理',1,1,1,0],['科目管理',1,1,1,0],['成员与权限',1,1,0,0],['站点设置',1,1,0,0],['查看后台数据',1,1,1,1],['审计日志',1,1,0,1]];
   let h='<div class="permission-grid"><div class="head">权限</div><div class="head">Owner</div><div class="head">管理员</div><div class="head">编辑</div><div class="head">审核</div>';
   rows.forEach(r=>{h+='<div>'+r[0]+'</div>'+r.slice(1).map(v=>'<div class="'+(v?'yes':'no')+'">'+(v?'✓':'—')+'</div>').join('')});return h+'</div>'
 }
@@ -522,8 +603,9 @@ function bind(){
     const key=button.dataset.id;state.copy[key]=!state.copy[key];saveSiteCopy();render();toast('显示设置已更新')
   });
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
-  $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(Number(b.dataset.editAdmin)));
-  $$('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员将从当前预览权限列表移除。',()=>{state.admins=state.admins.filter(x=>x.id!=b.dataset.deleteAdmin);saveStudioCollections();render();toast('成员已删除')})});
+  $('[data-account-password]')?.addEventListener('click',openPasswordEditor);
+  $('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(b.dataset.editAdmin));
+  $('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员的云端登录权限和会话都会失效。',async()=>{try{await studioApi('/admin/accounts/'+encodeURIComponent(b.dataset.deleteAdmin),{method:'DELETE'});toast('成员已删除');await bootstrapStudioCloud()}catch(error){toast(authErrorText(error.code||error.message))}})});
   $('[data-save-settings]')?.addEventListener('click',()=>{
     const input=$('#errataSubmitUrlInput');
     if(input){
@@ -727,13 +809,31 @@ function openCustomLink(resourceId,title='新增自定义链接'){
   })
 }
 function openAdmin(id){
-  const existing=state.admins.find(x=>x.id===id);const owner=existing?.locked;
-  const x=existing||{id:null,name:'',identifier:'',role:'admin',status:'active',last:'尚未登录',locked:false};
-  const body='<div class="form-grid"><label class="field wide"><span>显示名称</span><input id="mName" value="'+x.name+'" '+(owner?'disabled':'')+'></label><label class="field wide"><span>账号标识</span><input id="mIdentifier" value="'+(x.identifier||'')+'" placeholder="邮箱或用户 ID" '+(owner?'disabled':'')+'></label><label class="field"><span>角色</span><select id="mRole" '+(owner?'disabled':'')+'><option value="'+x.role+'">'+(x.role==='owner'?'Owner':x.role==='editor'?'编辑':'管理员')+'</option><option value="admin">管理员</option><option value="editor">编辑</option><option value="reviewer">审核</option></select></label><label class="field"><span>状态</span><select id="mStatus" '+(owner?'disabled':'')+'><option value="'+x.status+'">'+(x.status==='active'?'启用':'停用')+'</option><option value="active">启用</option><option value="disabled">停用</option></select></label></div><div class="subsection"><div class="subsection-head"><h3>细分权限</h3></div><div class="list">'+['资料 / 渠道 / 勘误','经验贴管理','公告管理','文件管理','科目管理','站点设置','审计日志'].map(p=>'<div class="list-row"><strong>'+p+'</strong>'+toggle('preview',p,true)+'</div>').join('')+'</div></div>'+(owner?'<div class="design-note" style="margin-top:14px">主管理员不可删除、停用或降权。</div>':'');
-  openDrawer(existing?'成员权限':'新增成员',body,owner?null:()=>{
-    x.name=$('#mName').value.trim()||'未命名成员';x.identifier=$('#mIdentifier').value.trim();x.role=$('#mRole').value;x.status=$('#mStatus').value;if(!existing){x.id=Date.now();state.admins.push(x)}saveStudioCollections();render();toast(existing?'成员已保存':'成员已创建')
+  const existing=state.admins.find(x=>String(x.id)===String(id));const owner=existing?.locked;
+  const x=existing||{id:null,name:'',identifier:'',role:'editor',status:'active',last:'尚未登录',locked:false};
+  const body='<div class="form-grid"><label class="field wide"><span>显示名称</span><input id="mName" value="'+x.name+'" '+(owner?'disabled':'')+'></label><label class="field wide"><span>登录邮箱</span><input id="mIdentifier" type="email" value="'+(x.identifier||'')+'" placeholder="name@example.com" '+(existing?'disabled':'')+'></label><label class="field"><span>角色</span><select id="mRole" '+(owner?'disabled':'')+'><option value="'+x.role+'">'+({owner:'Owner',admin:'管理员',editor:'编辑',reviewer:'审核'}[x.role]||x.role)+'</option>'+(owner?'':'<option value="admin">管理员</option><option value="editor">编辑</option><option value="reviewer">审核</option>')+'</select></label><label class="field"><span>状态</span><select id="mStatus" '+(owner?'disabled':'')+'><option value="'+x.status+'">'+(x.status==='active'?'启用':'停用')+'</option>'+(owner?'':'<option value="active">启用</option><option value="disabled">停用</option>')+'</select></label>'+
+    (!owner?'<label class="field wide"><span>'+(existing?'重置密码（可留空）':'初始密码')+'</span><input id="mPassword" type="password" minlength="12" autocomplete="new-password" placeholder="至少 12 位"></label>':'')+
+    '</div><div class="design-note" style="margin-top:14px">'+(owner?'Owner 不可由其他成员删除、停用或降权。':'权限由 Worker 服务端校验，不只是界面显示。')+'</div>';
+  openDrawer(existing?'成员权限':'新增成员',body,owner?null:async()=>{
+    const payload={display_name:$('#mName').value.trim()||'未命名成员',role:$('#mRole').value,status:$('#mStatus').value};
+    if(!existing){payload.email=$('#mIdentifier').value.trim();payload.password=$('#mPassword').value}
+    else if($('#mPassword')?.value)payload.password=$('#mPassword').value;
+    try{
+      await studioApi(existing?'/admin/accounts/'+encodeURIComponent(existing.identifier):'/admin/accounts',{method:existing?'PUT':'POST',body:JSON.stringify(payload)});
+      toast(existing?'成员已保存':'成员已创建');await bootstrapStudioCloud();
+    }catch(error){toast(authErrorText(error.code||error.message))}
   },owner)
 }
+function openPasswordEditor(){
+  openDrawer('修改密码','<div class="form-grid"><label class="field wide"><span>当前密码</span><input id="pwCurrent" type="password" autocomplete="current-password"></label><label class="field wide"><span>新密码</span><input id="pwNew" type="password" minlength="12" autocomplete="new-password"></label><label class="field wide"><span>确认新密码</span><input id="pwNew2" type="password" minlength="12" autocomplete="new-password"></label></div><div class="design-note" style="margin-top:12px">修改后会注销该账号的所有现有会话，需要重新登录。</div>',async()=>{
+    if($('#pwNew').value!==$('#pwNew2').value)return toast('两次新密码不一致');
+    try{
+      await studioApi('/auth/change-password',{method:'POST',body:JSON.stringify({current_password:$('#pwCurrent').value,new_password:$('#pwNew').value})});
+      toast('密码已修改，请重新登录');cloudState.status='auth';renderAuthGate('login',{needs_setup:false});
+    }catch(error){toast(authErrorText(error.code||error.message))}
+  })
+}
+
 function openSimple(title,fields){openDrawer(title,'<div class="design-note">'+fields+'</div><div class="form-grid" style="margin-top:14px"><label class="field wide"><span>名称 / 标题</span><input></label><label class="field wide"><span>说明</span><textarea></textarea></label></div>',()=>toast('已保存（预览）'))}
 function openDrawer(title,body,onSave,readOnly=false){
   $('#drawer').innerHTML='<header class="drawer-head"><h2>'+title+'</h2><button class="icon-btn" data-drawer-close>'+icon('x')+'</button></header><div class="drawer-body">'+body+'</div><footer class="drawer-foot"><button class="btn subtle" data-drawer-close>取消</button><div>'+(readOnly?'':'<button class="btn primary" data-drawer-save>保存</button>')+'</div></footer>';
@@ -753,6 +853,7 @@ function closeSide(){$('.sidebar').classList.remove('open');$('#sideBackdrop').h
 $('#sideOpen').onclick=openSide;$('#sideClose').onclick=closeSide;$('#sideBackdrop').onclick=closeSide;
 $('#openPublic').onclick=()=>window.open('../','_blank','noopener');
 $('#accountEntry').onclick=()=>{state.section='account';render();closeSide()};
+$('#logoutButton')?.addEventListener('click',async()=>{try{await studioApi('/auth/logout',{method:'POST'})}catch{}cloudState.status='auth';renderAuthGate('login',{needs_setup:false})});
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape'){closeDrawer();closeConfirm();closeSide()}});
 render();
 bootstrapStudioCloud();
