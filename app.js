@@ -236,16 +236,8 @@ function getFilteredResources() {
 }
 
 function commitViewUpdate(update) {
-  const apply = () => {
-    update();
-    renderAll();
-  };
-  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (document.startViewTransition && !reduced) {
-    document.startViewTransition(apply);
-  } else {
-    apply();
-  }
+  update();
+  renderAll();
 }
 
 function renderSections() {
