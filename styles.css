@@ -131,9 +131,33 @@ label svg {
 .notice-date { color:var(--muted-2); font-size:10px; }
 .notice-body h2 { margin:5px 0 4px; font-size:15px; font-weight:650; }
 .notice-body p { margin:0; max-width:760px; color:var(--muted); font-size:12px; line-height:1.72; }
-.notice-close { position:absolute; top:10px; right:10px; width:28px; height:28px; display:grid; place-items:center; border:0; border-radius:50%; background:rgba(91,84,73,.09); color:#8d877d; cursor:pointer; }
-.notice-close:hover { background:rgba(91,84,73,.14); color:var(--text); }
-.notice-close svg { width:13px; height:13px; }
+.notice-close {
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:30px;
+  height:30px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#8d877d;
+  cursor:pointer;
+  line-height:0;
+}
+.notice-close:hover {
+  background:rgba(91,84,73,.08);
+  color:var(--text);
+}
+.notice-close svg {
+  width:18px;
+  height:18px;
+  margin:0;
+  transform:none;
+}
 
 .filterbar { min-height:58px; padding:0 2px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .filterbar-controls { min-width:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -236,7 +260,21 @@ label svg {
   padding:18px; display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:14px; align-items:center;
   border:1px solid var(--border); border-radius:var(--radius-lg); background:rgba(255,253,248,.78);
 }
-.section-summary-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:rgba(91,84,73,.08); color:#4a463f; font-weight:700; }
+.section-summary-icon {
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:rgba(91,84,73,.08);
+  color:#4a463f;
+  line-height:0;
+}
+.section-summary-icon svg {
+  width:20px;
+  height:20px;
+  margin:auto;
+}
 .section-summary h2 { margin:0 0 4px; font-size:16px; }
 .section-summary p { margin:0; color:var(--muted); font-size:12px; }
 .primary-action {
