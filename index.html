@@ -6,7 +6,7 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-modal9" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-symmetry10" />
 </head>
 <body>
   <header class="topbar">
@@ -80,28 +80,38 @@
         <div id="resourceCount" class="result-count"></div>
       </div>
 <section id="overviewView" class="overview-view" hidden>
+        <button id="overviewNotice" class="overview-notice" type="button" data-announcement-index="0">
+          <span class="overview-notice-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+          </span>
+          <span class="overview-notice-copy">
+            <span><b>公告</b><time id="overviewNoticeDate">2026-09-19</time></span>
+            <strong id="overviewNoticeTitle">资源中心持续整理中</strong>
+            <small id="overviewNoticeBody">资源版本、下载入口与勘误会持续补充。</small>
+          </span>
+          <span class="overview-notice-arrow" aria-hidden="true">›</span>
+        </button>
+
         <div class="overview-metrics">
           <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small>已收录资料</small><strong id="metricResources">0</strong><em>查看全部资源</em></span></button>
-          <button class="metric-card" type="button" data-open-announcements="true"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span><span><small>公告</small><strong id="metricAnnouncements">0</strong><em>更新与使用说明</em></span></button>
-          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small>公开勘误</small><strong id="metricErrata">0</strong><em>查看修正状态</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span><span><small>资源版本</small><strong id="metricVersions">0</strong><em>标准版 / 打印版等</em></span></button>
           <button class="metric-card" type="button" data-go="experience"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span><small>经验贴</small><strong id="metricExperience">0</strong><em>备考经验整理</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small>公开勘误</small><strong id="metricErrata">0</strong><em>随对应版本查看</em></span></button>
         </div>
 
-        <div class="overview-grid">
+        <div class="overview-grid balanced">
           <section class="overview-card">
             <div class="overview-card-head"><div><span>RECENT</span><h2>最近更新</h2></div><button type="button" data-go="resources">查看全部</button></div>
             <div id="recentResources" class="overview-list"></div>
           </section>
           <section class="overview-card">
-            <div class="overview-card-head"><div><span>NOTICE</span><h2>公告</h2></div><button type="button" data-open-announcements="true">全部公告</button></div>
-            <div id="overviewAnnouncements" class="overview-list"></div>
+            <div class="overview-card-head"><div><span>MAINTENANCE</span><h2>资源维护</h2></div><button type="button" data-open-announcements="true">使用说明</button></div>
+            <div class="maintenance-list">
+              <button class="maintenance-row" type="button" data-go="resources"><span>获取入口</span><strong>网盘 · 直链 · 打印</strong><small>按具体版本分别提供</small></button>
+              <button class="maintenance-row" type="button" data-open-errata-submit="true"><span>勘误提交</span><strong>发现问题可申请提交</strong><small>提交地址由后台单独配置</small></button>
+            </div>
           </section>
         </div>
-
-        <section class="overview-card overview-wide">
-          <div class="overview-card-head"><div><span>ERRATA</span><h2>勘误状态</h2></div><button type="button" data-go="resources">在资料中查看</button></div>
-          <div class="overview-errata"><div><span>待核对</span><strong>0</strong></div><div><span>已确认</span><strong>0</strong></div><div><span>已修正</span><strong>0</strong></div></div>
-        </section>
       </section>
 
       <section id="resourceView">
@@ -205,6 +215,6 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260919-modal9"></script>
+  <script src="./app.js?v=20260919-symmetry10"></script>
 </body>
 </html>
