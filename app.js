@@ -1185,7 +1185,9 @@ function initBitstreamBackground(){
       spacing,
       offset:Math.random()*spacing,
       alpha:.88+Math.random()*.20,
-      sequence
+      sequence,
+      flipElapsed:Math.random()*.18,
+      flipEvery:(phone?.11:.14)+Math.random()*(phone?.16:.20)
     };
   }
 
@@ -1211,6 +1213,17 @@ function initBitstreamBackground(){
 
   function drawStream(stream,tone,delta){
     stream.offset=(stream.offset+stream.speed*delta)%stream.spacing;
+
+    stream.flipElapsed+=delta;
+    if(stream.flipElapsed>=stream.flipEvery){
+      stream.flipElapsed=0;
+      stream.flipEvery=(isPhone()?.11:.14)+Math.random()*(isPhone()?.16:.20);
+      const changes=1+Math.floor(Math.random()*(isPhone()?3:2));
+      for(let n=0;n<changes;n++){
+        const bitIndex=Math.floor(Math.random()*stream.sequence.length);
+        stream.sequence[bitIndex]=stream.sequence[bitIndex]==="1"?"0":"1";
+      }
+    }
 
     ctx.beginPath();
     const step=isPhone()?28:34;
