@@ -770,7 +770,7 @@ function openErrata(resourceIndex,versionIndex) {
 
 function renderVersion(version,resourceIndex,versionIndex) {
   return `
-    <details class="version" ${versionIndex === 0 ? "open" : ""}>
+    <details class="version">
       <summary>
         <div class="version-summary-main">
           ${icon(version.name.includes("打印") ? "printer" : "file","version-icon")}
@@ -814,6 +814,25 @@ function renderPublishedVersions(item) {
   '</div>';
 }
 
+function findQuickChannel(item,keyword){
+  for(let versionIndex=0;versionIndex<(item.versions||[]).length;versionIndex++){
+    const channels=item.versions[versionIndex].channels||[];
+    const channelIndex=channels.findIndex(channel=>String(channel.label||'').includes(keyword));
+    if(channelIndex>=0)return {versionIndex,channelIndex,channel:channels[channelIndex]};
+  }
+  return null;
+}
+function renderQuickChannel(item,sourceIndex,keyword,label){
+  const ref=findQuickChannel(item,keyword);
+  if(!ref){
+    return '<span class="quick-channel unavailable"><span>'+label+'</span><small>未添加</small></span>';
+  }
+  const ready=Boolean(ref.channel.url);
+  return '<span class="quick-channel '+(ready?'ready':'unavailable')+'">'+
+    '<button type="button" '+(ready?'onclick="openChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+'>'+label+'</button>'+
+    '<button type="button" class="quick-copy" '+(ready?'onclick="copyChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+' aria-label="复制'+label+'链接">复制</button>'+
+  '</span>';
+}
 function renderResources() {
   const items = getFilteredResources();
   count.textContent = `${items.length} 项已收录`;
@@ -821,20 +840,40 @@ function renderResources() {
   list.innerHTML = items.map(item => {
     const sourceIndex = resources.indexOf(item);
     return `
-      <article class="resource-item">
-        <div class="resource-head">
-          <div class="resource-icon">${icon(resourceTypeIcon(item.resourceType),"resource-type-icon")}</div>
-          <div class="resource-main">
+      <article class="resource-item compact-resource">
+        <div class="compact-resource-main">
+          <div class="compact-resource-icon">${icon(resourceTypeIcon(item.resourceType),"resource-type-icon")}</div>
+          <div class="compact-resource-copy">
             <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
-            <div class="resource-tags">\n              <span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${esc(item.releaseVersion)}</span><span>${item.versions.length} 个版本</span>\n            </div>
-            ${renderPublishedVersions(item)}
+            <div class="compact-resource-meta">
+              <span>${esc(item.subject || "未分类")}</span>
+              <span>${esc(item.releaseVersion || "未标版本")}</span>
+              <span>${item.versions.length} 个版本</span>
+              <time datetime="${esc(item.updated || item.publishedAt || "")}">更新 ${esc(item.updated || item.publishedAt || "")}</time>
+            </div>
           </div>
-          <time datetime="${esc(item.publishedAt)}">当前发布 ${esc(item.releaseVersion)} · ${esc(item.publishedAt)}</time>
         </div>
-        <div class="versions">${item.versions.map((version,i) => renderVersion(version,sourceIndex,i)).join("")}</div>
+        <div class="compact-resource-actions">
+          ${renderQuickChannel(item,sourceIndex,"百度","百度网盘")}
+          ${renderQuickChannel(item,sourceIndex,"夸克","夸克网盘")}
+          <button class="resource-detail-toggle" type="button" data-resource-detail="${sourceIndex}">详情</button>
+        </div>
+        <div class="resource-detail-panel" id="resource-detail-${sourceIndex}" hidden>
+          ${renderPublishedVersions(item)}
+          <div class="versions">${item.versions.map((version,i) => renderVersion(version,sourceIndex,i)).join("")}</div>
+        </div>
       </article>`;
   }).join("");
+  list.querySelectorAll("[data-resource-detail]").forEach(button=>{
+    button.addEventListener("click",()=>{
+      const panel=document.getElementById("resource-detail-"+button.dataset.resourceDetail);
+      if(!panel)return;
+      panel.hidden=!panel.hidden;
+      button.classList.toggle("active",!panel.hidden);
+      button.textContent=panel.hidden?"详情":"收起";
+    });
+  });
 }
 
 function renderOverview() {
