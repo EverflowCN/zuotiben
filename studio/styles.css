@@ -269,3 +269,35 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap
   .resource-editor-hero{display:grid;grid-template-columns:1fr auto}
   .account-grid{grid-template-columns:1fr}
 }
+
+/* announcements CMS */
+.announcement-summary{margin-bottom:10px;display:flex;gap:7px}
+.announcement-toolbar{flex-wrap:wrap}
+.bulk-bar{display:none;min-height:46px;padding:8px 12px;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:var(--blueSoft);font-size:10px}
+.bulk-bar.show{display:flex}
+.bulk-bar>div{display:flex;gap:5px;flex-wrap:wrap}
+.select-cell{width:36px!important;text-align:center!important}
+.row-check{width:15px;height:15px;accent-color:var(--blue)}
+.announcement-time{display:grid;gap:2px}.announcement-time strong{font-size:10px}.announcement-time small{color:var(--muted2);font-size:8px}
+.announcement-editor-head{margin-bottom:14px;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}
+.announcement-settings{display:grid;gap:8px}
+.announcement-preview{padding:8px 2px}
+.announcement-preview-meta{display:flex;align-items:center;gap:6px}
+.announcement-preview h2{margin:14px 0 8px;font-size:22px}
+.announcement-preview p{margin:0 0 16px;color:var(--muted);font-size:12px;line-height:1.8;white-space:pre-wrap}
+.announcement-preview small{display:block;margin-top:14px;color:var(--muted2);font-size:9px}
+@media(max-width:560px){
+  .announcement-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .announcement-summary .summary-chip{min-width:0;justify-content:center}
+  .announcement-table{min-width:0}
+  .announcement-table thead{display:none}
+  .announcement-table,.announcement-table tbody,.announcement-table tr,.announcement-table td{display:block;width:100%}
+  .announcement-table tr{position:relative;padding:14px 14px 13px;border-bottom:1px solid var(--line)}
+  .announcement-table td{padding:4px 0;border:0}
+  .announcement-table .select-cell{position:absolute;left:14px;top:17px;width:20px!important}
+  .announcement-table td:nth-child(2){padding-left:30px;padding-right:82px}
+  .announcement-table td:nth-child(3),.announcement-table td:nth-child(4),.announcement-table td:nth-child(5),.announcement-table td:nth-child(6){display:inline-flex;margin-right:8px;align-items:center}
+  .announcement-table td:last-child{position:absolute;right:12px;top:12px}
+  .announcement-table td:last-child .btn:nth-child(1),.announcement-table td:last-child .btn:nth-child(3){display:none}
+  .bulk-bar{align-items:flex-start;flex-direction:column}
+}
