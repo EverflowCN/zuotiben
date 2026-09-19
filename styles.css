@@ -280,6 +280,7 @@ svg {
   grid-template-columns: 38px minmax(0,1fr);
   gap: 13px;
   border: 1px solid var(--border);
+  border-left: 1px solid var(--border) !important;
   border-radius: var(--radius-md);
   background: rgba(255,255,255,.76);
   box-shadow: 0 5px 20px rgba(0,0,0,.035);
