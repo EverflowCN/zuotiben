@@ -226,6 +226,8 @@ async function studioApi(path,options={}){
 }
 function dbId(prefix,value){return prefix+'-'+String(value??crypto.randomUUID()).replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)}
 function resourceDbStatus(value){return value==='已发布'||value==='published'?'published':'draft'}
+function toCloudDateTime(value){if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toISOString()}
+function toLocalDateTime(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return String(value).replace('Z','').slice(0,16);const pad=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function buildCloudSnapshot(){
   const subjectIdByKey=new Map();
   const subjects=state.categories.map((x,index)=>{
@@ -270,7 +272,7 @@ function buildCloudSnapshot(){
   });
   const experiences=state.experiences.map((x,index)=>({id:String(x.id||'').startsWith('experience-')?String(x.id):dbId('experience',x.id||index+1),title:x.title||'未命名经验贴',source_url:x.sourceUrl||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status==='draft'?'draft':'published',visible:x.visible!==false,published_at:x.publishedAt||new Date().toISOString().slice(0,10)}));
   const errata=state.errata.map((x,index)=>({id:String(x.id||'').startsWith('errata-')?String(x.id):dbId('errata',x.id||index+1),resource_id:x.resourceId||x.resource_id||'',version_id:x.versionId||x.version_id||null,title:x.title||'未命名勘误',body:x.body||'',status:x.status||'recorded',visible:x.visible!==false}));
-  const announcements=state.announcements.map((x,index)=>({id:String(x.id||'').startsWith('announcement-')?String(x.id):dbId('announcement',x.id||index+1),title:x.title||'未命名公告',kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:x.visible!==false,pinned:Boolean(x.pinned),dismissible:x.dismissible!==false,audience:x.audience||'所有访客',publish_at:x.publishAt||null,expires_at:x.expiresAt||null,cta_text:x.ctaText||'',cta_url:x.ctaUrl||''}));
+  const announcements=state.announcements.map((x,index)=>({id:String(x.id||'').startsWith('announcement-')?String(x.id):dbId('announcement',x.id||index+1),title:x.title||'未命名公告',kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:x.visible!==false,pinned:Boolean(x.pinned),dismissible:x.dismissible!==false,audience:x.audience||'所有访客',publish_at:toCloudDateTime(x.publishAt),expires_at:toCloudDateTime(x.expiresAt),cta_text:x.ctaText||'',cta_url:x.ctaUrl||''}));
   return {subjects,resources,versions,links,errata,experiences,announcements,copy:state.copy};
 }
 function applyCloudBootstrap(data){
@@ -284,12 +286,12 @@ function applyCloudBootstrap(data){
   state.resources=(data.resources||[]).map(r=>{
     const subject=subjectById.get(r.subject_id)||{};
     const vs=(versionsByResource.get(r.id)||[]).map(v=>({id:v.id,name:v.name,releaseVersion:v.release_version||r.release_version||'v1.0',publishedAt:v.published_at||r.published_at||'',format:v.format||'PDF',order:v.sort_order||100,note:v.note||'',current:Boolean(v.current),visible:Boolean(v.visible),meta:(()=>{try{return JSON.parse(v.meta_json||'[]')}catch{return []}})(),links:(linksByVersion.get(v.id)||[]).map(ln=>({id:ln.id,versionId:v.id,label:ln.label,type:ln.kind,url:ln.url||'',code:ln.access_code||'',note:ln.note||'',visible:Boolean(ln.visible),order:ln.sort_order||100}))}));
-    return {id:r.id,key:r.slug,title:r.title,description:r.description||'',subjectName:subject.name||'',subjectCode:subject.code||'',type:r.resource_type||'其他',versions:vs.length,defaultVersions:false,extraVersions:vs,customLinks:[],releaseVersion:r.release_version||'v1.0',publishedAt:r.published_at||'',visible:Boolean(r.visible),pinned:Boolean(r.pinned),status:r.status==='published'?'已发布':'草稿',updated:(r.updated_at||'').slice(0,10)};
+    return {id:r.id,key:r.slug,title:r.title,description:r.description||'',subjectName:subject.name||'',subjectCode:subject.code||'',type:r.resource_type||'其他',versions:vs.length,defaultVersions:false,extraVersions:vs,customLinks:[],releaseVersion:r.release_version||'v1.0',publishedAt:r.published_at||'',visible:Boolean(r.visible),pinned:Boolean(r.pinned),status:r.status==='published'?'已发布':'草稿',updated:(r.updated_at||'').slice(0,10),order:r.sort_order||100};
   });
   state.categories.forEach(c=>c.count=state.resources.filter(r=>r.subjectName===c.name&&r.subjectCode===c.code).length);
   state.experiences=(data.experiences||[]).map(x=>({id:x.id,title:x.title,sourceUrl:x.source_url||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status,visible:Boolean(x.visible),publishedAt:x.published_at||''}));
   state.errata=(data.errata||[]).map(x=>({id:x.id,resourceId:x.resource_id||'',versionId:x.version_id||'',title:x.title||'',body:x.body||'',status:x.status||'recorded',visible:Boolean(x.visible),updated:(x.updated_at||'').slice(0,10)}));
-  state.announcements=(data.announcements||[]).map(x=>({id:x.id,title:x.title,kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:Boolean(x.visible),pinned:Boolean(x.pinned),dismissible:Boolean(x.dismissible),audience:x.audience||'所有访客',publishAt:(x.publish_at||'').replace('Z','').slice(0,16),expiresAt:(x.expires_at||'').replace('Z','').slice(0,16),ctaText:x.cta_text||'',ctaUrl:x.cta_url||'',updated:(x.updated_at||'').slice(0,10)}));
+  state.announcements=(data.announcements||[]).map(x=>({id:x.id,title:x.title,kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:Boolean(x.visible),pinned:Boolean(x.pinned),dismissible:Boolean(x.dismissible),audience:x.audience||'所有访客',publishAt:toLocalDateTime(x.publish_at),expiresAt:toLocalDateTime(x.expires_at),ctaText:x.cta_text||'',ctaUrl:x.cta_url||'',updated:(x.updated_at||'').slice(0,10)}));
   const copyRow=(data.site_settings||[]).find(x=>x.key==='public.copy');
   if(copyRow){try{state.copy={...siteCopyDefaults,...JSON.parse(copyRow.value_json||'{}')}}catch{}}
   const settingsRow=(data.site_settings||[]).find(x=>x.key==='public.settings');
@@ -649,7 +651,7 @@ function bind(){
   $$('[data-delete-errata]').forEach(b=>b.onclick=()=>confirmDelete('删除勘误','删除后该记录将从 D1 和公开页面移除。',()=>{state.errata=state.errata.filter(x=>!sameId(x.id,b.dataset.deleteErrata));saveStudioCollections();render();toast('勘误已删除')}));
   $('[data-new-category]')?.addEventListener('click',()=>openCategory());
   $$('[data-edit-category]').forEach(b=>b.onclick=()=>openCategory(b.dataset.editCategory));
-  $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料，但会移除该科目记录。',()=>{state.categories=state.categories.filter(x=>x.id!=b.dataset.deleteCategory);saveStudioCollections();render();toast('科目已删除')}));
+  $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料；原属于该科目的资料将变为未分类。',()=>{const category=state.categories.find(x=>sameId(x.id,b.dataset.deleteCategory));if(category){state.resources.forEach(r=>{if(r.subjectName===category.name&&r.subjectCode===category.code){r.subjectName='';r.subjectCode=''}})}state.categories=state.categories.filter(x=>!sameId(x.id,b.dataset.deleteCategory));saveStudioCollections();render();toast('科目已删除')}));
   $('[data-upload]')?.addEventListener('click',()=>openFile());
   $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.editFile));
   $$('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','当前只删除后台登记记录。',()=>{state.files=state.files.filter(x=>x.id!=b.dataset.deleteFile);saveStudioCollections();render();toast('文件记录已删除')}));
@@ -660,7 +662,7 @@ function bind(){
   $('[data-save-account]')?.addEventListener('click',()=>{state.account.displayName=$('#accountDisplayName')?.value.trim()||state.account.displayName;state.account.username=$('#accountUsername')?.value.trim()||state.account.username;state.account.email=$('#accountEmail')?.value.trim()||state.account.email;render();toast('账号资料已保存')});
 }
 function openResource(id){
-  const x=state.resources.find(x=>sameId(x.id,id))||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:'2026-09-19',updated:'2026-09-19'};
+  const x=state.resources.find(x=>sameId(x.id,id))||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:'2026-09-19',updated:'2026-09-19',order:100};
   x.extraVersions=x.extraVersions||[];x.customLinks=x.customLinks||[];
   const hasDefaultVersions=x.defaultVersions ?? [1,2].includes(Number(x.id));
   const defaultVersionCards=hasDefaultVersions?(
@@ -689,7 +691,7 @@ function openResource(id){
     '<div class="resource-tab-panel" data-resource-panel="publish"><div class="publish-settings">'+
       '<div class="setting-tile"><div><strong>前台显示</strong><small>关闭后资源不会出现在公开列表</small></div>'+toggle('preview-resource-visible','x',x.visible)+'</div>'+
       '<div class="setting-tile"><div><strong>置顶资源</strong><small>在筛选结果和最近资源中优先展示</small></div>'+pinButton('resource',x.id||'new',x.pinned)+'</div>'+
-      '<div class="form-grid"><label class="field"><span>发布版本</span><input id="dReleaseVersion" value="'+x.releaseVersion+'" placeholder="如：v1.2"></label><label class="field"><span>发布日期</span><input id="dPublishedAt" type="date" value="'+x.publishedAt+'"></label><label class="field"><span>更新时间</span><input id="dUpdated" type="date" value="'+x.updated+'"></label><label class="field"><span>排序权重</span><input type="number" value="100"></label><label class="field wide"><span>版本说明</span><textarea placeholder="本次发布更新了什么"></textarea></label></div>'+
+      '<div class="form-grid"><label class="field"><span>发布版本</span><input id="dReleaseVersion" value="'+x.releaseVersion+'" placeholder="如：v1.2"></label><label class="field"><span>发布日期</span><input id="dPublishedAt" type="date" value="'+x.publishedAt+'"></label><label class="field"><span>更新时间</span><input id="dUpdated" type="date" value="'+x.updated+'"></label><label class="field"><span>排序权重</span><input id="dOrder" type="number" value="'+(x.order||100)+'"></label><label class="field wide"><span>版本说明</span><textarea placeholder="本次发布更新了什么"></textarea></label></div>'+
       '<div class="design-note">发布版本、发布日期、更新时间都可由后台单独维护；以后接数据库后直接保存为正式字段。</div>'+
     '</div></div>';
 
@@ -703,6 +705,7 @@ function openResource(id){
     x.releaseVersion=$('#dReleaseVersion')?.value.trim()||x.releaseVersion;
     x.publishedAt=$('#dPublishedAt')?.value||x.publishedAt;
     x.updated=$('#dUpdated')?.value||x.updated;
+    x.order=Number($('#dOrder')?.value)||100;
     if(!x.id){x.id=Date.now();x.visible=false;x.versions=0;state.resources.push(x)}
     savePinnedResources();saveStudioCollections();render();toast(id?'资料已保存':'已创建草稿')
   };
@@ -825,9 +828,11 @@ function openExperience(id){
 }
 function openCategory(id){
   const x=state.categories.find(x=>sameId(x.id,id))||{id:null,name:'',code:'',order:state.categories.length+1,visible:true,count:0};
+  const originalName=x.name,originalCode=x.code;
   const body='<div class="form-grid"><label class="field wide"><span>科目名称</span><input id="cName" value="'+x.name+'" placeholder="如：数学二"></label><label class="field"><span>科目代码</span><input id="cCode" value="'+x.code+'" placeholder="如：302"></label><label class="field"><span>排序</span><input id="cOrder" type="number" value="'+x.order+'"></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>前台显示</strong><small>关闭后不显示该科目</small></div>'+toggle('draft-category-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑科目':'新建科目',body,()=>{
     x.name=$('#cName').value.trim()||'未命名科目';x.code=$('#cCode').value.trim();x.order=Number($('#cOrder').value)||1;
+    if(id){state.resources.forEach(r=>{if(r.subjectName===originalName&&r.subjectCode===originalCode){r.subjectName=x.name;r.subjectCode=x.code}})}
     if(!id){x.id=Date.now();state.categories.push(x)}saveStudioCollections();render();toast(id?'科目已保存':'科目已创建')
   });
   $('#drawer [data-toggle="draft-category-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
