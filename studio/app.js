@@ -161,6 +161,7 @@ function saveStudioCollections(){
   const data={
     resources:state.resources,
     experiences:state.experiences,
+    errata:state.errata,
     categories:state.categories,
     files:state.files,
     admins:state.admins
@@ -172,6 +173,7 @@ const persistedCollections=loadStudioCollections();
 if(persistedCollections){
   if(Array.isArray(persistedCollections.resources)) state.resources=persistedCollections.resources;
   if(Array.isArray(persistedCollections.experiences)) state.experiences=persistedCollections.experiences;
+  if(Array.isArray(persistedCollections.errata)) state.errata=persistedCollections.errata;
   if(Array.isArray(persistedCollections.categories)) state.categories=persistedCollections.categories;
   if(Array.isArray(persistedCollections.files)) state.files=persistedCollections.files;
   if(Array.isArray(persistedCollections.admins)){
@@ -267,8 +269,9 @@ function buildCloudSnapshot(){
     });
   });
   const experiences=state.experiences.map((x,index)=>({id:String(x.id||'').startsWith('experience-')?String(x.id):dbId('experience',x.id||index+1),title:x.title||'未命名经验贴',source_url:x.sourceUrl||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status==='draft'?'draft':'published',visible:x.visible!==false,published_at:x.publishedAt||new Date().toISOString().slice(0,10)}));
+  const errata=state.errata.map((x,index)=>({id:String(x.id||'').startsWith('errata-')?String(x.id):dbId('errata',x.id||index+1),resource_id:x.resourceId||x.resource_id||'',version_id:x.versionId||x.version_id||null,title:x.title||'未命名勘误',body:x.body||'',status:x.status||'recorded',visible:x.visible!==false}));
   const announcements=state.announcements.map((x,index)=>({id:String(x.id||'').startsWith('announcement-')?String(x.id):dbId('announcement',x.id||index+1),title:x.title||'未命名公告',kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:x.visible!==false,pinned:Boolean(x.pinned),dismissible:x.dismissible!==false,audience:x.audience||'所有访客',publish_at:x.publishAt||null,expires_at:x.expiresAt||null,cta_text:x.ctaText||'',cta_url:x.ctaUrl||''}));
-  return {subjects,resources,versions,links,experiences,announcements,copy:state.copy};
+  return {subjects,resources,versions,links,errata,experiences,announcements,copy:state.copy};
 }
 function applyCloudBootstrap(data){
   const subjects=data.subjects||[], versions=data.resource_versions||[], links=data.resource_links||[];
@@ -285,6 +288,7 @@ function applyCloudBootstrap(data){
   });
   state.categories.forEach(c=>c.count=state.resources.filter(r=>r.subjectName===c.name&&r.subjectCode===c.code).length);
   state.experiences=(data.experiences||[]).map(x=>({id:x.id,title:x.title,sourceUrl:x.source_url||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status,visible:Boolean(x.visible),publishedAt:x.published_at||''}));
+  state.errata=(data.errata||[]).map(x=>({id:x.id,resourceId:x.resource_id||'',versionId:x.version_id||'',title:x.title||'',body:x.body||'',status:x.status||'recorded',visible:Boolean(x.visible),updated:(x.updated_at||'').slice(0,10)}));
   state.announcements=(data.announcements||[]).map(x=>({id:x.id,title:x.title,kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:Boolean(x.visible),pinned:Boolean(x.pinned),dismissible:Boolean(x.dismissible),audience:x.audience||'所有访客',publishAt:(x.publish_at||'').replace('Z','').slice(0,16),expiresAt:(x.expires_at||'').replace('Z','').slice(0,16),ctaText:x.cta_text||'',ctaUrl:x.cta_url||'',updated:(x.updated_at||'').slice(0,10)}));
   const copyRow=(data.site_settings||[]).find(x=>x.key==='public.copy');
   if(copyRow){try{state.copy={...siteCopyDefaults,...JSON.parse(copyRow.value_json||'{}')}}catch{}}
