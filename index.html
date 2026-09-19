@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="研库 - 考研学习资源索引与分发" />
-  <meta name="theme-color" content="#f5f5f7" />
+  <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
+  <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-apple2" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-library3" />
 </head>
 <body>
   <header class="topbar">
@@ -29,25 +29,30 @@
   </header>
 
   <main class="shell">
-    <aside class="sidebar" aria-label="考试分类">
+    <aside class="sidebar">
       <div class="sidebar-section">
-        <div class="sidebar-title">分类</div>
-        <nav id="categoryNav" class="category-nav"></nav>
+        <div class="sidebar-title">栏目</div>
+        <nav id="sectionNav" class="section-nav" aria-label="站点栏目"></nav>
+      </div>
+
+      <div id="categorySection" class="sidebar-section">
+        <div class="sidebar-title">资料分类</div>
+        <nav id="categoryNav" class="category-nav" aria-label="资料分类"></nav>
       </div>
 
       <div class="sidebar-section sidebar-info">
         <div class="sidebar-title">研库</div>
-        <p>书籍、讲义、真题、做题本与打印专版统一归档。</p>
+        <p>资料、经验与勘误统一整理；只展示已经有内容的分类。</p>
       </div>
     </aside>
 
     <section class="content">
       <div class="content-head">
         <div>
-          <div class="eyebrow">RESOURCE LIBRARY</div>
+          <div id="eyebrow" class="eyebrow">RESOURCE LIBRARY</div>
           <h1 id="pageTitle">全部资源</h1>
-          <p class="content-desc">书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。</p>
-          <div class="breadcrumb">
+          <p id="contentDesc" class="content-desc">书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。</p>
+          <div id="breadcrumb" class="breadcrumb">
             <span id="currentCategory">全部</span>
             <span class="crumb-sep">›</span>
             <span id="currentSubject">全部科目</span>
@@ -70,8 +75,8 @@
             <span class="notice-label">通知</span>
             <span class="notice-date">2026-09-19</span>
           </div>
-          <h2>资源中心持续更新中</h2>
-          <p>资料会按标准版、平板版、打印专版等分别发布；百度网盘、夸克网盘、直链与打印入口会在对应版本中单独展示。</p>
+          <h2>资源中心持续整理中</h2>
+          <p>资料会按标准版、平板版、打印专版等分别发布；经验贴与勘误栏目也会逐步补充。</p>
         </div>
         <button id="dismissNoticeButton" class="notice-close" type="button" aria-label="关闭公告">
           <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -80,88 +85,114 @@
         </button>
       </section>
 
-      <div class="filterbar" aria-label="资源筛选">
-        <div class="filterbar-controls">
-          <div id="subjectPicker" class="combobox">
-            <button id="subjectPickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
-              <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/>
-                <path d="M4 5.5v16"/>
-              </svg>
-              <span class="filter-trigger-label">科目</span>
-              <span id="subjectPickerText" class="filter-trigger-value">全部科目</span>
-              <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="m6 8 4 4 4-4"/>
-              </svg>
-            </button>
-
-            <div id="subjectDropdown" class="command-popover subject-popover" hidden>
-              <label class="command-search">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
+      <section id="resourceView">
+        <div class="filterbar" aria-label="资源筛选">
+          <div class="filterbar-controls">
+            <div id="subjectPicker" class="combobox">
+              <button id="subjectPickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/>
+                  <path d="M4 5.5v16"/>
                 </svg>
-                <input id="subjectSearchInput" type="search" placeholder="搜索科目…" autocomplete="off" />
-              </label>
-              <div id="subjectOptions" class="command-list" role="listbox"></div>
+                <span class="filter-trigger-label">科目</span>
+                <span id="subjectPickerText" class="filter-trigger-value">全部科目</span>
+                <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m6 8 4 4 4-4"/>
+                </svg>
+              </button>
+              <div id="subjectDropdown" class="command-popover subject-popover" hidden>
+                <label class="command-search">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
+                  </svg>
+                  <input id="subjectSearchInput" type="search" placeholder="搜索科目…" autocomplete="off" />
+                </label>
+                <div id="subjectOptions" class="command-list" role="listbox"></div>
+              </div>
             </div>
-          </div>
 
-          <div id="resourceTypePicker" class="combobox">
-            <button id="resourceTypePickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
-              <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6h6l2 2h8v11H4Z"/>
-                <path d="M4 6V5h6l2 2"/>
-              </svg>
-              <span class="filter-trigger-label">类型</span>
-              <span id="resourceTypePickerText" class="filter-trigger-value">全部资源</span>
-              <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="m6 8 4 4 4-4"/>
-              </svg>
-            </button>
-
-            <div id="resourceTypeDropdown" class="command-popover type-popover" hidden>
-              <div id="resourceTypeOptions" class="command-list" role="listbox"></div>
+            <div id="resourceTypePicker" class="combobox">
+              <button id="resourceTypePickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 6h6l2 2h8v11H4Z"/>
+                  <path d="M4 6V5h6l2 2"/>
+                </svg>
+                <span class="filter-trigger-label">类型</span>
+                <span id="resourceTypePickerText" class="filter-trigger-value">全部资源</span>
+                <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m6 8 4 4 4-4"/>
+                </svg>
+              </button>
+              <div id="resourceTypeDropdown" class="command-popover type-popover" hidden>
+                <div id="resourceTypeOptions" class="command-list" role="listbox"></div>
+              </div>
             </div>
+
+            <button id="clearFiltersButton" class="clear-filters" type="button" hidden>清除筛选</button>
           </div>
-
-          <button id="clearFiltersButton" class="clear-filters" type="button" hidden>清除筛选</button>
+          <div class="filterbar-hint">支持搜索</div>
         </div>
 
-        <div class="filterbar-hint">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
-          </svg>
-          支持搜索
+        <div class="toolbar">
+          <div class="toolbar-sort">最近更新</div>
+          <div class="view-note">资源 · 版本 · 渠道</div>
         </div>
-      </div>
 
-      <div class="toolbar">
-        <div class="toolbar-sort">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8 6h12M8 12h9M8 18h6"/>
-            <path d="M4 5v14"/>
-          </svg>
-          最近更新
+        <div id="resourceList" class="resource-list" aria-live="polite"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <div class="empty-title">暂时没有收录资源</div>
+          <p>有内容后才会显示对应分类。</p>
         </div>
-        <div class="view-note">资源 · 版本 · 渠道</div>
-      </div>
+      </section>
 
-      <div id="resourceList" class="resource-list" aria-live="polite"></div>
-
-      <div id="emptyState" class="empty-state" hidden>
-        <div class="empty-state-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 5h6l2 2h8v12H4Z"/>
-            <path d="M9 13h6"/>
-          </svg>
+      <section id="experienceView" class="secondary-view" hidden>
+        <div class="section-summary">
+          <div class="section-summary-icon">文</div>
+          <div>
+            <h2>经验贴</h2>
+            <p>后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
+          </div>
         </div>
-        <div class="empty-title">暂时没有收录资源</div>
-        <p>目录已经保留，之后加入对应资料时会自动归类。</p>
-      </div>
+        <div class="empty-state">
+          <div class="empty-title">暂未收录经验贴</div>
+          <p>后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。</p>
+        </div>
+      </section>
+
+      <section id="errataView" class="secondary-view" hidden>
+        <div class="section-summary">
+          <div class="section-summary-icon">勘</div>
+          <div>
+            <h2>勘误中心</h2>
+            <p>记录资源中的题目、答案、排版、链接和版本问题，并保留处理状态。</p>
+          </div>
+          <button id="submitErrataButton" class="primary-action" type="button">提交勘误</button>
+        </div>
+
+        <div class="errata-statuses">
+          <div class="status-tile">
+            <span>待核对</span>
+            <strong>0</strong>
+          </div>
+          <div class="status-tile">
+            <span>已确认</span>
+            <strong>0</strong>
+          </div>
+          <div class="status-tile">
+            <span>已修正</span>
+            <strong>0</strong>
+          </div>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-title">暂无公开勘误</div>
+          <p>接入后台后，可提交问题、关联具体资源和版本，并在修正后保留处理记录。</p>
+        </div>
+      </section>
 
       <section class="site-note">
-        <h2>使用说明</h2>
-        <p>不同版本可能针对阅读、平板书写或打印进行单独排版。下载与打印入口由各资源条目分别提供；涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
+        <h2>说明</h2>
+        <p>资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
       </section>
     </section>
   </main>
@@ -172,6 +203,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260919-apple2"></script>
+  <script src="./app.js?v=20260919-library3"></script>
 </body>
 </html>
