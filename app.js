@@ -1,23 +1,18 @@
-const contributors = [
-  "Everflow 团队",
-  "资料整理与校对贡献者"
-];
-
 const resources = [
   {
     title: "408 做题本",
-    description: "用于计算机 408 复习与刷题的公开做题本。",
+    description: "用于计算机 408 复习、刷题与知识点整理。",
     tag: "408",
     format: "PDF / 在线资源",
-    status: "待填入正式链接",
+    status: "即将开放",
     url: ""
   },
   {
     title: "数学二做题本",
-    description: "用于数学二复习、刷题与错题整理的公开做题本。",
+    description: "用于数学二刷题、复盘与错题整理。",
     tag: "数学二",
     format: "PDF / 在线资源",
-    status: "待填入正式链接",
+    status: "即将开放",
     url: ""
   }
 ];
@@ -40,13 +35,17 @@ function showToast(message) {
 }
 
 async function copyLink(url) {
-  if (!url) return showToast("请先填入正式资源链接");
+  if (!url) return showToast("该资源尚未开放");
   try {
     await navigator.clipboard.writeText(url);
     showToast("链接已复制");
   } catch {
     const ta = document.createElement("textarea");
-    ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
     showToast("链接已复制");
   }
 }
@@ -57,19 +56,26 @@ if (!resources.length) {
   grid.innerHTML = resources.map((item, i) => {
     const usable = Boolean(item.url);
     const open = usable
-      ? `<a class="btn btn-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">打开资源 ↗</a>`
-      : `<button class="btn btn-primary" type="button" onclick="showToast('请先填入正式资源链接')">即将开放</button>`;
+      ? `<a class="btn btn-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">打开资源 <span aria-hidden="true">↗</span></a>`
+      : `<button class="btn btn-primary" type="button" onclick="showToast('该资源尚未开放')">即将开放</button>`;
+
     return `
       <article class="resource-card">
         <div class="resource-top">
-          <div>
-            <span class="kicker">FREE WORKBOOK</span>
-            <h3>${esc(item.title)}</h3>
+          <div class="resource-title-wrap">
+            <span class="resource-index">${String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <span class="kicker">FREE WORKBOOK</span>
+              <h3>${esc(item.title)}</h3>
+            </div>
           </div>
           <span class="badge">${esc(item.tag)}</span>
         </div>
-        <p>${esc(item.description)}</p>
-        <div class="meta"><span>${esc(item.format)}</span><span>${esc(item.status)}</span></div>
+        <p class="resource-desc">${esc(item.description)}</p>
+        <div class="meta">
+          <span>${esc(item.format)}</span>
+          <span>${esc(item.status)}</span>
+        </div>
         <div class="actions">
           ${open}
           <button class="btn btn-secondary" type="button" onclick="copyLink(resources[${i}].url)">复制链接</button>
