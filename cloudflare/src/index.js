@@ -149,6 +149,7 @@ async function handleStudioSync(request, env, identity) {
   const resources = Array.isArray(body.resources) ? body.resources : [];
   const versions = Array.isArray(body.versions) ? body.versions : [];
   const links = Array.isArray(body.links) ? body.links : [];
+  const errata = Array.isArray(body.errata) ? body.errata : [];
   const experiences = Array.isArray(body.experiences) ? body.experiences : [];
   const announcements = Array.isArray(body.announcements) ? body.announcements : [];
   const statements = [
@@ -177,6 +178,10 @@ async function handleStudioSync(request, env, identity) {
     env.DB.prepare("INSERT INTO resource_links (id,version_id,label,kind,url,access_code,note,visible,sort_order,updated_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
       .bind(x.id,x.version_id,x.label||'链接',x.kind||'link',x.url||'',x.access_code||'',x.note||'',x.visible===false?0:1,Number(x.sort_order)||100)
   );
+  for (const x of errata) statements.push(
+    env.DB.prepare("INSERT INTO errata (id,resource_id,version_id,title,body,status,visible,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(x.id,x.resource_id,x.version_id||null,x.title||'未命名勘误',x.body||'',x.status||'recorded',x.visible===false?0:1)
+  );
   for (const x of experiences) statements.push(
     env.DB.prepare("INSERT INTO experiences (id,title,source_url,school,major,year,stage,author,body,status,visible,published_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
       .bind(x.id,x.title||'',x.source_url||'',x.school||'',x.major||'',x.year||'',x.stage||'',x.author||'',x.body||'',x.status||'published',x.visible===false?0:1,x.published_at||null)
@@ -191,8 +196,8 @@ async function handleStudioSync(request, env, identity) {
     await env.DB.prepare("INSERT INTO site_settings (key,value_json,updated_at) VALUES ('public.copy',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=CURRENT_TIMESTAMP")
       .bind(JSON.stringify(body.copy)).run();
   }
-  await audit(env,identity.email,'sync','studio','snapshot',{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,experiences:experiences.length,announcements:announcements.length});
-  return json({ok:true,counts:{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,experiences:experiences.length,announcements:announcements.length}},200,request,env);
+  await audit(env,identity.email,'sync','studio','snapshot',{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length});
+  return json({ok:true,counts:{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length}},200,request,env);
 }
 
 async function handleAdminSettings(request, env, url, identity) {
