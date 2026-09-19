@@ -51,9 +51,8 @@ export default {
 async function handleRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return corsPreflight(request, env);
-  if (url.pathname === '/health') return json({ ok: true, service: 'zuotiben-api', d1: Boolean(env.DB), r2: Boolean(env.FILES) }, 200, request, env);
+  if (url.pathname === '/health') return json({ ok: true, service: 'zuotiben-api', d1: Boolean(env.DB), storage: 'external-links' }, 200, request, env);
   if (request.method === 'GET' && url.pathname === '/public/bootstrap') return json(await getPublicBootstrap(env), 200, request, env, publicCacheHeaders(env));
-  if (request.method === 'GET' && url.pathname.startsWith('/files/')) return getPublicFile(request, env, decodeURIComponent(url.pathname.slice('/files/'.length)));
   if (url.pathname.startsWith('/admin/')) {
     const identity = await requireAccessIdentity(request, env);
     if (identity instanceof Response) return identity;
@@ -88,27 +87,12 @@ async function getPublicBootstrap(env) {
   return {ok:true,generated_at:now,subjects:subjectsQ.results,resources,experiences:experiencesQ.results,announcements:announcementsQ.results,settings};
 }
 
-async function getPublicFile(request, env, key) {
-  if (!key) return json({ok:false,error:'missing_key'},400,request,env);
-  const meta = await env.DB.prepare("SELECT name,mime_type,size_bytes FROM files WHERE object_key=? AND is_public=1").bind(key).first();
-  if (!meta) return json({ok:false,error:'not_found'},404,request,env);
-  const object = await env.FILES.get(key);
-  if (!object) return json({ok:false,error:'not_found'},404,request,env);
-  const headers = new Headers(corsHeaders(request,env));
-  headers.set('Content-Type',meta.mime_type||object.httpMetadata?.contentType||'application/octet-stream');
-  headers.set('Content-Disposition',"inline; filename*=UTF-8''"+encodeURIComponent(meta.name||key));
-  headers.set('Cache-Control','public, max-age=3600, immutable');
-  if (object.httpEtag) headers.set('ETag',object.httpEtag);
-  return new Response(object.body,{headers});
-}
-
 async function handleAdmin(request, env, url, identity) {
   if (request.method==='GET' && url.pathname==='/admin/me') {
     const profile=await env.DB.prepare("SELECT email,display_name,role,status FROM admin_profiles WHERE email=?").bind(identity.email).first();
     return json({ok:true,identity,profile:profile||{email:identity.email,role:'admin',status:'active'}},200,request,env);
   }
   if (request.method==='GET' && url.pathname==='/admin/bootstrap') return json(await getAdminBootstrap(env,identity),200,request,env);
-  if (url.pathname.startsWith('/admin/files')) return handleAdminFiles(request,env,url,identity);
   if (url.pathname.startsWith('/admin/settings')) return handleAdminSettings(request,env,url,identity);
   const parts=url.pathname.split('/').filter(Boolean), entity=parts[1], id=parts[2]?decodeURIComponent(parts[2]):null, config=ENTITY_CONFIG[entity];
   if (!config) return json({ok:false,error:'unknown_entity'},404,request,env);
@@ -137,7 +121,7 @@ async function handleAdmin(request, env, url, identity) {
 }
 
 async function getAdminBootstrap(env, identity) {
-  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','site_settings','files','admin_profiles','audit_logs'];
+  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','site_settings','admin_profiles','audit_logs'];
   const data={ok:true,identity};
   for(const table of tables){const order=table==='audit_logs'?'created_at DESC':(table==='site_settings'?'key':'updated_at DESC');data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;}
   return data;
@@ -157,22 +141,6 @@ async function handleAdminSettings(request, env, url, identity) {
     return json({ok:true,key,value:body.value??body},200,request,env);
   }
   if (request.method==='DELETE') {await env.DB.prepare("DELETE FROM site_settings WHERE key=?").bind(key).run();await audit(env,identity.email,'delete','settings',key,{});return json({ok:true},200,request,env);}
-  return json({ok:false,error:'method_not_allowed'},405,request,env);
-}
-
-async function handleAdminFiles(request, env, url, identity) {
-  if (request.method==='GET' && url.pathname==='/admin/files') {const rows=await env.DB.prepare("SELECT * FROM files ORDER BY created_at DESC").all();return json({ok:true,items:rows.results},200,request,env);}
-  const key=decodeURIComponent(url.pathname.slice('/admin/files/'.length));
-  if (!key) return json({ok:false,error:'missing_key'},400,request,env);
-  if (request.method==='PUT') {
-    const contentType=request.headers.get('content-type')||'application/octet-stream', name=request.headers.get('x-file-name')||key.split('/').pop()||key, resourceId=request.headers.get('x-resource-id')||null, versionId=request.headers.get('x-version-id')||null, isPublic=request.headers.get('x-public')==='1'?1:0, bytes=await request.arrayBuffer();
-    await env.FILES.put(key,bytes,{httpMetadata:{contentType},customMetadata:{uploadedBy:identity.email}});
-    const id=crypto.randomUUID();
-    await env.DB.prepare("INSERT INTO files (id,object_key,name,mime_type,size_bytes,is_public,resource_id,version_id) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(object_key) DO UPDATE SET name=excluded.name,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,is_public=excluded.is_public,resource_id=excluded.resource_id,version_id=excluded.version_id").bind(id,key,name,contentType,bytes.byteLength,isPublic,resourceId,versionId).run();
-    await audit(env,identity.email,'upload','file',key,{name,contentType,size:bytes.byteLength,isPublic,resourceId,versionId});
-    return json({ok:true,key,size:bytes.byteLength},201,request,env);
-  }
-  if (request.method==='DELETE') {await env.FILES.delete(key);await env.DB.prepare("DELETE FROM files WHERE object_key=?").bind(key).run();await audit(env,identity.email,'delete','file',key,{});return json({ok:true},200,request,env);}
   return json({ok:false,error:'method_not_allowed'},405,request,env);
 }
 
@@ -198,7 +166,7 @@ function groupBy(items,key){return items.reduce((acc,item)=>{const value=item[ke
 function safeJson(value,fallback){try{return JSON.parse(value);}catch{return fallback;}}
 async function readJson(request){const contentType=request.headers.get('content-type')||'';if(!contentType.includes('application/json'))throw new Error('expected_json');return request.json();}
 function allowedOrigin(request,env){const origin=request.headers.get('origin')||'',allowed=String(env.ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean);if(!origin)return allowed[0]||'*';return allowed.includes(origin)?origin:'';}
-function corsHeaders(request,env){const origin=allowedOrigin(request,env),headers=new Headers({'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type,X-File-Name,X-Resource-Id,X-Version-Id,X-Public','Access-Control-Max-Age':'86400'});if(origin)headers.set('Access-Control-Allow-Origin',origin);return headers;}
+function corsHeaders(request,env){const origin=allowedOrigin(request,env),headers=new Headers({'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'86400'});if(origin)headers.set('Access-Control-Allow-Origin',origin);return headers;}
 function corsPreflight(request,env){if(!allowedOrigin(request,env))return new Response(null,{status:403});return new Response(null,{status:204,headers:corsHeaders(request,env)});}
 function publicCacheHeaders(env){const seconds=Math.max(0,Number(env.PUBLIC_CACHE_SECONDS||60));return {'Cache-Control':'public, max-age='+seconds+', s-maxage='+seconds};}
 function json(data,status,request,env,extraHeaders={}){const headers=corsHeaders(request,env);headers.set('Content-Type','application/json; charset=utf-8');for(const [key,value] of Object.entries(extraHeaders))headers.set(key,value);return new Response(JSON.stringify(data),{status,headers});}
