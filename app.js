@@ -1169,16 +1169,17 @@ function initBitstreamBackground(){
   };
 
   function makeStream(index,count){
-    const fontSize=isPhone()?11:12;
-    const length=Math.floor(6+Math.random()*8);
+    const phone=isPhone();
+    const fontSize=phone?12:12;
+    const length=Math.floor((phone?8:6)+Math.random()*(phone?8:8));
     return {
       x:((index+.5)/count)*width+(Math.random()-.5)*Math.min(54,width/count*.45),
       y:Math.random()*height,
-      speed:(isPhone()?8:10)+Math.random()*(isPhone()?5:8),
+      speed:(phone?10:10)+Math.random()*(phone?7:8),
       fontSize,
       length,
-      gap:fontSize*1.5,
-      alpha:(isPhone()?.060:.050)+Math.random()*(isPhone()?.032:.030),
+      gap:fontSize*(phone?1.42:1.5),
+      alpha:(phone?.095:.050)+Math.random()*(phone?.050:.030),
       bits:Array.from({length},()=>Math.random()>.5?"1":"0")
     };
   }
@@ -1192,34 +1193,36 @@ function initBitstreamBackground(){
     canvas.style.width=width+"px";
     canvas.style.height=height+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    const count=Math.max(isPhone()?6:8,Math.min(isPhone()?10:18,Math.floor(width/(isPhone()?58:92))));
+    const count=Math.max(isPhone()?9:8,Math.min(isPhone()?14:18,Math.floor(width/(isPhone()?36:92))));
     streams=Array.from({length:count},(_,i)=>makeStream(i,count));
   }
 
   function draw(now){
     frame=requestAnimationFrame(draw);
     if(document.hidden)return;
-    if(now-last<55)return;
+    if(now-last<(isPhone()?45:55))return;
     const delta=Math.min((now-last||55)/1000,.12);
     last=now;
     ctx.clearRect(0,0,width,height);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.font='500 '+(isPhone()?11:12)+'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.font=(isPhone()?'600 12px':'500 12px')+' ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
     const tone=themeTone();
 
     streams.forEach(stream=>{
       stream.y+=stream.speed*delta;
       if(stream.y-stream.length*stream.gap>height+32){
         stream.y=-24;
-        stream.speed=(isPhone()?8:10)+Math.random()*(isPhone()?5:8);
+        stream.speed=(isPhone()?10:10)+Math.random()*(isPhone()?7:8);
         stream.bits=stream.bits.map(()=>Math.random()>.5?"1":"0");
       }
       for(let i=0;i<stream.length;i++){
         const y=stream.y-i*stream.gap;
         if(y<-18||y>height+18)continue;
         const tail=1-i/Math.max(1,stream.length);
-        ctx.fillStyle='rgba('+tone.rgb+','+(stream.alpha*tone.boost*(.50+.50*tail)).toFixed(4)+')';
+        const phoneBoost=isPhone()?1.18:1;
+        const tailFloor=isPhone()?.64:.50;
+        ctx.fillStyle='rgba('+tone.rgb+','+(stream.alpha*tone.boost*phoneBoost*(tailFloor+(1-tailFloor)*tail)).toFixed(4)+')';
         ctx.fillText(stream.bits[i],stream.x,y);
       }
     });
