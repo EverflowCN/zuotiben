@@ -367,9 +367,9 @@ function commitViewUpdate(update) {
 
 function renderSections() {
   const sections = [
-    { id: "overview", label: "总览", icon: "home", count: 0 },
-    { id: "resources", label: "资料", icon: "book", count: resources.length },
-    { id: "experience", label: "经验贴", icon: "article", count: experiencePosts.length }
+    { id: "overview", label: siteCopy.navOverview, icon: "home", count: 0 },
+    { id: "resources", label: siteCopy.navResources, icon: "book", count: resources.length },
+    { id: "experience", label: siteCopy.navExperience, icon: "article", count: experiencePosts.length }
   ];
 
   let html = "";
@@ -383,7 +383,7 @@ function renderSections() {
 
     if (section.id === "resources" && state.section === "resources") {
       html += '<div class="nav-children">';
-      html += '<button class="nav-child' + (state.subject === "全部科目" ? ' active' : '') + '" type="button" data-nav-subject="全部科目"><span>全部资料</span><b>' + resources.length + '</b></button>';
+      html += '<button class="nav-child' + (state.subject === "全部科目" ? ' active' : '') + '" type="button" data-nav-subject="全部科目"><span>' + esc(siteCopy.allResourcesLabel) + '</span><b>' + resources.length + '</b></button>';
       getVisibleSubjects().forEach(subject => {
         html += '<button class="nav-child' + (state.subject === subject ? ' active' : '') + '" type="button" data-nav-subject="' + esc(subject) + '"><span>' + esc(subject) + '</span><b>' + subjectCount(subject) + '</b></button>';
       });
@@ -429,12 +429,12 @@ function renderSubjectOptions(query = "") {
   const normalized = query.trim().toLowerCase();
   const subjects = getVisibleSubjects().filter(subject => !normalized || subject.toLowerCase().includes(normalized));
   let html = "";
-  if (!normalized || "全部科目".includes(query)) {
-    html += '<button class="command-item' + (state.subject === "全部科目" ? " selected" : "") + '" type="button" data-subject="全部科目"><span class="command-item-main"><span>全部科目</span><small>' + subjectCount("全部科目") + ' 项</small></span>' + (state.subject === "全部科目" ? checkIcon() : "") + '</button>';
+  if (!normalized || siteCopy.allSubjectsLabel.includes(query)) {
+    html += '<button class="command-item' + (state.subject === "全部科目" ? " selected" : "") + '" type="button" data-subject="全部科目"><span class="command-item-main"><span>' + esc(siteCopy.allSubjectsLabel) + '</span><small>' + subjectCount("全部科目") + ' 项</small></span>' + (state.subject === "全部科目" ? checkIcon() : "") + '</button>';
   }
-  if (subjects.length) html += '<div class="command-group-label">已收录科目</div>';
+  if (subjects.length) html += '<div class="command-group-label">' + esc(siteCopy.subjectGroupLabel) + '</div>';
   html += subjects.map(subject => '<button class="command-item' + (state.subject === subject ? " selected" : "") + '" type="button" data-subject="' + esc(subject) + '"><span class="command-item-main"><span>' + esc(subject) + '</span><small>' + subjectCount(subject) + ' 项</small></span>' + (state.subject === subject ? checkIcon() : "") + '</button>').join("");
-  subjectOptions.innerHTML = html || '<div class="command-empty">没有匹配的已收录科目</div>';
+  subjectOptions.innerHTML = html || '<div class="command-empty">' + esc(siteCopy.noSubjectMatch) + '</div>';
   subjectOptions.querySelectorAll("[data-subject]").forEach(button => {
     button.addEventListener("click", () => {
       state.subject = button.dataset.subject;
@@ -662,6 +662,24 @@ function renderOverview() {
   const errataCount = resources.reduce((sum,item) => sum + item.versions.reduce((n,version) => n + (version.errata || []).length,0),0);
   const notice = announcements.find(isAnnouncementPinned) || announcements[0];
 
+  setText("metricResourcesLabel",siteCopy.metricResourcesLabel);
+  setText("metricResourcesNote",siteCopy.metricResourcesNote);
+  setText("metricVersionsLabel",siteCopy.metricVersionsLabel);
+  setText("metricVersionsNote",siteCopy.metricVersionsNote);
+  setText("metricExperienceLabel",siteCopy.metricExperienceLabel);
+  setText("metricExperienceNote",siteCopy.metricExperienceNote);
+  setText("metricErrataLabel",siteCopy.metricErrataLabel);
+  setText("metricErrataNote",siteCopy.metricErrataNote);
+  setText("recentTitle",siteCopy.recentTitle);
+  setText("recentAction",siteCopy.recentAction);
+  setText("maintenanceTitle",siteCopy.maintenanceTitle);
+  setText("maintenanceAction",siteCopy.maintenanceAction);
+  setText("maintenanceEntryLabel",siteCopy.maintenanceEntryLabel);
+  setText("maintenanceEntryTitle",siteCopy.maintenanceEntryTitle);
+  setText("maintenanceEntryBody",siteCopy.maintenanceEntryBody);
+  setText("maintenanceErrataLabel",siteCopy.maintenanceErrataLabel);
+  setText("maintenanceErrataTitle",siteCopy.maintenanceErrataTitle);
+  setText("maintenanceErrataBody",siteCopy.maintenanceErrataBody);
   document.getElementById("metricResources").textContent = resources.length;
   document.getElementById("metricVersions").textContent = versionCount;
   document.getElementById("metricErrata").textContent = errataCount;
@@ -678,7 +696,7 @@ function renderOverview() {
     .slice()
     .sort((a,b) => Number(isResourcePinned(b)) - Number(isResourcePinned(a)) || b.updated.localeCompare(a.updated))
     .slice(0,4)
-    .map(item => '<button class="overview-row" type="button" data-resource-category="' + esc(item.category) + '"><span class="overview-row-icon">' + icon(resourceTypeIcon(item.resourceType)) + '</span><span><strong>' + esc(item.title) + '</strong><small>' + esc(item.category) + ' · ' + esc(item.subject) + ' · ' + item.versions.length + ' 个版本</small></span><time>' + esc(item.updated) + '</time></button>')
+    .map(item => '<button class="overview-row" type="button" data-resource-subject="' + esc(item.subject) + '"><span class="overview-row-icon">' + icon(resourceTypeIcon(item.resourceType)) + '</span><span><strong>' + esc(item.title) + '</strong><small>' + esc(item.subject) + ' · ' + esc(item.releaseVersion) + ' · ' + item.versions.length + ' 个版本</small></span><time>' + esc(item.updated) + '</time></button>')
     .join("");
 }
 
@@ -712,29 +730,30 @@ function updatePageMode() {
   breadcrumb.hidden = state.section !== "resources";
 
   if (state.section === "overview") {
-    eyebrow.textContent = "OVERVIEW";
-    pageTitle.textContent = "总览";
-    contentDesc.textContent = "快速查看最近更新、公告、勘误与资源收录情况。";
-    searchInput.placeholder = "搜索资源、科目、经验或勘误";
+    eyebrow.textContent = siteCopy.overviewEyebrow;
+    pageTitle.textContent = siteCopy.overviewTitle;
+    contentDesc.textContent = siteCopy.overviewDesc;
+    searchInput.placeholder = siteCopy.overviewSearchPlaceholder;
     count.textContent = "";
     renderOverview();
   } else if (state.section === "resources") {
-    eyebrow.textContent = "RESOURCE LIBRARY";
-    pageTitle.textContent = state.subject !== "全部科目" ? state.subject + "资源" : state.resourceType !== "全部资源" ? state.resourceType : "全部资源";
-    contentDesc.textContent = "书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。";
-    searchInput.placeholder = "搜索资源、科目、版本或关键词";
+    eyebrow.textContent = siteCopy.resourcesEyebrow;
+    pageTitle.textContent = state.subject !== "全部科目" ? state.subject + siteCopy.navResources : state.resourceType !== "全部资源" ? state.resourceType : siteCopy.resourcesTitle;
+    contentDesc.textContent = siteCopy.resourcesDesc;
+    searchInput.placeholder = siteCopy.resourcesSearchPlaceholder;
     breadcrumb.innerHTML = esc(state.subject) + ' <span>›</span> ' + esc(state.resourceType);
     clearFiltersButton.hidden = state.subject === "全部科目" && state.resourceType === "全部资源";
   } else if (state.section === "experience") {
-    eyebrow.textContent = "EXPERIENCE";
-    pageTitle.textContent = "经验贴";
-    contentDesc.textContent = "围绕院校、专业、初试、复试、择校与备考方法整理可追溯来源的经验内容。";
-    searchInput.placeholder = "搜索经验贴、院校或专业";
+    eyebrow.textContent = siteCopy.experienceEyebrow;
+    pageTitle.textContent = siteCopy.experienceTitle;
+    contentDesc.textContent = siteCopy.experienceDesc;
+    searchInput.placeholder = siteCopy.experienceSearchPlaceholder;
     count.textContent = experiencePosts.length ? experiencePosts.length + " 篇" : "";
   }
 }
 
 function renderAll() {
+  applyStaticCopy();
   renderSections();
   renderCategories();
   renderSubjectPicker();
@@ -807,6 +826,11 @@ document.addEventListener("click", event => {
     openErrataSubmit();
     return;
   }
+  const qqCopy = event.target.closest("#copyQqButton");
+  if (qqCopy) {
+    copyText(siteCopy.qqNumber,siteCopy.copySuccessText);
+    return;
+  }
   const go = event.target.closest("[data-go]");
   if (go) {
     closeMobileDrawer();
@@ -815,13 +839,12 @@ document.addEventListener("click", event => {
     });
     return;
   }
-  const resourceJump = event.target.closest("[data-resource-category]");
+  const resourceJump = event.target.closest("[data-resource-subject]");
   if (resourceJump) {
     closeMobileDrawer();
     commitViewUpdate(() => {
       state.section = "resources";
-      state.category = resourceJump.dataset.resourceCategory;
-      state.subject = "全部科目";
+      state.subject = resourceJump.dataset.resourceSubject;
     });
   }
 });
