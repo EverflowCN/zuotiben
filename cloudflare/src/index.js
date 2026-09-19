@@ -219,7 +219,8 @@ async function audit(env,actor,action,entityType,entityId,payload){await env.DB.
 
 const AUTH_COOKIE='__Host-yanku_session';
 const SESSION_SECONDS=60*60*24*7;
-const PASSWORD_ITERATIONS=310000;
+// Cloudflare Workers Web Crypto supports at most 100,000 PBKDF2 iterations.
+const PASSWORD_ITERATIONS=100000;
 const ROLE_RANK={reviewer:1,editor:2,admin:3,owner:4};
 
 async function handleAuth(request, env, url) {
