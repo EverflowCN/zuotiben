@@ -86,7 +86,13 @@ const state = {
 };
 
 const categoryNav = document.getElementById("categoryNav");
-const subjectNav = document.getElementById("subjectNav");
+const subjectPicker = document.getElementById("subjectPicker");
+const subjectPickerButton = document.getElementById("subjectPickerButton");
+const subjectPickerText = document.getElementById("subjectPickerText");
+const subjectPickerCount = document.getElementById("subjectPickerCount");
+const subjectDropdown = document.getElementById("subjectDropdown");
+const subjectSearchInput = document.getElementById("subjectSearchInput");
+const subjectOptions = document.getElementById("subjectOptions");
 const resourceTypeNav = document.getElementById("resourceTypeNav");
 const list = document.getElementById("resourceList");
 const count = document.getElementById("resourceCount");
@@ -124,6 +130,7 @@ function getSubjects() {
   if (state.category === "全部") {
     return ["全部科目", ...Array.from(new Set(catalog.flatMap(group => group.subjects)))];
   }
+
   const group = catalog.find(item => item.name === state.category);
   return ["全部科目", ...(group?.subjects || [])];
 }
@@ -257,6 +264,7 @@ function renderCategories() {
     button.addEventListener("click", () => {
       state.category = button.dataset.category;
       state.subject = "全部科目";
+      closeSubjectDropdown();
       updateHeadings();
       renderCategories();
       renderSubjects();
@@ -266,26 +274,54 @@ function renderCategories() {
   });
 }
 
-function renderSubjects() {
-  subjectNav.innerHTML = getSubjects().map(subject => {
-    const active = subject === state.subject ? " active" : "";
-    return `
-      <button class="filter-chip${active}" type="button" data-subject="${esc(subject)}">
-        <span>${esc(subject)}</span>
-        <small>${subjectCount(subject)}</small>
-      </button>
-    `;
-  }).join("");
+function openSubjectDropdown() {
+  subjectDropdown.hidden = false;
+  subjectPickerButton.setAttribute("aria-expanded", "true");
+  subjectSearchInput.value = "";
+  renderSubjectOptions();
+  requestAnimationFrame(() => subjectSearchInput.focus());
+}
 
-  subjectNav.querySelectorAll(".filter-chip").forEach(button => {
+function closeSubjectDropdown() {
+  subjectDropdown.hidden = true;
+  subjectPickerButton.setAttribute("aria-expanded", "false");
+  subjectSearchInput.value = "";
+}
+
+function renderSubjectOptions(query = "") {
+  const normalized = query.trim().toLowerCase();
+  const subjects = getSubjects().filter(subject =>
+    !normalized || subject.toLowerCase().includes(normalized)
+  );
+
+  subjectOptions.innerHTML = subjects.length
+    ? subjects.map(subject => {
+        const active = subject === state.subject ? " active" : "";
+        return `
+          <button class="subject-option${active}" type="button" role="option" aria-selected="${subject === state.subject}" data-subject="${esc(subject)}">
+            <span>${esc(subject)}</span>
+            <small>${subjectCount(subject)}</small>
+          </button>
+        `;
+      }).join("")
+    : '<div class="subject-no-result">没有匹配的科目</div>';
+
+  subjectOptions.querySelectorAll(".subject-option").forEach(button => {
     button.addEventListener("click", () => {
       state.subject = button.dataset.subject;
+      closeSubjectDropdown();
       updateHeadings();
       renderSubjects();
       renderResourceTypes();
       renderResources();
     });
   });
+}
+
+function renderSubjects() {
+  subjectPickerText.textContent = state.subject;
+  subjectPickerCount.textContent = subjectCount(state.subject);
+  renderSubjectOptions(subjectSearchInput.value);
 }
 
 function renderResourceTypes() {
@@ -389,15 +425,40 @@ function renderResources() {
   }).join("");
 }
 
+subjectPickerButton.addEventListener("click", () => {
+  if (subjectDropdown.hidden) {
+    openSubjectDropdown();
+  } else {
+    closeSubjectDropdown();
+  }
+});
+
+subjectSearchInput.addEventListener("input", event => {
+  renderSubjectOptions(event.target.value);
+});
+
+document.addEventListener("click", event => {
+  if (!subjectPicker.contains(event.target)) {
+    closeSubjectDropdown();
+  }
+});
+
 searchInput.addEventListener("input", event => {
   state.query = event.target.value;
   renderResources();
 });
 
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !subjectDropdown.hidden) {
+    closeSubjectDropdown();
+    subjectPickerButton.focus();
+    return;
+  }
+
   if (
     event.key === "/" &&
     document.activeElement !== searchInput &&
+    document.activeElement !== subjectSearchInput &&
     !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)
   ) {
     event.preventDefault();
