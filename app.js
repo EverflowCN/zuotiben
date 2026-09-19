@@ -513,11 +513,9 @@ function renderResources() {
           <div class="resource-main">
             <div class="resource-title-line"><h2>${esc(item.title)}</h2>${isResourcePinned(item) ? '<span class="pin-badge">置顶</span>' : ""}<span class="status">${esc(item.status)}</span></div>
             <p class="resource-description">${esc(item.description)}</p>
-            <div class="resource-tags">
-              <span>${esc(item.category)}</span><span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${item.versions.length} 个版本</span>
-            </div>
+            <div class="resource-tags">\n              <span>${esc(item.subject)}</span><span>${esc(item.resourceType)}</span><span>${esc(item.releaseVersion)}</span><span>${item.versions.length} 个版本</span>\n            </div>
           </div>
-          <time datetime="${esc(item.updated)}">更新于 ${esc(item.updated)}</time>
+          <time datetime="${esc(item.publishedAt)}">${esc(item.releaseVersion)} · 发布于 ${esc(item.publishedAt)}</time>
         </div>
         <div class="versions">${item.versions.map((version,i) => renderVersion(version,sourceIndex,i)).join("")}</div>
       </article>`;
