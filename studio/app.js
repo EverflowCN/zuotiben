@@ -96,7 +96,7 @@ function loadSiteCopy(){
   try{return {...siteCopyDefaults,...(JSON.parse(localStorage.getItem('yanku-site-copy-v1')||'{}'))}}
   catch{return {...siteCopyDefaults}}
 }
-function saveSiteCopy(){localStorage.setItem('yanku-site-copy-v1',JSON.stringify(state.copy))}
+function saveSiteCopy(){localStorage.setItem('yanku-site-copy-v1',JSON.stringify(state.copy));queueCloudSync()}
 const copyGroups=[
   {title:'品牌与导航',desc:'站点品牌、侧栏和栏目名称。',fields:[
     ['brandName','品牌名称'],['mobileBrandSubtitle','移动端副标题'],['sidebarColumnsTitle','侧栏栏目标题'],['sidebarSubjectsTitle','侧栏科目标题'],
@@ -165,6 +165,7 @@ function saveStudioCollections(){
     admins:state.admins
   };
   localStorage.setItem('yanku-studio-collections-v1',JSON.stringify(data));
+  queueCloudSync();
 }
 const persistedCollections=loadStudioCollections();
 if(persistedCollections){
@@ -178,6 +179,139 @@ if(persistedCollections){
     if(owner) state.admins.unshift(owner);
   }
 }
+
+const STUDIO_API_BASE='https://zuotiben-api.bm9h54b4t9.workers.dev';
+const cloudState={status:'checking',message:'正在检测 D1',syncTimer:null,lastError:''};
+
+function cloudStatusLabel(){
+  if(cloudState.status==='connected') return 'D1 已连接';
+  if(cloudState.status==='syncing') return '正在同步 D1';
+  if(cloudState.status==='needs-access') return '待配置 Access';
+  if(cloudState.status==='auth') return '等待登录';
+  if(cloudState.status==='error') return '云端暂不可用';
+  return '检测云端中';
+}
+function refreshCloudStatus(){
+  const el=document.querySelector('[data-cloud-status]');
+  if(el) el.textContent=cloudStatusLabel();
+  const top=document.querySelector('.workspace-status');
+  if(top){
+    top.innerHTML='<i></i>'+cloudStatusLabel();
+    top.classList.toggle('cloud-connected',cloudState.status==='connected');
+  }
+}
+async function studioApi(path,options={}){
+  const init={credentials:'include',cache:'no-store',...options};
+  init.headers={Accept:'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})};
+  const response=await fetch(STUDIO_API_BASE+path,init);
+  const type=response.headers.get('content-type')||'';
+  const data=type.includes('application/json')?await response.json():null;
+  if(!response.ok){
+    const error=new Error(data?.error||('http_'+response.status));
+    error.status=response.status;
+    error.code=data?.error||'';
+    throw error;
+  }
+  return data;
+}
+function dbId(prefix,value){return prefix+'-'+String(value??crypto.randomUUID()).replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)}
+function resourceDbStatus(value){return value==='已发布'||value==='published'?'published':'draft'}
+function buildCloudSnapshot(){
+  const subjectIdByKey=new Map();
+  const subjects=state.categories.map((x,index)=>{
+    const id=String(x.id||'').startsWith('subject-')?String(x.id):dbId('subject',x.code||x.id||index+1);
+    subjectIdByKey.set((x.name||'')+'|'+(x.code||''),id);
+    return {id,name:x.name||'',code:x.code||'',sort_order:Number(x.order)||100,visible:x.visible!==false};
+  });
+  const resources=[],versions=[],links=[];
+  state.resources.forEach((x,index)=>{
+    const rid=String(x.id||'').startsWith('resource-')?String(x.id):dbId('resource',x.key||x.id||index+1);
+    const skey=(x.subjectName||'')+'|'+(x.subjectCode||'');
+    let subjectId=subjectIdByKey.get(skey)||null;
+    if(!subjectId && (x.subjectName||x.subjectCode)){
+      subjectId=dbId('subject',x.subjectCode||('auto-'+index));
+      subjectIdByKey.set(skey,subjectId);
+      subjects.push({id:subjectId,name:x.subjectName||'',code:x.subjectCode||'',sort_order:100+index,visible:true});
+    }
+    resources.push({
+      id:rid,slug:x.key||String(rid).replace(/^resource-/,''),
+      title:x.title||'未命名资料',subject_id:subjectId,resource_type:x.type||'其他',
+      description:x.description||'',status:resourceDbStatus(x.status),visible:x.visible!==false,pinned:Boolean(x.pinned),
+      release_version:x.releaseVersion||'v1.0',published_at:x.publishedAt||null,updated_at:x.updated||new Date().toISOString(),
+      sort_order:Number(x.order)||100
+    });
+    let localVersions=Array.isArray(x.extraVersions)?x.extraVersions.slice():[];
+    if(x.defaultVersions && !localVersions.length){
+      localVersions=[
+        {id:rid+'-standard',name:'标准版',releaseVersion:x.releaseVersion||'v1.0',publishedAt:x.publishedAt||null,format:'PDF',note:'常规阅读与书写版本。',order:10,current:true,visible:true,meta:['PDF']},
+        {id:rid+'-print',name:'打印专版',releaseVersion:x.releaseVersion||'v1.0',publishedAt:x.publishedAt||null,format:'PDF',note:'双面打印优化版本。',order:20,current:true,visible:true,meta:['A4','双面印刷']}
+      ];
+    }
+    localVersions.forEach((v,vi)=>{
+      const vid=String(v.id||'').startsWith('version-')?String(v.id):dbId('version',(v.id||rid+'-'+vi));
+      versions.push({id:vid,resource_id:rid,name:v.name||'未命名版本',release_version:v.releaseVersion||x.releaseVersion||'v1.0',published_at:v.publishedAt||x.publishedAt||null,format:v.format||'PDF',note:v.note||'',meta:Array.isArray(v.meta)?v.meta:[],current:v.current!==false,visible:v.visible!==false,sort_order:Number(v.order)||Number(v.sort_order)||100});
+      (v.links||[]).forEach((ln,li)=>links.push({id:String(ln.id||'').startsWith('link-')?String(ln.id):dbId('link',(ln.id||vid+'-'+li)),version_id:vid,label:ln.label||'链接',kind:ln.kind||ln.type||'link',url:ln.url||'',access_code:ln.code||ln.access_code||'',note:ln.note||'',visible:ln.visible!==false,sort_order:Number(ln.order)||Number(ln.sort_order)||100}));
+    });
+    const fallbackVersion=versions.find(v=>v.resource_id===rid)?.id;
+    (x.customLinks||[]).forEach((ln,li)=>{
+      if(!fallbackVersion)return;
+      links.push({id:String(ln.id||'').startsWith('link-')?String(ln.id):dbId('link',(ln.id||rid+'-custom-'+li)),version_id:ln.versionId||fallbackVersion,label:ln.label||'链接',kind:ln.kind||ln.type||'link',url:ln.url||'',access_code:ln.code||'',note:ln.note||'',visible:ln.visible!==false,sort_order:Number(ln.order)||100});
+    });
+  });
+  const experiences=state.experiences.map((x,index)=>({id:String(x.id||'').startsWith('experience-')?String(x.id):dbId('experience',x.id||index+1),title:x.title||'未命名经验贴',source_url:x.sourceUrl||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status==='draft'?'draft':'published',visible:x.visible!==false,published_at:x.publishedAt||new Date().toISOString().slice(0,10)}));
+  const announcements=state.announcements.map((x,index)=>({id:String(x.id||'').startsWith('announcement-')?String(x.id):dbId('announcement',x.id||index+1),title:x.title||'未命名公告',kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:x.visible!==false,pinned:Boolean(x.pinned),dismissible:x.dismissible!==false,audience:x.audience||'所有访客',publish_at:x.publishAt||null,expires_at:x.expiresAt||null,cta_text:x.ctaText||'',cta_url:x.ctaUrl||''}));
+  return {subjects,resources,versions,links,experiences,announcements,copy:state.copy};
+}
+function applyCloudBootstrap(data){
+  const subjects=data.subjects||[], versions=data.resource_versions||[], links=data.resource_links||[];
+  const subjectById=new Map(subjects.map(x=>[x.id,x]));
+  const linksByVersion=new Map();
+  links.forEach(x=>{if(!linksByVersion.has(x.version_id))linksByVersion.set(x.version_id,[]);linksByVersion.get(x.version_id).push(x)});
+  const versionsByResource=new Map();
+  versions.forEach(v=>{if(!versionsByResource.has(v.resource_id))versionsByResource.set(v.resource_id,[]);versionsByResource.get(v.resource_id).push(v)});
+  state.categories=subjects.map(x=>({id:x.id,name:x.name,code:x.code||'',visible:Boolean(x.visible),count:0,order:x.sort_order||100}));
+  state.resources=(data.resources||[]).map(r=>{
+    const subject=subjectById.get(r.subject_id)||{};
+    const vs=(versionsByResource.get(r.id)||[]).map(v=>({id:v.id,name:v.name,releaseVersion:v.release_version||r.release_version||'v1.0',publishedAt:v.published_at||r.published_at||'',format:v.format||'PDF',order:v.sort_order||100,note:v.note||'',current:Boolean(v.current),visible:Boolean(v.visible),meta:(()=>{try{return JSON.parse(v.meta_json||'[]')}catch{return []}})(),links:(linksByVersion.get(v.id)||[]).map(ln=>({id:ln.id,versionId:v.id,label:ln.label,type:ln.kind,url:ln.url||'',code:ln.access_code||'',note:ln.note||'',visible:Boolean(ln.visible),order:ln.sort_order||100}))}));
+    return {id:r.id,key:r.slug,title:r.title,description:r.description||'',subjectName:subject.name||'',subjectCode:subject.code||'',type:r.resource_type||'其他',versions:vs.length,defaultVersions:false,extraVersions:vs,customLinks:vs.flatMap(v=>v.links||[]),releaseVersion:r.release_version||'v1.0',publishedAt:r.published_at||'',visible:Boolean(r.visible),pinned:Boolean(r.pinned),status:r.status==='published'?'已发布':'草稿',updated:(r.updated_at||'').slice(0,10)};
+  });
+  state.categories.forEach(c=>c.count=state.resources.filter(r=>r.subjectName===c.name&&r.subjectCode===c.code).length);
+  state.experiences=(data.experiences||[]).map(x=>({id:x.id,title:x.title,sourceUrl:x.source_url||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status,visible:Boolean(x.visible),publishedAt:x.published_at||''}));
+  state.announcements=(data.announcements||[]).map(x=>({id:x.id,title:x.title,kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:Boolean(x.visible),pinned:Boolean(x.pinned),dismissible:Boolean(x.dismissible),audience:x.audience||'所有访客',publishAt:(x.publish_at||'').replace('Z','').slice(0,16),expiresAt:(x.expires_at||'').replace('Z','').slice(0,16),ctaText:x.cta_text||'',ctaUrl:x.cta_url||'',updated:(x.updated_at||'').slice(0,10)}));
+  const copyRow=(data.site_settings||[]).find(x=>x.key==='public.copy');
+  if(copyRow){try{state.copy={...siteCopyDefaults,...JSON.parse(copyRow.value_json||'{}')}}catch{}}
+  const profiles=data.admin_profiles||[];
+  if(profiles.length)state.admins=profiles.map((x,index)=>({id:x.email||index+1,name:x.display_name||x.email,identifier:x.email,role:x.role||'admin',status:x.status||'active',last:'Cloudflare Access',locked:x.role==='owner'}));
+  state.audit=data.audit_logs||[];
+  savePinnedResources();savePinnedAnnouncements();
+}
+async function bootstrapStudioCloud(){
+  try{
+    const data=await studioApi('/admin/bootstrap');
+    applyCloudBootstrap(data);
+    cloudState.status='connected';cloudState.lastError='';
+    localStorage.setItem('yanku-studio-cloud-ready','1');
+    render();refreshCloudStatus();
+  }catch(error){
+    cloudState.lastError=error.code||error.message||'unknown';
+    cloudState.status=error.code==='access_not_configured'?'needs-access':(error.status===401||error.code==='access_required'||error.code==='invalid_access_token'?'auth':'error');
+    refreshCloudStatus();
+  }
+}
+function queueCloudSync(){
+  if(cloudState.status!=='connected')return;
+  clearTimeout(cloudState.syncTimer);
+  cloudState.syncTimer=setTimeout(async()=>{
+    cloudState.status='syncing';refreshCloudStatus();
+    try{
+      await studioApi('/admin/studio-sync',{method:'PUT',body:JSON.stringify(buildCloudSnapshot())});
+      cloudState.status='connected';cloudState.lastError='';refreshCloudStatus();
+    }catch(error){
+      cloudState.lastError=error.code||error.message||'unknown';cloudState.status='error';refreshCloudStatus();toast('云端同步失败，本地副本已保留');
+    }
+  },450);
+}
+
 const navGroups=[
   {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article'],['announcements','公告','bell'],['copy','文案与说明','text']]},
   {label:'资源管理',items:[['taxonomy','科目管理','tag'],['files','文件','folder']]},
@@ -185,9 +319,9 @@ const navGroups=[
 ];
 const titles={overview:['OVERVIEW','概览'],resources:['RESOURCES','资料'],experience:['EXPERIENCE','经验贴'],announcements:['ANNOUNCEMENTS','公告'],copy:['COPY','文案与说明'],taxonomy:['SUBJECTS','科目管理'],files:['MEDIA','文件'],account:['ACCOUNT','账号中心'],admins:['ACCESS','成员与权限'],settings:['SETTINGS','站点设置'],audit:['AUDIT','审计日志']};
 function subjectLabel(item){return item.subjectName+(item.subjectCode?'（'+item.subjectCode+'）':'')}
-function savePinnedResources(){localStorage.setItem('yanku-pinned-resource-titles',JSON.stringify(state.resources.filter(x=>x.pinned).map(x=>x.title)))}
-function savePinnedAnnouncements(){localStorage.setItem('yanku-pinned-announcement-titles',JSON.stringify(state.announcements.filter(x=>x.pinned).map(x=>x.title)))}
-function saveAnnouncements(){localStorage.setItem('yanku-announcements-v2',JSON.stringify(state.announcements));savePinnedAnnouncements()}
+function savePinnedResources(){localStorage.setItem('yanku-pinned-resource-titles',JSON.stringify(state.resources.filter(x=>x.pinned).map(x=>x.title)));queueCloudSync()}
+function savePinnedAnnouncements(){localStorage.setItem('yanku-pinned-announcement-titles',JSON.stringify(state.announcements.filter(x=>x.pinned).map(x=>x.title)));queueCloudSync()}
+function saveAnnouncements(){localStorage.setItem('yanku-announcements-v2',JSON.stringify(state.announcements));savePinnedAnnouncements();queueCloudSync()}
 function announcementStatusLabel(x){if(x.status==='draft')return '草稿';if(x.status==='scheduled')return '定时';if(x.status==='expired')return '已过期';return '已发布'}
 function pinButton(scope,id,on){return '<button class="pin-control '+(on?'active':'')+'" type="button" data-pin="'+scope+'" data-id="'+id+'" aria-label="'+(on?'取消置顶':'置顶')+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 6 3 3v2H5v-2l3-3Z"/><path d="M12 14v7"/></svg></button>'}
 function renderNav(){
@@ -203,7 +337,7 @@ function renderOverview(){
   return head('概览','管理资源、公告、版本、权限与前台状态。','<button class="btn primary" data-new-resource>＋ 新建资料</button>')+
   '<section class="studio-status-strip">'+
     '<div><span class="status-dot online"></span><p><small>前台</small><strong>正常访问</strong></p></div>'+
-    '<div><span class="status-dot preview"></span><p><small>数据源</small><strong>本地预览</strong></p></div>'+
+    '<div><span class="status-dot preview"></span><p><small>数据源</small><strong data-cloud-status>'+cloudStatusLabel()+'</strong></p></div>'+
     '<div><span class="status-dot neutral"></span><p><small>资源状态</small><strong>'+visibleResources+' 显示 · '+hiddenResources+' 隐藏</strong></p></div>'+
   '</section>'+
   '<div class="metric-grid studio-metrics">'+
@@ -621,3 +755,4 @@ $('#openPublic').onclick=()=>window.open('../','_blank','noopener');
 $('#accountEntry').onclick=()=>{state.section='account';render();closeSide()};
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape'){closeDrawer();closeConfirm();closeSide()}});
 render();
+bootstrapStudioCloud();
