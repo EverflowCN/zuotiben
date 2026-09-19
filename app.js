@@ -338,6 +338,8 @@ async function loadRemoteBootstrap() {
     if (remoteSettings && typeof remoteSettings === "object") Object.assign(siteSettings, remoteSettings);
     if (siteSettings.siteName) siteCopy.brandName = siteSettings.siteName;
     if (siteSettings.siteDescription) siteCopy.siteNoteBody = siteSettings.siteDescription;
+    if(siteSettings.resources===false)resources.splice(0,resources.length);
+    if(siteSettings.experience===false)experiencePosts.splice(0,experiencePosts.length);
     const metaDescription=document.querySelector('meta[name="description"]');
     if(metaDescription&&siteSettings.siteDescription)metaDescription.setAttribute("content",siteSettings.siteDescription);
     if(siteSettings.siteName)document.title=siteSettings.siteName+" · 考研资源库";
