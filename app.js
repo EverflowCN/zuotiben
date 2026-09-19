@@ -246,7 +246,7 @@ const resources = [
   }
 ];
 
-const API_BASE = "https://api.zuotiben.top";
+const API_BASE = "https://zuotiben-api.bm9h54b4t9.workers.dev";
 
 function mapApiResource(item) {
   return {
