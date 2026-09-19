@@ -113,22 +113,22 @@
         </section>
 
         <div class="overview-metrics">
-          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small>已收录资料</small><strong id="metricResources">0</strong><em>查看全部资源</em></span></button>
-          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span><span><small>资源版本</small><strong id="metricVersions">0</strong><em>标准版 / 打印版等</em></span></button>
-          <button class="metric-card" type="button" data-go="experience"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span><small>经验贴</small><strong id="metricExperience">0</strong><em>备考经验整理</em></span></button>
-          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small>公开勘误</small><strong id="metricErrata">0</strong><em>随对应版本查看</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small id="metricResourcesLabel">已收录资料</small><strong id="metricResources">0</strong><em id="metricResourcesNote">查看全部资源</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span><span><small id="metricVersionsLabel">资源版本</small><strong id="metricVersions">0</strong><em id="metricVersionsNote">标准版 / 打印版等</em></span></button>
+          <button class="metric-card" type="button" data-go="experience"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span><small id="metricExperienceLabel">经验贴</small><strong id="metricExperience">0</strong><em id="metricExperienceNote">备考经验整理</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small id="metricErrataLabel">公开勘误</small><strong id="metricErrata">0</strong><em id="metricErrataNote">随对应版本查看</em></span></button>
         </div>
 
         <div class="overview-grid balanced">
           <section class="overview-card">
-            <div class="overview-card-head"><div><span>RECENT</span><h2>最近更新</h2></div><button type="button" data-go="resources">查看全部</button></div>
+            <div class="overview-card-head"><div><span>RECENT</span><h2 id="recentTitle">最近更新</h2></div><button id="recentAction" type="button" data-go="resources">查看全部</button></div>
             <div id="recentResources" class="overview-list"></div>
           </section>
           <section class="overview-card">
-            <div class="overview-card-head"><div><span>MAINTENANCE</span><h2>资源维护</h2></div><button type="button" data-open-announcements="true">使用说明</button></div>
+            <div class="overview-card-head"><div><span>MAINTENANCE</span><h2 id="maintenanceTitle">资源维护</h2></div><button id="maintenanceAction" type="button" data-open-announcements="true">使用说明</button></div>
             <div class="maintenance-list">
-              <button class="maintenance-row" type="button" data-go="resources"><span>获取入口</span><strong>网盘 · 直链 · 打印</strong><small>按具体版本分别提供</small></button>
-              <button class="maintenance-row" type="button" data-open-errata-submit="true"><span>勘误提交</span><strong>发现问题可申请提交</strong><small>提交地址由后台单独配置</small></button>
+              <button class="maintenance-row" type="button" data-go="resources"><span id="maintenanceEntryLabel">获取入口</span><strong id="maintenanceEntryTitle">网盘 · 直链 · 打印</strong><small id="maintenanceEntryBody">按具体版本分别提供</small></button>
+              <button class="maintenance-row" type="button" data-open-errata-submit="true"><span id="maintenanceErrataLabel">勘误提交</span><strong id="maintenanceErrataTitle">发现问题可申请提交</strong><small id="maintenanceErrataBody">提交地址由后台单独配置</small></button>
             </div>
           </section>
         </div>
