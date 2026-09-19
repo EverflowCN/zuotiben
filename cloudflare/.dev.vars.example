@@ -1,6 +1,4 @@
-# Admin endpoints intentionally fail closed until these are configured.
-# ACCESS_TEAM_DOMAIN is the left side of <team>.cloudflareaccess.com
-
+# Self-hosted D1 admin authentication.
 # One-time secret used only for the very first Owner creation.
 # Set this as a Worker Secret in Cloudflare; do not commit the real value.
 ADMIN_SETUP_TOKEN=replace-with-a-long-random-secret
