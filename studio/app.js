@@ -32,7 +32,7 @@ const state={
   ],
   files:[],
   admins:[{id:1,name:'主管理员',role:'owner',status:'active',last:'当前会话',locked:true}],
-  settings:{resources:true,experience:true,errata:true,notice:true,siteName:'研库',siteDescription:'考研学习资源索引与分发'}
+  settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:localStorage.getItem('yanku-errata-submit-url')||''}
 };
 const navGroups=[
   {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article']]},
@@ -110,6 +110,7 @@ function renderSettings(){
   return head('站点设置','控制公开站点的名称、说明、栏目、默认排序和整体显示。','<button class="btn primary" data-save-settings>保存设置</button>')+
   '<div class="grid two"><section class="card"><div class="card-head"><div><h2>基础信息</h2><p>前台公开信息</p></div></div><div class="card-body"><div class="form-grid"><label class="field wide"><span>站点名称</span><input value="'+state.settings.siteName+'"></label><label class="field wide"><span>站点说明</span><textarea>'+state.settings.siteDescription+'</textarea></label></div></div></section>'+
   '<section class="card"><div class="card-head"><div><h2>栏目显示</h2><p>关闭后前台不加载该栏目</p></div></div><div class="card-body"><div class="list">'+['resources','experience'].map(k=>settingRow(k)).join('')+'</div></div></section></div>'+
+  '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>交互链接</h2><p>统一配置前台需要跳转到外部页面的入口</p></div></div><div class="card-body"><div class="form-grid"><label class="field wide"><span>勘误申请提交链接</span><input id="errataSubmitUrlInput" type="url" placeholder="https://..." value="'+state.settings.errataSubmitUrl+'"></label><div class="field wide"><span>说明</span><div class="design-note">前台每个资料版本的「勘误」旁会显示「申请提交」。当前预览版保存到本浏览器，接入服务器后改为数据库配置。</div></div></div></div></section>'+
   '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>危险操作</h2><p>全站级操作必须由主管理员执行</p></div></div><div class="card-body"><div class="list-row"><div><strong>导出全部配置</strong><small>不包含密钥与身份凭据</small></div><button class="btn small">导出</button></div><div class="list-row"><div><strong>清空演示数据</strong><small>接入服务器后要求二次确认</small></div><button class="btn small danger">清空</button></div></div></section>'
 }
 function settingRow(k){const labels={resources:'资料栏目',experience:'经验贴栏目'};return '<div class="list-row"><div><strong>'+labels[k]+'</strong><small>前台显示</small></div>'+toggle('settings',k,state.settings[k])+'</div>'}
@@ -132,7 +133,14 @@ function bind(){
   $$('[data-delete-announcement]').forEach(b=>b.onclick=()=>confirmDelete('删除公告','该公告将不再出现在前台。',()=>{state.announcements=state.announcements.filter(x=>x.id!=b.dataset.deleteAnnouncement);render();toast('已删除（预览）')}));
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
   $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(Number(b.dataset.editAdmin)));
-  $('[data-save-settings]')?.addEventListener('click',()=>toast('设置已保存（预览）'));
+  $('[data-save-settings]')?.addEventListener('click',()=>{
+    const input=$('#errataSubmitUrlInput');
+    if(input){
+      state.settings.errataSubmitUrl=input.value.trim();
+      localStorage.setItem('yanku-errata-submit-url',state.settings.errataSubmitUrl);
+    }
+    toast('设置已保存（预览）');
+  });
   $('[data-new-experience]')?.addEventListener('click',()=>openSimple('新建经验贴','标题、来源、院校、专业、年份、阶段、正文、显示状态'));
   $('[data-new-errata]')?.addEventListener('click',()=>openSimple('新建勘误','关联资源、版本、页码/题号、问题类型、说明、状态、是否公开'));
   $('[data-new-category]')?.addEventListener('click',()=>openSimple('新建分类','分类名称、科目、排序、显示状态'));
