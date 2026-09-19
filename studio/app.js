@@ -48,29 +48,52 @@ function badge(id){const n={resources:state.resources.length,experience:state.ex
 function head(title,desc,action=''){return '<div class="page-head"><div><div class="eyebrow">'+titles[state.section][0]+'</div><h1>'+title+'</h1><p>'+desc+'</p></div><div class="page-actions">'+action+'</div></div>'}
 function metric(label,value,note){return '<article class="metric"><span>'+label+'</span><strong>'+value+'</strong><small>'+note+'</small></article>'}
 function renderOverview(){
-  return head('概览','资源、公告、勘误和权限状态集中查看。','<button class="btn primary" data-new-announcement>＋ 新建公告</button>')+
-  '<div class="design-note">当前为界面预览：所有操作只在本页内模拟，不会写入服务器或公开站点。</div>'+
-  '<div class="metric-grid" style="margin-top:12px">'+
-    metric('公开资料',state.resources.filter(x=>x.visible).length,'共 '+state.resources.length+' 项')+
-    metric('经验贴',state.experiences.length,'已发布')+
-    metric('待处理勘误',state.errata.filter(x=>x.status!=="resolved").length,'归属具体资料 / 版本')+
+  const visibleResources=state.resources.filter(x=>x.visible).length;
+  const hiddenResources=state.resources.length-visibleResources;
+  return head('概览','管理资源、公告、版本、权限与前台状态。','<button class="btn primary" data-new-resource>＋ 新建资料</button>')+
+  '<section class="studio-status-strip">'+
+    '<div><span class="status-dot online"></span><p><small>前台</small><strong>正常访问</strong></p></div>'+
+    '<div><span class="status-dot preview"></span><p><small>数据源</small><strong>本地预览</strong></p></div>'+
+    '<div><span class="status-dot neutral"></span><p><small>资源状态</small><strong>'+visibleResources+' 显示 · '+hiddenResources+' 隐藏</strong></p></div>'+
+  '</section>'+
+  '<div class="metric-grid studio-metrics">'+
+    metric('公开资料',visibleResources,'共 '+state.resources.length+' 项')+
+    metric('资源版本',state.resources.reduce((n,x)=>n+x.versions,0),'标准版 / 打印版等')+
+    metric('经验贴',state.experiences.length,'当前已发布')+
     metric('成员',state.admins.length,'含主管理员')+
   '</div>'+
-  '<div class="grid two">'+
-    '<section class="card"><div class="card-head"><div><h2>公告</h2><p>只在前台总览展示</p></div><button class="btn small" data-new-announcement>＋ 新建</button></div><div class="card-body"><div class="list">'+
-      state.announcements.map(x=>'<div class="list-row"><div><strong>'+x.title+'</strong><small>'+x.kind+' · '+x.updated+'</small></div><div class="row-actions">'+toggle('announcement',x.id,x.visible)+'<button class="btn small" data-edit-announcement="'+x.id+'">编辑</button><button class="btn small danger" data-delete-announcement="'+x.id+'">删除</button></div></div>').join('')+
+  '<div class="grid two overview-panels">'+
+    '<section class="card"><div class="card-head"><div><h2>公告</h2><p>仅在前台总览显示</p></div><button class="btn small" data-new-announcement>＋ 新建</button></div><div class="card-body"><div class="list">'+
+      state.announcements.map(x=>'<div class="list-row compact"><div><strong>'+x.title+'</strong><small>'+x.kind+' · '+x.updated+'</small></div><div class="row-actions">'+toggle('announcement',x.id,x.visible)+'<button class="btn small" data-edit-announcement="'+x.id+'">编辑</button></div></div>').join('')+
     '</div></div></section>'+
-    '<section class="card"><div class="card-head"><div><h2>最近资料</h2><p>勘误在具体资料版本内管理</p></div></div><div class="card-body"><div class="list">'+
-      state.resources.map(x=>'<div class="list-row"><div><strong>'+x.title+'</strong><small>'+x.subject+' · '+x.updated+'</small></div><span class="pill '+(x.visible?'green':'')+'">'+(x.visible?'显示':'隐藏')+'</span></div>').join('')+
+    '<section class="card"><div class="card-head"><div><h2>最近资料</h2><p>快速进入版本、渠道与勘误</p></div><button class="btn small" data-jump-resources>管理全部</button></div><div class="card-body"><div class="list">'+
+      state.resources.map(x=>'<button class="overview-resource-row" type="button" data-edit-resource="'+x.id+'"><span class="resource-dot"></span><span><strong>'+x.title+'</strong><small>'+x.category+' · '+x.subject+' · '+x.versions+' 个版本</small></span><span class="pill '+(x.visible?'green':'')+'">'+(x.visible?'显示':'隐藏')+'</span></button>').join('')+
     '</div></div></section>'+
-  '</div>'
+  '</div>'+
+  '<section class="card quick-card"><div class="card-head"><div><h2>快捷操作</h2><p>常用管理入口</p></div></div><div class="quick-actions-grid">'+
+    '<button type="button" data-new-resource>'+icon('plus')+'<span><strong>新建资料</strong><small>创建资源与版本</small></span></button>'+
+    '<button type="button" data-new-announcement>'+icon('bell')+'<span><strong>发布公告</strong><small>显示在前台总览</small></span></button>'+
+    '<button type="button" data-jump-taxonomy>'+icon('tag')+'<span><strong>分类与科目</strong><small>管理目录层级</small></span></button>'+
+    '<button type="button" data-jump-settings>'+icon('settings')+'<span><strong>站点设置</strong><small>链接与显示策略</small></span></button>'+
+  '</div></section>'
 }
 function settingRow(k){const labels={resources:'资料',experience:'经验贴',errata:'勘误',notice:'公告'};return '<div class="list-row"><div><strong>'+labels[k]+'</strong><small>前台栏目</small></div>'+toggle('settings',k,state.settings[k])+'</div>'}
 function toggle(scope,id,on){return '<button class="switch '+(on?'on':'')+'" data-toggle="'+scope+'" data-id="'+id+'" aria-label="切换显示"><i></i></button>'}
 function renderResources(){
-  const rows=state.resources.map(x=>'<tr><td><div class="title-cell"><strong>'+x.title+'</strong><small>#'+x.id+'</small></div></td><td>'+x.category+' / '+x.subject+'</td><td><span class="pill">'+x.type+'</span></td><td>'+x.versions+'</td><td>'+toggle('resource',x.id,x.visible)+'</td><td><span class="pill orange">'+x.status+'</span></td><td>'+x.updated+'</td><td><div class="row-actions"><button class="btn small" data-edit-resource="'+x.id+'">编辑</button><button class="btn small danger" data-delete-resource="'+x.id+'">删除</button></div></td></tr>').join('');
-  return head('资料','管理书籍、讲义、做题本、真题；每个版本内部统一管理网盘、直链、打印入口和勘误。','<button class="btn primary" data-new-resource>＋ 新建资料</button>')+
-  '<section class="card"><div class="toolbar"><input class="control grow" placeholder="搜索标题、科目或标签"><select class="control"><option>全部类型</option><option>做题本</option><option>书籍</option><option>讲义</option><option>真题</option></select><select class="control"><option>全部状态</option><option>显示</option><option>隐藏</option></select></div><div class="table-wrap"><table class="table"><thead><tr><th>资源</th><th>分类 / 科目</th><th>类型</th><th>版本</th><th>显示</th><th>状态</th><th>更新</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'
+  const visible=state.resources.filter(x=>x.visible).length;
+  const hidden=state.resources.length-visible;
+  const rows=state.resources.map(x=>'<tr>'+
+    '<td><div class="title-cell resource-title-cell"><span class="resource-table-icon">'+icon('box')+'</span><span><strong>'+x.title+'</strong><small>#'+x.id+' · '+x.updated+'</small></span></div></td>'+
+    '<td>'+x.category+' / '+x.subject+'</td>'+
+    '<td><span class="pill">'+x.type+'</span></td>'+
+    '<td><strong>'+x.versions+'</strong><small class="cell-sub"> 个版本</small></td>'+
+    '<td>'+toggle('resource',x.id,x.visible)+'</td>'+
+    '<td><span class="pill orange">'+x.status+'</span></td>'+
+    '<td class="actions-cell"><div class="row-actions"><button class="btn small" data-edit-resource="'+x.id+'">编辑</button><button class="icon-danger" aria-label="删除" data-delete-resource="'+x.id+'">×</button></div></td>'+
+  '</tr>').join('');
+  return head('资料','统一管理资料本体、版本、下载渠道、打印入口与勘误。','<button class="btn primary" data-new-resource>＋ 新建资料</button>')+
+  '<section class="resource-summary"><button class="summary-chip active"><strong>'+state.resources.length+'</strong><span>全部</span></button><button class="summary-chip"><strong>'+visible+'</strong><span>显示</span></button><button class="summary-chip"><strong>'+hidden+'</strong><span>隐藏</span></button></section>'+
+  '<section class="card data-card"><div class="toolbar"><label class="table-search">'+icon('search')+'<input class="control grow" placeholder="搜索标题、科目或标签"></label><div class="toolbar-spacer"></div><select class="control"><option>全部类型</option><option>做题本</option><option>书籍</option><option>讲义</option><option>真题</option></select><select class="control"><option>全部状态</option><option>显示</option><option>隐藏</option></select></div><div class="table-wrap"><table class="table resource-table"><thead><tr><th>资源</th><th>分类 / 科目</th><th>类型</th><th>版本</th><th>显示</th><th>状态</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'
 }
 function renderExperience(){
   return head('经验贴','按院校、专业、年份和阶段整理，并保留原始来源。','<button class="btn primary" data-new-experience>＋ 新建经验贴</button>')+
@@ -145,12 +168,15 @@ function bind(){
   $('[data-new-errata]')?.addEventListener('click',()=>openSimple('新建勘误','关联资源、版本、页码/题号、问题类型、说明、状态、是否公开'));
   $('[data-new-category]')?.addEventListener('click',()=>openSimple('新建分类','分类名称、科目、排序、显示状态'));
   $('[data-upload]')?.addEventListener('click',()=>openSimple('上传文件','文件、用途、关联资源、公开状态、替换策略'));
+  $('[data-jump-resources]')?.addEventListener('click',()=>{state.section='resources';render()});
+  $('[data-jump-taxonomy]')?.addEventListener('click',()=>{state.section='taxonomy';render()});
+  $('[data-jump-settings]')?.addEventListener('click',()=>{state.section='settings';render()});
 }
 function openResource(id){
   const x=state.resources.find(x=>x.id===id)||{title:'',category:'公共课',subject:'',type:'做题本',visible:true,status:'草稿',versions:0};
-  const versions = x.versions ? (
+  const versions=x.versions?(
     '<div class="version-admin-card">'+
-      '<div class="version-admin-head"><span class="pill blue">PDF</span><div class="grow"><strong>标准版</strong><small>下载渠道与勘误</small></div><button class="btn small">编辑版本</button><button class="btn small danger">删除</button></div>'+
+      '<div class="version-admin-head"><span class="pill blue">PDF</span><div class="grow"><strong>标准版</strong><small>下载渠道与勘误</small></div><button class="btn small">编辑版本</button><button class="icon-danger">×</button></div>'+
       '<div class="version-admin-links">'+
         '<button class="admin-subitem" data-open-channel><span>百度网盘</span><small>链接 / 提取码</small></button>'+
         '<button class="admin-subitem" data-open-channel><span>夸克网盘</span><small>链接 / 提取码</small></button>'+
@@ -159,30 +185,50 @@ function openResource(id){
       '</div>'+
     '</div>'+
     '<div class="version-admin-card">'+
-      '<div class="version-admin-head"><span class="pill">PRINT</span><div class="grow"><strong>打印专版</strong><small>A4 · 双面 · 留空白页</small></div><button class="btn small">编辑版本</button><button class="btn small danger">删除</button></div>'+
+      '<div class="version-admin-head"><span class="pill">PRINT</span><div class="grow"><strong>打印专版</strong><small>A4 · 双面 · 留空白页</small></div><button class="btn small">编辑版本</button><button class="icon-danger">×</button></div>'+
       '<div class="version-admin-links">'+
         '<button class="admin-subitem" data-open-channel><span>打印链接</span><small>在线打印 / 下载</small></button>'+
         '<button class="admin-subitem errata-admin-item" data-open-errata><span>勘误</span><small>0 条 · 待核对 / 已修正</small></button>'+
       '</div>'+
     '</div>'
-  ) : '<div class="empty"><p>暂无版本</p></div>';
+  ):'<div class="empty compact-empty"><strong>还没有版本</strong><p>先添加标准版、打印版或其他版本。</p></div>';
 
-  openDrawer(
-    id?'编辑资料':'新建资料',
-    '<div class="form-grid">'+
+  const body=
+    '<div class="resource-editor-hero"><div><span class="pill '+(x.visible?'green':'')+'">'+(x.visible?'前台显示':'前台隐藏')+'</span><h3>'+(x.title||'新资料')+'</h3><p>资料 ID：'+(id||'新建')+'</p></div><button class="btn small" id="previewResourceButton">预览前台</button></div>'+
+    '<div class="drawer-tabs" role="tablist">'+
+      '<button class="active" type="button" data-resource-tab="basic">基本信息</button>'+
+      '<button type="button" data-resource-tab="versions">版本与渠道</button>'+
+      '<button type="button" data-resource-tab="publish">发布设置</button>'+
+    '</div>'+
+    '<div class="resource-tab-panel active" data-resource-panel="basic"><div class="form-grid">'+
       '<label class="field wide"><span>标题</span><input id="dTitle" value="'+x.title+'"></label>'+
       '<label class="field"><span>分类</span><select><option>'+x.category+'</option><option>公共课</option><option>计算机</option></select></label>'+
       '<label class="field"><span>科目</span><input value="'+x.subject+'"></label>'+
       '<label class="field"><span>资源类型</span><select><option>'+x.type+'</option><option>书籍</option><option>讲义</option><option>真题</option></select></label>'+
       '<label class="field"><span>状态</span><select><option>'+x.status+'</option><option>草稿</option><option>已发布</option></select></label>'+
       '<label class="field wide"><span>简介</span><textarea placeholder="资源说明"></textarea></label>'+
-    '</div>'+
-    '<div class="subsection"><div class="subsection-head"><h3>版本 / 渠道 / 勘误</h3><button class="btn small">＋ 添加版本</button></div><div class="inline-list">'+versions+'</div></div>',
+    '</div></div>'+
+    '<div class="resource-tab-panel" data-resource-panel="versions"><div class="subsection-head"><div><h3>版本与入口</h3><p>每个版本可独立配置网盘、直链、打印与勘误。</p></div><button class="btn small">＋ 添加版本</button></div><div class="inline-list">'+versions+'</div></div>'+
+    '<div class="resource-tab-panel" data-resource-panel="publish"><div class="publish-settings">'+
+      '<div class="setting-tile"><div><strong>前台显示</strong><small>关闭后资源不会出现在公开列表</small></div>'+toggle('preview-resource-visible','x',x.visible)+'</div>'+
+      '<label class="field"><span>排序权重</span><input type="number" value="100"></label>'+
+      '<label class="field"><span>更新时间</span><input type="date" value="'+x.updated+'"></label>'+
+      '<div class="design-note">后续接服务器后，这里的发布状态、排序和时间会进入数据库，不再依赖静态代码。</div>'+
+    '</div></div>';
+
+  openDrawer(
+    id?'编辑资料':'新建资料',
+    body,
     id?()=>toast('资料已保存（预览）'):()=>{state.resources.push({id:Date.now(),title:$('#dTitle').value||'未命名资料',category:'公共课',subject:'',type:'做题本',versions:0,visible:false,status:'草稿',updated:'2026-09-19'});render();toast('已创建草稿（预览）')}
   );
 
-  $('[data-open-channel]').forEach(button=>button.onclick=()=>openSimple('编辑获取入口','渠道类型、显示名称、URL、提取码、说明、显示/隐藏、排序'));
-  $('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
+  $$('[data-resource-tab]').forEach(button=>button.onclick=()=>{
+    $$('[data-resource-tab]').forEach(x=>x.classList.toggle('active',x===button));
+    $$('[data-resource-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.resourcePanel===button.dataset.resourceTab));
+  });
+  $$('[data-open-channel]').forEach(button=>button.onclick=()=>openSimple('编辑获取入口','渠道类型、显示名称、URL、提取码、说明、显示/隐藏、排序'));
+  $$('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
+  $('#previewResourceButton')?.addEventListener('click',()=>window.open('../','_blank','noopener'));
 }
 function openAnnouncement(id){
   const x=state.announcements.find(x=>x.id===id)||{title:'',kind:'通知',visible:true,dismissible:true};
