@@ -1139,16 +1139,16 @@ function initBitstreamBackground(){
   const isPhone=()=>window.innerWidth<=560;
 
   function makeStream(index,count){
-    const fontSize=isPhone()?10:11;
-    const length=Math.floor(5+Math.random()*7);
+    const fontSize=isPhone()?11:12;
+    const length=Math.floor(6+Math.random()*8);
     return {
       x:((index+.5)/count)*width+(Math.random()-.5)*Math.min(54,width/count*.45),
       y:Math.random()*height,
-      speed:(isPhone()?7:9)+Math.random()*(isPhone()?5:8),
+      speed:(isPhone()?8:10)+Math.random()*(isPhone()?5:8),
       fontSize,
       length,
-      gap:fontSize*1.45,
-      alpha:.018+Math.random()*.022,
+      gap:fontSize*1.5,
+      alpha:(isPhone()?.060:.050)+Math.random()*(isPhone()?.032:.030),
       bits:Array.from({length},()=>Math.random()>.5?"1":"0")
     };
   }
@@ -1162,7 +1162,7 @@ function initBitstreamBackground(){
     canvas.style.width=width+"px";
     canvas.style.height=height+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    const count=Math.max(4,Math.min(isPhone()?7:13,Math.floor(width/(isPhone()?78:118))));
+    const count=Math.max(isPhone()?6:8,Math.min(isPhone()?10:18,Math.floor(width/(isPhone()?58:92))));
     streams=Array.from({length:count},(_,i)=>makeStream(i,count));
   }
 
@@ -1175,20 +1175,20 @@ function initBitstreamBackground(){
     ctx.clearRect(0,0,width,height);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.font='500 '+(isPhone()?10:11)+'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.font='500 '+(isPhone()?11:12)+'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
     streams.forEach(stream=>{
       stream.y+=stream.speed*delta;
       if(stream.y-stream.length*stream.gap>height+32){
         stream.y=-24;
-        stream.speed=(isPhone()?7:9)+Math.random()*(isPhone()?5:8);
+        stream.speed=(isPhone()?8:10)+Math.random()*(isPhone()?5:8);
         stream.bits=stream.bits.map(()=>Math.random()>.5?"1":"0");
       }
       for(let i=0;i<stream.length;i++){
         const y=stream.y-i*stream.gap;
         if(y<-18||y>height+18)continue;
         const tail=1-i/Math.max(1,stream.length);
-        ctx.fillStyle='rgba(83,105,92,'+(stream.alpha*(.38+.62*tail)).toFixed(4)+')';
+        ctx.fillStyle='rgba(75,96,82,'+(stream.alpha*(.50+.50*tail)).toFixed(4)+')';
         ctx.fillText(stream.bits[i],stream.x,y);
       }
     });
