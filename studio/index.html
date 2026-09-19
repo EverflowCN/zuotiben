@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#f6f0e5">
   <title>Studio</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-studio6">
+  <link rel="stylesheet" href="./styles.css?v=20260919-studio7">
 </head>
 <body>
   <div id="app" class="app">
@@ -18,10 +18,10 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-foot">
-        <div class="identity">
+        <button id="accountEntry" class="identity identity-button" type="button">
           <span class="avatar">主</span>
-          <div><strong>主管理员</strong><small>Owner · 全部权限</small></div>
-        </div>
+          <span><strong>主管理员</strong><small>Owner · 账号中心</small></span>
+        </button>
         <button class="icon-btn" type="button" aria-label="退出工作台" data-icon="logout"></button>
       </div>
     </aside>
@@ -43,7 +43,6 @@
         <div class="top-actions">
           <span class="workspace-status"><i></i>界面预览</span>
           <button id="openPublic" class="btn subtle" type="button">查看前台</button>
-          <button id="quickCreate" class="btn primary" type="button">＋ 新建</button>
         </div>
       </header>
 
@@ -58,6 +57,6 @@
   <section id="confirmModal" class="confirm-modal" hidden role="dialog" aria-modal="true"></section>
 
   <div id="toastStack" class="toast-stack"></div>
-  <script src="./app.js?v=20260919-studio6"></script>
+  <script src="./app.js?v=20260919-studio7"></script>
 </body>
 </html>
