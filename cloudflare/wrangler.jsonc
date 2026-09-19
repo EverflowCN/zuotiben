@@ -13,12 +13,16 @@
   },
   "d1_databases": [
     {
-      "binding": "DB"
+      "binding": "DB",
+      "database_name": "zuotiben-api-db",
+      "database_id": "801f870c-f481-4dfa-b1ac-c0f9045aae7e",
+      "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
     {
-      "binding": "FILES"
+      "binding": "FILES",
+      "bucket_name": "zuotiben-api-files"
     }
   ]
 }
