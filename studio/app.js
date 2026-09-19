@@ -467,7 +467,7 @@ function openResource(id){
     $$('[data-resource-tab]').forEach(el=>el.classList.toggle('active',el===button));
     $$('[data-resource-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.resourcePanel===button.dataset.resourceTab));
   });
-  $('[data-open-channel]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'编辑获取入口')});
+  $$('[data-open-channel]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'编辑获取入口')});
   $$('[data-add-custom-link]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增自定义链接')});
   $$('[data-open-errata]').forEach(button=>button.onclick=()=>openSimple('管理勘误','关联当前资料与版本；题号/页码、问题类型、原内容、修正内容、处理状态、公开/隐藏、删除'));
   $('[data-add-version]')?.addEventListener('click',()=>{const rid=ensureResourceRecord(x);openVersionEditor(rid)});
