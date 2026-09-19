@@ -6,14 +6,14 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260919-subject15" />
+  <link rel="stylesheet" href="./styles.css?v=20260919-copy17" />
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="./" aria-label="研库首页">
         <span class="brand-symbol" aria-hidden="true">研</span>
-        <span class="brand-name">研库</span>
+        <span id="brandName" class="brand-name">研库</span>
       </a>
 
       <button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="打开导航" aria-expanded="false">
@@ -42,8 +42,8 @@
         <div class="mobile-drawer-brand">
           <span class="brand-symbol" aria-hidden="true">研</span>
           <div>
-            <strong>研库</strong>
-            <small>资源导航</small>
+            <strong id="mobileBrandName">研库</strong>
+            <small id="mobileBrandSubtitle">资源导航</small>
           </div>
         </div>
         <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="关闭导航">
@@ -54,12 +54,12 @@
       </div>
 
       <div class="sidebar-section">
-        <div class="sidebar-title">栏目</div>
+        <div id="sidebarColumnsTitle" class="sidebar-title">栏目</div>
         <nav id="sectionNav" class="section-nav" aria-label="站点栏目"></nav>
       </div>
 
       <div id="categorySection" class="sidebar-section">
-        <div class="sidebar-title">科目</div>
+        <div id="sidebarSubjectsTitle" class="sidebar-title">科目</div>
         <nav id="categoryNav" class="category-nav" aria-label="资料分类"></nav>
       </div></aside>
 
@@ -89,6 +89,28 @@
           </span>
           <span class="overview-notice-arrow" aria-hidden="true">›</span>
         </button>
+
+        <section id="communityInfo" class="community-info" aria-label="站点说明">
+          <article id="freeInfoCard" class="community-card">
+            <span class="community-icon free-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"/><rect x="3" y="7" width="18" height="4" rx="1"/></svg>
+            </span>
+            <span><strong id="freeInfoTitle">全部资源免费公开</strong><small id="freeInfoBody">本站收录与整理的资源均免费公开，不设置付费门槛。</small></span>
+          </article>
+          <article id="qqInfoCard" class="community-card qq-card">
+            <span class="community-icon qq-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.395 15.035a40 40 0 0 0-.803-2.264l-1.079-2.695c.001-.032.014-.562.014-.836C19.526 4.632 17.351 0 12 0S4.474 4.632 4.474 9.241c0 .274.013.804.014.836l-1.08 2.695a39 39 0 0 0-.802 2.264c-1.021 3.283-.69 4.643-.438 4.673.54.065 2.103-2.472 2.103-2.472 0 1.469.756 3.387 2.394 4.771-.612.188-1.363.479-1.845.835-.434.32-.379.646-.301.778.343.578 5.883.369 7.482.189 1.6.18 7.14.389 7.483-.189.078-.132.132-.458-.301-.778-.483-.356-1.233-.646-1.846-.836 1.637-1.384 2.393-3.302 2.393-4.771 0 0 1.563 2.537 2.103 2.472.251-.03.581-1.39-.438-4.673"/></svg>
+            </span>
+            <span class="community-copy"><strong id="qqInfoTitle">更多资料在 QQ 群</strong><small id="qqInfoBody">更多资料、更新与交流可加入 QQ 群。</small><b id="qqNumber">1032998814</b></span>
+            <button id="copyQqButton" class="community-action" type="button">复制群号</button>
+          </article>
+          <article id="progressInfoCard" class="community-card">
+            <span class="community-icon progress-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+            </span>
+            <span><strong id="progressInfoTitle">功能持续添加中</strong><small id="progressInfoBody">资料、经验贴、勘误和后台功能会持续补充与完善。</small></span>
+          </article>
+        </section>
 
         <div class="overview-metrics">
           <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small>已收录资料</small><strong id="metricResources">0</strong><em>查看全部资源</em></span></button>
@@ -157,18 +179,18 @@
 
             <button id="clearFiltersButton" class="clear-filters" type="button" hidden>清除筛选</button>
           </div>
-          <div class="filterbar-hint">支持搜索</div>
+          <div id="filterHint" class="filterbar-hint">支持搜索</div>
         </div>
 
         <div class="toolbar">
-          <div class="toolbar-sort">最近更新</div>
-          <div class="view-note">资源 · 版本 · 渠道</div>
+          <div id="toolbarSort" class="toolbar-sort">最近更新</div>
+          <div id="viewNote" class="view-note">资源 · 版本 · 渠道</div>
         </div>
 
         <div id="resourceList" class="resource-list" aria-live="polite"></div>
         <div id="emptyState" class="empty-state" hidden>
-          <div class="empty-title">暂时没有收录资源</div>
-          <p>有内容后才会显示对应分类。</p>
+          <div id="resourceEmptyTitle" class="empty-title">暂时没有收录资源</div>
+          <p id="resourceEmptyBody">有内容后才会显示对应分类。</p>
         </div>
       </section>
 
@@ -181,25 +203,25 @@
             </svg>
           </div>
           <div>
-            <h2>经验贴</h2>
-            <p>后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
+            <h2 id="experienceSectionTitle">经验贴</h2>
+            <p id="experienceSectionBody">后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
           </div>
         </div>
         <div class="empty-state">
-          <div class="empty-title">暂未收录经验贴</div>
-          <p>后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。</p>
+          <div id="experienceEmptyTitle" class="empty-title">暂未收录经验贴</div>
+          <p id="experienceEmptyBody">后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。</p>
         </div>
       </section>
 <section class="site-note">
-        <h2>说明</h2>
-        <p>资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
+        <h2 id="siteNoteTitle">说明</h2>
+        <p id="siteNoteBody">资源、经验与勘误将采用统一后台管理。涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
       </section>
     </section>
   </main>
 
   <footer class="footer">
-    <span>研库 · 考研学习资源索引与分发</span>
-    <span>zuotiben.top</span>
+    <span id="footerLeft">研库 · 考研学习资源索引与分发</span>
+    <span id="footerRight">zuotiben.top</span>
   </footer>
 
   <div id="unifiedModalBackdrop" class="unified-modal-backdrop" hidden></div>
@@ -213,6 +235,6 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260919-announcements16"></script>
+  <script src="./app.js?v=20260919-copy17"></script>
 </body>
 </html>
