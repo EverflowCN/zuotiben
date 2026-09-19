@@ -241,6 +241,16 @@ async function handleAuth(request, env, url) {
     if(identity instanceof Response)return identity;
     return json({ok:true,identity},200,request,env,{'Cache-Control':'no-store'});
   }
+  if (request.method==='POST' && url.pathname==='/auth/profile') {
+    const identity=await requireSession(request,env);
+    if(identity instanceof Response)return identity;
+    if(!mutationOriginAllowed(request,env))return json({ok:false,error:'origin_not_allowed'},403,request,env);
+    const body=await readJson(request),displayName=String(body.display_name||'').trim().slice(0,80);
+    if(!displayName)return json({ok:false,error:'invalid_display_name'},400,request,env);
+    await env.DB.prepare("UPDATE admin_profiles SET display_name=?,updated_at=CURRENT_TIMESTAMP WHERE email=?").bind(displayName,identity.email).run();
+    await audit(env,identity.email,'update_profile','admin',identity.email,{display_name:displayName});
+    return json({ok:true,identity:{...identity,display_name:displayName}},200,request,env,{'Cache-Control':'no-store'});
+  }
   if (request.method==='POST' && url.pathname==='/auth/change-password') {
     const identity=await requireSession(request,env);
     if(identity instanceof Response)return identity;
