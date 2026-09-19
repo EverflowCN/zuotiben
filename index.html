@@ -6,7 +6,7 @@
   <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
   <meta name="theme-color" content="#f6f0e5" />
   <title>研库 · 考研资源库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260920-public21" />
+  <link rel="stylesheet" href="./styles.css?v=20260920-public22" />
 </head>
 <body>
   <header class="topbar">
@@ -210,7 +210,8 @@
             <p id="experienceSectionBody">后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
           </div>
         </div>
-        <div class="empty-state">
+        <div id="experienceList" class="experience-list" aria-live="polite"></div>
+        <div id="experienceEmptyState" class="empty-state">
           <div id="experienceEmptyTitle" class="empty-title">暂未收录经验贴</div>
           <p id="experienceEmptyBody">后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。</p>
         </div>
@@ -238,6 +239,6 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
-  <script src="./app.js?v=20260920-cloudflare22"></script>
+  <script src="./app.js?v=20260920-cloudflare23"></script>
 </body>
 </html>
