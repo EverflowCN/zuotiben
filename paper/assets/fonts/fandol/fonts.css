@@ -1,0 +1,31 @@
+@font-face {
+  font-family: "Everflow Song";
+  src: url("./FandolSong-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Everflow Song";
+  src: url("./FandolSong-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Everflow Hei";
+  src: url("./FandolHei-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Everflow Hei";
+  src: url("./FandolHei-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
