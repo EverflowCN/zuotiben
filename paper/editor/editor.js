@@ -260,7 +260,8 @@ function renderOrder(){
   els.orderList.replaceChildren();
   state.questions.forEach(function(q,i){
     var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=true;row.dataset.index=i;
-    var check=document.createElement("input");check.type="checkbox";check.className="order-check";check.checked=selectedIds.has(q.id);check.setAttribute("aria-label","选择第 "+(i+1)+" 题");check.onclick=function(e){e.stopPropagation();if(check.checked)selectedIds.add(q.id);else selectedIds.delete(q.id);renderOrder();updateBatchBar()};\n    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
+    var check=document.createElement("input");check.type="checkbox";check.className="order-check";check.checked=selectedIds.has(q.id);check.setAttribute("aria-label","选择第 "+(i+1)+" 题");check.onclick=function(e){e.stopPropagation();if(check.checked)selectedIds.add(q.id);else selectedIds.delete(q.id);renderOrder();updateBatchBar()};
+    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";c.tabIndex=0;c.setAttribute("role","button");
     var b=document.createElement("b");b.textContent=clip(q.content,42)||"未命名题目";
@@ -370,7 +371,8 @@ function renderQuestionEditor(){
   var idx=state.questions.indexOf(q),h=document.createElement("div");h.className="question-editor-head";
   var title=document.createElement("h3");title.textContent="第 "+(idx+1)+" 题";
   var actions=document.createElement("div");
-  var insert=document.createElement("button");insert.type="button";insert.className="text-btn";insert.textContent="后插题";insert.onclick=function(){mutateState(function(){var nq=newQuestion(q.section);state.questions.splice(idx+1,0,nq);selectedId=nq.id},"已插入新题")};\n  var duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-btn";duplicate.textContent="复制";
+  var insert=document.createElement("button");insert.type="button";insert.className="text-btn";insert.textContent="后插题";insert.onclick=function(){mutateState(function(){var nq=newQuestion(q.section);state.questions.splice(idx+1,0,nq);selectedId=nq.id},"已插入新题")};
+  var duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-btn";duplicate.textContent="复制";
   duplicate.onclick=function(){undoStack.push(snapshot());var copy=deepClone(q);copy.id="local-copy-"+Date.now().toString(36);state.questions.splice(idx+1,0,copy);selectedId=copy.id;save(false);render()};
   var removeQ=document.createElement("button");removeQ.type="button";removeQ.className="text-btn danger";removeQ.textContent="删除";
   removeQ.onclick=function(){if(!confirm("删除第 "+(idx+1)+" 题？"))return;mutateState(function(){selectedIds.delete(q.id);state.questions.splice(idx,1);selectedId=(state.questions[idx]||state.questions[idx-1]||{}).id||null},"已删除题目")};
