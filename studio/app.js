@@ -226,7 +226,7 @@ function refreshCloudStatus(){
 }
 async function studioApi(path,options={}){
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),8000);
+  const timeout=setTimeout(()=>controller.abort(),20000);
   const init={credentials:'include',cache:'no-store',signal:controller.signal,...options};
   init.headers={Accept:'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})};
   try{
@@ -422,11 +422,12 @@ async function bootstrapStudioCloud(){
         renderAuthGate(status.needs_setup?'setup':'login',status);
       }catch(statusError){
         cloudState.status='error';
-        renderAuthGate('login',{},'认证服务暂不可用，请确认 Worker 已部署最新版本。');
+        renderAuthGate('login',{},'无法自动读取初始化状态：'+authErrorText(statusError.code||statusError.message)+'。如果主管理员已创建，请直接登录。');
       }
     }else{
       cloudState.status='error';
-      renderAuthGate('login',{},'后台初始化失败。可以先重新登录；如果仍失败，请刷新页面。');
+      const detail=authErrorText(error.code||error.message);
+      renderAuthGate('login',{},'后台自动登录检查失败：'+detail+'。你仍可以直接重新登录。');
     }
     refreshCloudStatus();
   }
@@ -1199,6 +1200,7 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus();$('#globalSearch').select()}
   if(e.key==='Escape'){closeGlobalSearch();closeDrawer();closeConfirm();closeSide()}
 });
+renderAuthGate('login',{needs_setup:false});
 bootstrapStudioCloud();
 
 window.addEventListener('error',event=>{
