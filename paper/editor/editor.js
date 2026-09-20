@@ -2,7 +2,7 @@
 "use strict";
 var STORAGE_KEY="zuotiben-local-paper-v1";
 var state={title:"未命名试卷",sourceName:"本地文件",questions:[],originalIds:[]};
-var compileMode=false, questionMoveEnabled=true;
+var compileMode=false, questionMoveEnabled=true, pdfExporting=false;
 var els={};
 
 function byId(id){return document.getElementById(id)}
@@ -139,9 +139,32 @@ function setCompile(v){
   compileMode=!!v;document.body.classList.toggle("compile-mode",compileMode);document.body.classList.toggle("question-move-on",compileMode&&questionMoveEnabled);
   els.compileBar.hidden=!compileMode;els.compileModeButton.textContent=compileMode?"退出编译模式":"进入编译模式";renderPaper();window.scrollTo({top:0,behavior:"smooth"});
 }
-async function printPaper(){
-  try{if(document.fonts&&document.fonts.ready)await document.fonts.ready}catch(e){}
-  renderPaper();requestAnimationFrame(function(){window.print()});
+async function downloadPaperPdf(){
+  if(pdfExporting)return;
+  pdfExporting=true;
+  var buttons=[els.printButton,els.compilePrintButton].filter(Boolean);
+  var labels=buttons.map(function(btn){return btn.textContent});
+  buttons.forEach(function(btn){btn.disabled=true;btn.setAttribute("aria-busy","true")});
+  try{
+    var exporter=await import("./pdf-export.js?v=20260921-direct1");
+    await exporter.downloadPdf(state,{
+      onStatus:function(status){
+        if(status==="done")return;
+        buttons.forEach(function(btn){btn.textContent=status});
+      }
+    });
+    toast("PDF 已生成并开始下载");
+  }catch(err){
+    console.error("PDF export failed",err);
+    toast("PDF 生成失败，请检查题目格式或网络字体");
+  }finally{
+    pdfExporting=false;
+    buttons.forEach(function(btn,i){
+      btn.disabled=false;
+      btn.removeAttribute("aria-busy");
+      btn.textContent=labels[i]||"下载 PDF";
+    });
+  }
 }
 function exportProject(){
   var data={version:1,type:"everflow-local-paper",title:state.title,localOnly:true,latexEnabled:false,questions:state.questions.map(function(q){return {localId:q.id,content:q.content,options:q.options}})};
@@ -156,7 +179,7 @@ function init(){
   els.compileModeButton.onclick=function(){setCompile(!compileMode)};
   els.compileExitButton.onclick=function(){setCompile(false)};
   els.compileOrderButton.onclick=function(){questionMoveEnabled=!questionMoveEnabled;document.body.classList.toggle("question-move-on",questionMoveEnabled);els.compileOrderButton.textContent="题目移动："+(questionMoveEnabled?"开启":"关闭");renderPaper()};
-  els.compilePrintButton.onclick=printPaper;els.printButton.onclick=printPaper;els.saveProjectButton.onclick=exportProject;
+  els.compilePrintButton.onclick=downloadPaperPdf;els.printButton.onclick=downloadPaperPdf;els.saveProjectButton.onclick=exportProject;
   els.resetOrderButton.onclick=function(){var rank={};state.originalIds.forEach(function(id,i){rank[id]=i});state.questions.sort(function(a,b){return (rank[a.id]??9999)-(rank[b.id]??9999)});save();render();toast("已恢复导入顺序")};
   els.clearButton.onclick=function(){if(confirm("清空当前本地试卷？")){localStorage.removeItem(STORAGE_KEY);location.replace("../")}};
   window.addEventListener("resize",updatePages);
