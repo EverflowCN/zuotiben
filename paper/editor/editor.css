@@ -217,3 +217,105 @@ body[data-template="book"][data-layout="padp"] .question{break-after:page}
   .editor-main #paperSheet,.cover-sheet{zoom:var(--preview-scale,.45);transform:none}
   .cover-sheet{margin-bottom:20px!important}
 }
+
+
+/* 2026-09-21 XeLaTeX parity calibration: measured against original PDFs */
+.editor-main #paperSheet{box-sizing:border-box}
+.editor-main #paperSheet .paper-header{display:none!important}
+.editor-main #paperSheet .paper-questions{padding:0 0 14mm!important}
+.editor-main #paperSheet .question{
+  font-weight:400!important;
+  line-height:1.56!important;
+}
+.editor-main #paperSheet .question-number{font-weight:400!important}
+.editor-main #paperSheet .question-body p{margin:0!important}
+.editor-main #paperSheet .options{margin-left:calc(2.25em + .55em)!important}
+.editor-main #paperSheet .options.cols-4{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:.55em!important}
+.editor-main #paperSheet .options.cols-3{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:.8em!important}
+.editor-main #paperSheet .options.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:1.2em!important}
+.editor-main #paperSheet .options.cols-1{grid-template-columns:1fr}
+.editor-main #paperSheet .paper-footer{border:0!important;padding-top:0!important;justify-content:center!important;color:#24272b!important}
+
+/* 试卷：原 Exam A4 / A3 geometry */
+body[data-template="exam"] .editor-main #paperSheet{
+  font-size:10.5pt!important;line-height:1.56!important;
+}
+body[data-template="exam"][data-layout="a4"] .editor-main #paperSheet{
+  padding:16mm 20mm 12mm!important;
+}
+body[data-template="exam"][data-layout="a3"] .editor-main #paperSheet,
+body[data-template="exam"][data-layout="mixed"] .editor-main #paperSheet{
+  padding:14mm 18mm 11mm!important;
+}
+body[data-template="exam"] .editor-main #paperSheet .question{margin-bottom:2.93mm!important}
+body[data-template="exam"] .editor-main #paperSheet .options{margin-top:2.60mm!important}
+body[data-template="exam"] .editor-main #paperSheet .paper-running-head{display:none!important}
+body[data-template="exam"] .editor-main #paperSheet .paper-footer{
+  left:20mm!important;right:20mm!important;bottom:5.3mm!important;
+  font-size:9pt!important;font-family:"Everflow Song","FandolKai","KaiTi",serif!important;
+}
+body[data-template="exam"][data-layout="a3"] .editor-main #paperSheet .paper-footer,
+body[data-template="exam"][data-layout="mixed"] .editor-main #paperSheet .paper-footer{
+  left:18mm!important;right:18mm!important;
+}
+
+/* 做题本：原 ExBook geometry / typography */
+body[data-template="book"] .editor-main #paperSheet{
+  font-size:12pt!important;line-height:1.56!important;
+  padding:14mm 18mm 14mm!important;
+}
+body[data-template="book"][data-layout="compact"] .editor-main #paperSheet .question{margin-bottom:1.69mm!important}
+body[data-template="book"][data-layout="standard"] .editor-main #paperSheet .question{margin-bottom:25mm!important}
+body[data-template="book"][data-layout="loose"] .editor-main #paperSheet .question{margin-bottom:75mm!important}
+body[data-template="book"][data-layout="single"] .editor-main #paperSheet .question,
+body[data-template="book"][data-layout="padl"] .editor-main #paperSheet .question,
+body[data-template="book"][data-layout="padp"] .editor-main #paperSheet .question{margin-bottom:0!important}
+body[data-template="book"] .editor-main #paperSheet .options{margin-top:2.97mm!important}
+body[data-template="book"] .editor-main #paperSheet .paper-running-head{
+  left:18mm!important;right:18mm!important;top:5.7mm!important;height:6mm!important;
+  font-size:10pt!important;line-height:12pt!important;font-weight:700!important;
+  border-bottom:.4pt solid #24272b!important;padding-bottom:1.5mm!important;
+}
+body[data-template="book"] .editor-main #paperSheet .paper-footer{
+  left:18mm!important;right:18mm!important;bottom:4.0mm!important;
+  font-size:9pt!important;line-height:11pt!important;
+  font-family:"Everflow Song","FandolSong","Songti SC",serif!important;
+}
+body[data-template="book"][data-layout="padl"] .editor-main #paperSheet{
+  padding:10mm 12mm 12mm!important;
+}
+body[data-template="book"][data-layout="padp"] .editor-main #paperSheet{
+  padding:14mm 14mm 12mm!important;
+}
+body[data-template="book"][data-layout="padl"] .editor-main #paperSheet .paper-running-head,
+body[data-template="book"][data-layout="padp"] .editor-main #paperSheet .paper-running-head{
+  left:12mm!important;right:12mm!important;
+}
+body[data-template="book"][data-layout="padp"] .editor-main #paperSheet .paper-running-head{
+  left:14mm!important;right:14mm!important;
+}
+
+/* 原 white 正封面：按参考 PDF 实测字号/坐标校准 */
+.cover-main-title{
+  top:121.3mm!important;
+  font-family:"Everflow Song","FandolSong","Songti SC",serif!important;
+  font-size:24.787pt!important;line-height:30pt!important;font-weight:700!important;
+}
+.cover-signature{
+  top:147.0mm!important;
+  font-family:"Everflow Song","FandolSong","Songti SC",serif!important;
+  font-size:14.346pt!important;line-height:18pt!important;font-weight:700!important;
+}
+.cover-bottom-line{left:18mm!important;top:266mm!important;width:50mm!important;border-top:.4pt solid #111!important}
+.cover-brand{
+  left:19.3mm!important;top:270.6mm!important;
+  font-family:"Everflow Song","FandolSong","Songti SC",serif!important;
+  font-size:9.465pt!important;line-height:12pt!important;font-weight:700!important;
+}
+.cover-date{
+  left:19.3mm!important;top:277.2mm!important;
+  font-family:"Everflow Song","FandolSong","Songti SC",serif!important;
+  font-size:8.966pt!important;line-height:11pt!important;font-weight:700!important;
+}
+body[data-template="exam"] .cover-date{color:#f00!important}
+body[data-template="book"] .cover-date{color:#24272b!important}
