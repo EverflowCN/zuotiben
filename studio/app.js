@@ -258,8 +258,10 @@ function buildCloudSnapshot(){
     return {id,name:x.name||'',code:x.code||'',sort_order:Number(x.order)||100,visible:x.visible!==false};
   });
   const resources=[],versions=[],links=[];
+  const resourceIds=new Map(),versionIds=new Map();
   state.resources.forEach((x,index)=>{
     const rid=String(x.id||'').startsWith('resource-')?String(x.id):dbId('resource',x.key||x.id||index+1);
+    resourceIds.set(String(x.id),rid);
     const skey=(x.subjectName||'')+'|'+(x.subjectCode||'');
     let subjectId=subjectIdByKey.get(skey)||null;
     if(!subjectId && (x.subjectName||x.subjectCode)){
@@ -284,6 +286,7 @@ function buildCloudSnapshot(){
     if(Array.isArray(x.extraVersions))localVersions.push(...x.extraVersions);
     localVersions.forEach((v,vi)=>{
       const vid=String(v.id||'').startsWith('version-')?String(v.id):dbId('version',(v.id||rid+'-'+vi));
+      versionIds.set(String(v.id),vid);
       versions.push({id:vid,resource_id:rid,name:v.name||'未命名版本',release_version:v.releaseVersion||x.releaseVersion||'v1.0',published_at:v.publishedAt||x.publishedAt||null,format:v.format||'PDF',note:v.note||'',meta:Array.isArray(v.meta)?v.meta:[],current:v.current!==false,visible:v.visible!==false,sort_order:Number(v.order)||Number(v.sort_order)||100});
       (v.links||[]).forEach((ln,li)=>links.push({id:String(ln.id||'').startsWith('link-')?String(ln.id):dbId('link',(ln.id||vid+'-'+li)),version_id:vid,label:ln.label||'链接',kind:ln.kind||ln.type||'link',url:ln.url||'',access_code:ln.code||ln.access_code||'',note:ln.note||'',visible:ln.visible!==false,sort_order:Number(ln.order)||Number(ln.sort_order)||100}));
     });
@@ -294,7 +297,7 @@ function buildCloudSnapshot(){
     });
   });
   const experiences=state.experiences.map((x,index)=>({id:String(x.id||'').startsWith('experience-')?String(x.id):dbId('experience',x.id||index+1),title:x.title||'未命名经验贴',source_url:x.sourceUrl||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status==='draft'?'draft':'published',visible:x.visible!==false,published_at:x.publishedAt||new Date().toISOString().slice(0,10)}));
-  const errata=state.errata.map((x,index)=>({id:String(x.id||'').startsWith('errata-')?String(x.id):dbId('errata',x.id||index+1),resource_id:x.resourceId||x.resource_id||'',version_id:x.versionId||x.version_id||null,title:x.title||'未命名勘误',body:x.body||'',status:x.status||'recorded',visible:x.visible!==false}));
+  const errata=state.errata.map((x,index)=>({id:String(x.id||'').startsWith('errata-')?String(x.id):dbId('errata',x.id||index+1),resource_id:resourceIds.get(String(x.resourceId||x.resource_id))||x.resourceId||x.resource_id||'',version_id:versionIds.get(String(x.versionId||x.version_id))||x.versionId||x.version_id||null,title:x.title||'未命名勘误',body:x.body||'',status:x.status||'recorded',visible:x.visible!==false}));
   const announcements=state.announcements.map((x,index)=>({id:String(x.id||'').startsWith('announcement-')?String(x.id):dbId('announcement',x.id||index+1),title:x.title||'未命名公告',kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:x.visible!==false,pinned:Boolean(x.pinned),dismissible:x.dismissible!==false,audience:x.audience||'所有访客',publish_at:toCloudDateTime(x.publishAt),expires_at:toCloudDateTime(x.expiresAt),cta_text:x.ctaText||'',cta_url:x.ctaUrl||''}));
   return {subjects,resources,versions,links,errata,experiences,announcements,copy:state.copy};
 }
@@ -800,7 +803,7 @@ function bind(){
   });
   $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(b.dataset.editResource));
   $('[data-new-resource]')?.addEventListener('click',()=>openResource());
-  $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);saveStudioCollections();render();toast('已删除')}));
+  $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);state.errata=state.errata.filter(x=>!sameId(x.resourceId,b.dataset.deleteResource));saveStudioCollections();render();toast('已删除')}));
   $$('[data-select-announcement]').forEach(b=>b.onchange=()=>{const id=String(b.dataset.selectAnnouncement);b.checked?state.announcementSelection.add(id):state.announcementSelection.delete(id);render()});
   $('#selectAllAnnouncements')?.addEventListener('change',e=>{state.announcementSelection=new Set(e.target.checked?state.announcements.map(x=>String(x.id)):[]);render()});
   $$('[data-announcement-bulk]').forEach(b=>b.onclick=()=>{
@@ -829,7 +832,7 @@ function bind(){
   $('[data-new-admin]')?.addEventListener('click',openAdmin);
   $('[data-account-password]')?.addEventListener('click',openPasswordEditor);
   $$('[data-edit-admin]').forEach(b=>b.onclick=()=>openAdmin(b.dataset.editAdmin));
-  $$('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员的云端登录权限和会话都会失效。',async()=>{try{await studioApi('/admin/accounts/'+encodeURIComponent(b.dataset.deleteAdmin),{method:'DELETE'});toast('成员已删除');await bootstrapStudioCloud()}catch(error){toast(authErrorText(error.code||error.message))}})});
+  $$('[data-delete-admin]').forEach(b=>b.onclick=()=>{if(b.disabled)return;confirmDelete('删除成员','删除后该成员的云端登录权限和会话都会失效。',async()=>{try{await studioApi('/admin/accounts/'+encodeURIComponent(b.dataset.deleteAdmin),{method:'DELETE'});toast('成员已删除');await bootstrapStudioCloud()}catch(error){toast(authErrorText(error.code||error.message));return false}})});
   $('[data-save-settings]')?.addEventListener('click',async()=>{
     state.settings.siteName=$('#siteNameInput')?.value.trim()||'研库';
     state.settings.siteDescription=$('#siteDescriptionInput')?.value.trim()||'';
@@ -838,7 +841,7 @@ function bind(){
     try{
       await studioApi('/admin/settings/public.settings',{method:'PUT',body:JSON.stringify({value:state.settings})});
       toast('站点设置已同步到云端');
-    }catch(error){toast(authErrorText(error.code||error.message))}
+    }catch(error){toast(authErrorText(error.code||error.message));return false}
   });
   $('[data-new-experience]')?.addEventListener('click',()=>openExperience());
   $$('[data-edit-experience]').forEach(b=>b.onclick=()=>openExperience(b.dataset.editExperience));
@@ -868,7 +871,7 @@ function bind(){
   $('[data-jump-announcements]')?.addEventListener('click',()=>{state.section='announcements';render()});
   $('[data-jump-taxonomy]')?.addEventListener('click',()=>{state.section='taxonomy';render()});
   $('[data-jump-settings]')?.addEventListener('click',()=>{state.section='settings';render()});
-  $('[data-save-account]')?.addEventListener('click',async()=>{const displayName=$('#accountDisplayName')?.value.trim()||state.account.displayName;try{const data=await studioApi('/auth/profile',{method:'POST',body:JSON.stringify({display_name:displayName})});state.account.displayName=data.identity?.display_name||displayName;render();toast('账号资料已同步到云端')}catch(error){toast(authErrorText(error.code||error.message))}});
+  $('[data-save-account]')?.addEventListener('click',async()=>{const displayName=$('#accountDisplayName')?.value.trim()||state.account.displayName;try{const data=await studioApi('/auth/profile',{method:'POST',body:JSON.stringify({display_name:displayName})});state.account.displayName=data.identity?.display_name||displayName;render();toast('账号资料已同步到云端')}catch(error){toast(authErrorText(error.code||error.message));return false}});
   $('[data-export-config]')?.addEventListener('click',()=>{const text=JSON.stringify(buildCloudSnapshot(),null,2);navigator.clipboard?.writeText(text).then(()=>toast('配置 JSON 已复制')).catch(()=>toast('复制失败'))});
   $('[data-export-audit]')?.addEventListener('click',()=>{const text=JSON.stringify(state.audit||[],null,2);navigator.clipboard?.writeText(text).then(()=>toast('审计日志 JSON 已复制')).catch(()=>toast('复制失败'))});
 }
@@ -912,8 +915,8 @@ function openResource(id){
 
   const save=()=>{
     x.title=$('#dTitle')?.value.trim()||x.title||'未命名资料';
-    x.subjectName=$('#dSubjectName')?.value.trim()||x.subjectName;
-    x.subjectCode=$('#dSubjectCode')?.value.trim()||x.subjectCode;
+    x.subjectName=$('#dSubjectName')?.value.trim()??x.subjectName;
+    x.subjectCode=$('#dSubjectCode')?.value.trim()??x.subjectCode;
     x.type=$('#dType')?.value||x.type;
     x.description=$('#dDescription')?.value.trim()||'';
     x.status=$('#dStatus')?.value||x.status;
@@ -921,7 +924,7 @@ function openResource(id){
     x.publishedAt=$('#dPublishedAt')?.value||x.publishedAt;
     x.updated=$('#dUpdated')?.value||x.updated;
     x.order=Number($('#dOrder')?.value)||100;
-    if(!x.id){x.id=Date.now();x.visible=false;x.versions=0;state.resources.push(x)}
+    if(!x.id){x.id=Date.now();x.versions=0;state.resources.push(x)}
     savePinnedResources();saveStudioCollections();render();toast(id?'资料已保存':'已创建草稿')
   };
   openDrawer(id?'编辑资料':'新建资料',body,save);
@@ -975,7 +978,8 @@ function openErrataEditor(id,preset={}){
 }
 
 function openAnnouncement(id){
-  const x=state.announcements.find(x=>sameId(x.id,id))||{id:null,title:'',kind:'更新通知',body:'',status:'draft',visible:true,pinned:false,dismissible:true,audience:'所有访客',publishAt:'',expiresAt:'',ctaText:'',ctaUrl:'',updated:'2026-09-19'};
+  const original=state.announcements.find(x=>sameId(x.id,id));
+  const x=original?structuredClone(original):{id:null,title:'',kind:'更新通知',body:'',status:'draft',visible:true,pinned:false,dismissible:true,audience:'所有访客',publishAt:'',expiresAt:'',ctaText:'',ctaUrl:'',updated:'2026-09-19'};
   const body=
     '<div class="announcement-editor-head"><span class="pill '+(x.status==='published'?'green':x.status==='scheduled'?'blue':'')+'">'+announcementStatusLabel(x)+'</span><span>'+(x.pinned?'已置顶':'普通公告')+'</span></div>'+
     '<div class="form-grid">'+
@@ -1006,7 +1010,8 @@ function openAnnouncement(id){
     x.expiresAt=$('#aExpiresAt')?.value||'';
     x.ctaText=$('#aCtaText')?.value.trim()||'';
     x.ctaUrl=$('#aCtaUrl')?.value.trim()||'';
-    x.updated='2026-09-19';
+    x.updated=new Date().toISOString().slice(0,10);
+    if(original)Object.assign(original,x);
     if(!id){x.id=Date.now();state.announcements.unshift(x)}
     saveAnnouncements();render();toast(id?'公告已保存':'公告已创建')
   };
@@ -1038,21 +1043,25 @@ function duplicateAnnouncement(id){
 }
 
 function openExperience(id){
-  const x=state.experiences.find(x=>sameId(x.id,id))||{id:null,title:'',sourceUrl:'',school:'',major:'',year:'2026',stage:'初试',author:'',body:'',visible:true};
+  const original=state.experiences.find(x=>sameId(x.id,id));
+  const x=original?structuredClone(original):{id:null,title:'',sourceUrl:'',school:'',major:'',year:'2026',stage:'初试',author:'',body:'',visible:true};
   const body='<div class="form-grid"><label class="field wide"><span>标题</span><input id="eTitle" value="'+x.title+'"></label><label class="field wide"><span>来源链接</span><input id="eSource" type="url" value="'+x.sourceUrl+'" placeholder="https://..."></label><label class="field"><span>院校</span><input id="eSchool" value="'+x.school+'"></label><label class="field"><span>专业</span><input id="eMajor" value="'+x.major+'"></label><label class="field"><span>年份</span><input id="eYear" value="'+x.year+'"></label><label class="field"><span>阶段</span><select id="eStage"><option>'+x.stage+'</option><option>初试</option><option>复试</option><option>择校</option><option>时间规划</option></select></label><label class="field wide"><span>作者 / 来源名</span><input id="eAuthor" value="'+x.author+'"></label><label class="field wide"><span>正文 / 摘要</span><textarea id="eBody">'+x.body+'</textarea></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>前台显示</strong><small>关闭后仅后台可见</small></div>'+toggle('draft-experience-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑经验贴':'新建经验贴',body,()=>{
     x.title=$('#eTitle').value.trim()||'未命名经验贴';x.sourceUrl=$('#eSource').value.trim();x.school=$('#eSchool').value.trim();x.major=$('#eMajor').value.trim();x.year=$('#eYear').value.trim();x.stage=$('#eStage').value;x.author=$('#eAuthor').value.trim();x.body=$('#eBody').value.trim();
+    if(original)Object.assign(original,x);
     if(!id){x.id=Date.now();state.experiences.unshift(x)}saveStudioCollections();render();toast(id?'经验贴已保存':'经验贴已创建')
   });
   $('#drawer [data-toggle="draft-experience-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
 }
 function openCategory(id){
-  const x=state.categories.find(x=>sameId(x.id,id))||{id:null,name:'',code:'',order:state.categories.length+1,visible:true,count:0};
+  const original=state.categories.find(x=>sameId(x.id,id));
+  const x=original?structuredClone(original):{id:null,name:'',code:'',order:state.categories.length+1,visible:true,count:0};
   const originalName=x.name,originalCode=x.code;
   const body='<div class="form-grid"><label class="field wide"><span>科目名称</span><input id="cName" value="'+x.name+'" placeholder="如：数学二"></label><label class="field"><span>科目代码</span><input id="cCode" value="'+x.code+'" placeholder="如：302"></label><label class="field"><span>排序</span><input id="cOrder" type="number" value="'+x.order+'"></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>前台显示</strong><small>关闭后不显示该科目</small></div>'+toggle('draft-category-visible','x',x.visible)+'</div>';
   openDrawer(id?'编辑科目':'新建科目',body,()=>{
     x.name=$('#cName').value.trim()||'未命名科目';x.code=$('#cCode').value.trim();x.order=Number($('#cOrder').value)||1;
     if(id){state.resources.forEach(r=>{if(r.subjectName===originalName&&r.subjectCode===originalCode){r.subjectName=x.name;r.subjectCode=x.code}})}
+    if(original)Object.assign(original,x);
     if(!id){x.id=Date.now();state.categories.push(x)}saveStudioCollections();render();toast(id?'科目已保存':'科目已创建')
   });
   $('#drawer [data-toggle="draft-category-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
@@ -1097,7 +1106,7 @@ function openFile(id){
         toast('云端文件接口尚未部署，当前记录仅保留在本次页面会话');
         render();
       }
-    }catch(error){toast(authErrorText(error.code||error.message))}
+    }catch(error){toast(authErrorText(error.code||error.message));return false}
   });
   $('#fResource')?.addEventListener('change',e=>{x.versionId='';$('#fVersion').innerHTML=versionOptions(e.target.value)});
   $('#drawer [data-toggle="draft-file-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
@@ -1160,23 +1169,34 @@ function openAdmin(id){
     try{
       await studioApi(existing?'/admin/accounts/'+encodeURIComponent(existing.identifier):'/admin/accounts',{method:existing?'PUT':'POST',body:JSON.stringify(payload)});
       toast(existing?'成员已保存':'成员已创建');await bootstrapStudioCloud();
-    }catch(error){toast(authErrorText(error.code||error.message))}
+    }catch(error){toast(authErrorText(error.code||error.message));return false}
   },owner)
 }
 function openPasswordEditor(){
   openDrawer('修改密码','<div class="form-grid"><label class="field wide"><span>当前密码</span><input id="pwCurrent" type="password" autocomplete="current-password"></label><label class="field wide"><span>新密码</span><input id="pwNew" type="password" minlength="12" autocomplete="new-password"></label><label class="field wide"><span>确认新密码</span><input id="pwNew2" type="password" minlength="12" autocomplete="new-password"></label></div><div class="design-note" style="margin-top:12px">修改后会注销该账号的所有现有会话，需要重新登录。</div>',async()=>{
-    if($('#pwNew').value!==$('#pwNew2').value)return toast('两次新密码不一致');
+    if($('#pwNew').value!==$('#pwNew2').value){toast('两次新密码不一致');return false}
     try{
       await studioApi('/auth/change-password',{method:'POST',body:JSON.stringify({current_password:$('#pwCurrent').value,new_password:$('#pwNew').value})});
       toast('密码已修改，请重新登录');cloudState.status='auth';renderAuthGate('login',{needs_setup:false});
-    }catch(error){toast(authErrorText(error.code||error.message))}
+    }catch(error){toast(authErrorText(error.code||error.message));return false}
   })
 }
 
 function openSimple(title,fields){openDrawer(title,'<div class="design-note">'+fields+'</div><div class="form-grid" style="margin-top:14px"><label class="field wide"><span>名称 / 标题</span><input></label><label class="field wide"><span>说明</span><textarea></textarea></label></div>',()=>toast('已保存'))}
 function openDrawer(title,body,onSave,readOnly=false){
   $('#drawer').innerHTML='<header class="drawer-head"><h2>'+title+'</h2><button class="icon-btn" data-drawer-close>'+icon('x')+'</button></header><div class="drawer-body">'+body+'</div><footer class="drawer-foot"><button class="btn subtle" data-drawer-close>取消</button><div>'+(readOnly?'':'<button class="btn primary" data-drawer-save>保存</button>')+'</div></footer>';
-  $('#drawer').hidden=false;$('#drawerBackdrop').hidden=false;$$('[data-drawer-close]').forEach(b=>b.onclick=closeDrawer);$('[data-drawer-save]')?.addEventListener('click',()=>{closeDrawer();onSave?.()})
+  $('#drawer').hidden=false;$('#drawerBackdrop').hidden=false;$$('[data-drawer-close]').forEach(b=>b.onclick=closeDrawer);$('[data-drawer-save]')?.addEventListener('click',async event=>{
+    const button=event.currentTarget;
+    if(button.disabled)return;
+    const invalid=$$('#drawer input, #drawer select, #drawer textarea').find(field=>!field.checkValidity());
+    if(invalid){invalid.reportValidity();return}
+    button.disabled=true;button.textContent='保存中…';
+    try{
+      const result=await onSave?.();
+      if(result!==false&&button.isConnected)closeDrawer();
+    }catch(error){toast(authErrorText(error.code||error.message));return false}
+    finally{if(button.isConnected){button.disabled=false;button.textContent='保存'}}
+  })
 }
 function closeDrawer(){$('#drawer').hidden=true;$('#drawerBackdrop').hidden=true}
 $('#drawerBackdrop').onclick=closeDrawer;
