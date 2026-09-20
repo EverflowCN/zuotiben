@@ -64,19 +64,17 @@ function checkpoint(){
   },300);
 }
 function undo(){
-  if(!undoStack.length)return;
-  redoStack.push(snapshot());
-  var prev=undoStack.pop();
-  applySnapshot(prev);updateHistoryButtons();
+  if(undoStack.length<=1)return;
+  var current=undoStack.pop();redoStack.push(current);
+  applySnapshot(deepClone(undoStack[undoStack.length-1]));updateHistoryButtons();
 }
 function redo(){
   if(!redoStack.length)return;
-  undoStack.push(snapshot());
-  var next=redoStack.pop();
-  applySnapshot(next);updateHistoryButtons();
+  var next=redoStack.pop();undoStack.push(deepClone(next));
+  applySnapshot(deepClone(next));updateHistoryButtons();
 }
 function updateHistoryButtons(){
-  els.undoButton.disabled=!undoStack.length;
+  els.undoButton.disabled=undoStack.length<=1;
   els.redoButton.disabled=!redoStack.length;
 }
 function load(){
