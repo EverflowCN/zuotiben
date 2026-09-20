@@ -2,7 +2,7 @@ import React from "https://esm.sh/react@19.1.1";
 import {
   Document, Page, Text, View, Image, Font, StyleSheet, pdf
 } from "https://esm.sh/@react-pdf/renderer@4.9.0?deps=react@19.1.1";
-import { Math as PdfMath } from "https://esm.sh/@react-pdf/math@6.0.0?deps=react@19.1.1,@react-pdf/renderer@4.9.0";
+import { Math as PdfMath } from "https://esm.sh/@react-pdf/math@6.0.0?bundle&deps=react@19.1.1,@react-pdf/renderer@4.9.0";
 import QRCode from "https://esm.sh/qrcode@1.5.4";
 
 const h = React.createElement;

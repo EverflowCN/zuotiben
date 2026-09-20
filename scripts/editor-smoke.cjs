@@ -5,6 +5,7 @@ const fs=require('node:fs');
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try {
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ page.on('console',m=>{if(m.type()==='error')console.log('BROWSER:',m.text())});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{if(!localStorage.getItem('zuotiben-local-paper-v1'))localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({title:'编辑器验证试卷',questions:[{id:'a',content:'设函数 $f(x)=x^2$，求导数。',options:['$x$','$2x$']},{id:'b',content:'设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，求：\n(1) 求 $\\det A$；\n(2) 求 $A^{-1}$。',options:[]}]}))});
  await page.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded',timeout:120000});

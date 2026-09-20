@@ -12,7 +12,7 @@ function normalizeOption(v){return cleanText(typeof v==="object"&&v?(v.text||v.c
 function normalizeQuestion(raw,index){
   raw=raw||{};
   var options=[];
-  if(Array.isArray(raw.options))options=raw.options.map(normalizeOption).filter(Boolean);
+  if(Array.isArray(raw.options))options=raw.options.map(normalizeOption);
   else if(raw.options&&typeof raw.options==="object")Object.keys(raw.options).sort().forEach(function(k){options.push(normalizeOption(raw.options[k]))});
   return {
     id:String(raw.localId||raw.id||uid()),

@@ -13,7 +13,7 @@ function toast(msg){els.toast.textContent=msg;els.toast.classList.add("show");cl
 function normalizeOption(v){return cleanText(typeof v==="object"&&v?(v.text||v.content||v.label||""):v)}
 function normalizeQuestion(raw,index){
   raw=raw||{};
-  var options=Array.isArray(raw.options)?raw.options.map(normalizeOption).filter(Boolean):[];
+  var options=Array.isArray(raw.options)?raw.options.map(normalizeOption):[];
   return {
     id:String(raw.localId||raw.id||("local-"+index)),
     content:cleanText(raw.content||raw.stem||raw.question||raw.text||raw.title||""),
@@ -79,7 +79,7 @@ function renderOrder(){
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";
     var b=document.createElement("b");b.textContent=clip(q.content,42)||"未命名题目";
-    var s=document.createElement("small");s.textContent=q.options.length?("选择题 · "+q.options.length+" 个选项"):"题目";
+    var s=document.createElement("small");s.textContent=q.type+(q.showOptions&&q.options.length?" · "+q.options.length+" 个选项":"");
     c.appendChild(b);c.appendChild(s);c.tabIndex=0;c.setAttribute("role","button");c.setAttribute("aria-label","编辑第 "+(i+1)+" 题");c.onclick=function(){selectedId=q.id;renderOrder();renderQuestionEditor()};c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click()}};
     var ctr=document.createElement("span");ctr.className="order-controls";
     var up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.onclick=function(){move(i,i-1)};
