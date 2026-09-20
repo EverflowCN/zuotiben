@@ -369,7 +369,7 @@ body.dark .paper-stage{background:#090a0c}
   font-family:"Everflow Termes","Times New Roman","Songti SC",serif;color:#222;pointer-events:none;
 }
 .paper-qr-code{width:13mm;height:13mm;display:grid;place-items:center;background:#fff}
-.paper-qr-code canvas,.paper-qr-code img{display:block!important;width:13mm!important;height:13mm!important}
+.paper-qr-code img{display:block!important;width:13mm!important;height:13mm!important}
 .paper-qr span{font-size:5.8pt;line-height:1;white-space:nowrap}
 .paper-footer{
   left:20mm;right:20mm;bottom:3.6mm;z-index:4;padding:0;border:0;
