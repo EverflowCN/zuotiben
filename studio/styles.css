@@ -402,3 +402,24 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap
 }
 .auth-reload-fallback{margin-top:14px;justify-content:center}
 @keyframes auth-loading-slide{to{background-position:-180% 0}}
+
+/* Compact overview lists; keep action controls out of generic grid rules. */
+.overview-panels{align-items:start}
+.overview-panels>.card{min-height:0}
+.overview-panels .card-body{padding:0 18px}
+.overview-panels .list-row.compact{min-height:76px;padding:16px 0;gap:16px}
+.overview-panels .list-row>div:first-child{min-width:0;gap:6px}
+.overview-panels .list-row strong{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.overview-panels .list-row small{font-size:11px;line-height:1.5}
+.overview-panels .list-row>.row-actions{display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0}
+.overview-panels .row-actions .pin-control{width:32px;height:32px;border-radius:8px}
+.overview-panels .row-actions .btn{min-height:32px}
+.overview-panels .overview-resource-row{min-height:70px;padding:14px 0}
+.overview-panels .overview-resource-row>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+.overview-panels .card-head{padding:16px 18px;flex-wrap:wrap}
+@media(max-width:600px){
+  .overview-panels .list-row.compact{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 0}
+  .overview-panels .list-row>.row-actions{justify-content:flex-start;gap:14px}
+  .overview-panels .row-actions .btn,.overview-panels .row-actions .pin-control{min-height:40px}
+  .overview-panels .card-head .row-actions{flex-wrap:wrap}
+}
