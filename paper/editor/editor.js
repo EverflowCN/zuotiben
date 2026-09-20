@@ -15,7 +15,7 @@ var state={
   questions:[],
   originalIds:[]
 };
-var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,revision=0,pdfRevision=-1,pdfBlob=null,pdfUrl=null;
+var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfBlob=null,pdfUrl=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -95,7 +95,7 @@ function load(){
 }
 function save(markDirty){
   if(markDirty!==false){revision++;checkpoint()}
-  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；下载时会使用最新排版。";
+  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；正在等待最新排版。";\n  schedulePdfPreview();
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
@@ -361,9 +361,37 @@ function bindDrag(container){
   container.addEventListener("drop",function(e){var row=e.target.closest(".order-item");if(!row||from==null)return;e.preventDefault();move(from,Number(row.dataset.index));from=null});
   container.addEventListener("dragend",function(){from=null;container.querySelectorAll(".order-item").forEach(function(x){x.classList.remove("dragging","drop-before")})});
 }
-function setMode(preview){
+function schedulePdfPreview(){
+  clearTimeout(previewCompileTimer);
+  if(!previewMode)return;
+  previewCompileTimer=setTimeout(function(){refreshPdfPreview()},420);
+}
+async function refreshPdfPreview(){
+  if(!previewMode)return;
+  try{
+    await createLatestPdf();
+    if(!previewMode)return;
+    els.pdfPreview.hidden=false;
+    els.paperStage.hidden=true;
+    els.pdfStatus.textContent="预览与下载使用同一份本地 PDF。";
+  }catch(e){
+    console.error(e);
+    els.pdfStatus.textContent="PDF 预览失败："+(e.message||"未知错误");
+  }
+}
+async function setMode(preview){
   previewMode=!!preview;document.body.classList.toggle("preview-mode",previewMode);
   els.editModeButton.setAttribute("aria-pressed",String(!previewMode));els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
+  if(previewMode){
+    els.paperStage.hidden=true;
+    els.pdfPreview.hidden=false;
+    await refreshPdfPreview();
+  }else{
+    clearTimeout(previewCompileTimer);
+    els.pdfPreview.hidden=true;
+    els.paperStage.hidden=false;
+    els.pdfStatus.textContent="";
+  }
 }
 function renderQuestionEditor(){
   var root=els.questionEditor;root.replaceChildren();
