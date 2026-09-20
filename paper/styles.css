@@ -464,3 +464,13 @@ body.compile-mode .paper-sheet{box-shadow:0 25px 80px rgba(0,0,0,.15)}
   }
   .paper-header{padding-top:3.5mm!important}
 }
+
+/* TeX Gyre Termes Math: match exam-zh math-font=termes through native MathML. */
+math{
+  font-family:"Everflow Termes Math","TeX Gyre Termes Math","STIX Two Math","Cambria Math",math;
+  font-size:1em;
+}
+math mtext{
+  font-family:"Everflow Termes","TeX Gyre Termes","Times New Roman","Songti SC","STSong","Noto Serif CJK SC",serif;
+}
+math[display="block"]{margin:.55em 0}
