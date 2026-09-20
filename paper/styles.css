@@ -319,22 +319,22 @@ body.dark .paper-stage{background:#090a0c}
 /* ===== Everflow exam-A4 parity / compile mode ===== */
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://raw.githubusercontent.com/fred-wang/MathFonts/main/TeXGyreTermes/texgyretermes-regular.woff2") format("woff2");
+  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-regular.woff2") format("woff2");
   font-style:normal;font-weight:400;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://raw.githubusercontent.com/fred-wang/MathFonts/main/TeXGyreTermes/texgyretermes-bold.woff2") format("woff2");
+  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-bold.woff2") format("woff2");
   font-style:normal;font-weight:700;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://raw.githubusercontent.com/fred-wang/MathFonts/main/TeXGyreTermes/texgyretermes-italic.woff2") format("woff2");
+  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-italic.woff2") format("woff2");
   font-style:italic;font-weight:400;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes Math";
-  src:url("https://raw.githubusercontent.com/fred-wang/MathFonts/main/TeXGyreTermes/texgyretermes-math.woff2") format("woff2");
+  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-math.woff2") format("woff2");
   font-style:normal;font-weight:400;font-display:swap;
 }
 .paper-sheet{
@@ -474,3 +474,20 @@ math mtext{
   font-family:"Everflow Termes","TeX Gyre Termes","Times New Roman","Songti SC","STSong","Noto Serif CJK SC",serif;
 }
 math[display="block"]{margin:.55em 0}
+
+/* CTeX Ubuntu parity: body = Noto Serif CJK SC, \heiti title = Noto Sans CJK SC. */
+.question-body,
+.option{
+  font-family:"Everflow Termes","TeX Gyre Termes","Times New Roman","Noto Serif SC","Noto Serif CJK SC",serif;
+}
+.paper-header h1{
+  font-family:"Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+.paper-running-head,
+.paper-footer,
+.paper-qr span{
+  font-family:"Everflow Termes","TeX Gyre Termes","Times New Roman","Kaiti SC","KaiTi","Noto Serif SC",serif;
+}
+math mtext{
+  font-family:"Everflow Termes","TeX Gyre Termes","Times New Roman","Noto Serif SC","Noto Serif CJK SC",serif;
+}
