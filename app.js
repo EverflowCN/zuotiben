@@ -419,6 +419,7 @@ function icon(name, className = "ui-icon") {
     printer: '<path d="M7 8V3h10v5"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7Z"/>',
     cloud: '<path d="M7 18h10a4 4 0 0 0 .7-7.94A6 6 0 0 0 6.2 8.2 4.5 4.5 0 0 0 7 18Z"/><path d="m12 11 0 6m-3-3 3 3 3-3"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.2-1.2"/>',
+    workbook: '<rect x="5" y="3" width="15" height="18" rx="3"/><path d="M9 3v18M13 8h3M13 12h3M3 7h4M3 12h4M3 17h4"/>',
     layers: '<path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
     archive: '<path d="M3 5h18v4H3Z"/><path d="M5 9h14v11H5Z"/><path d="M9 13h6"/>',
     note: '<path d="M5 3h14v18H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
@@ -436,7 +437,7 @@ function resourceTypeIcon(type) {
   if (type === "书籍") return "book";
   if (["讲义","真题","题库"].includes(type)) return "file";
   if (type === "笔记") return "note";
-  if (["做题本","模拟卷","冲刺资料"].includes(type)) return "layers";
+  if (["做题本","模拟卷","冲刺资料"].includes(type)) return "workbook";
   return "archive";
 }
 
