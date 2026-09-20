@@ -15,7 +15,7 @@ var state={
   questions:[],
   originalIds:[]
 };
-var selectedId=null,previewMode=false,pdfExporting=false,revision=0,pdfRevision=-1,pdfBlob=null,pdfUrl=null;
+var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,revision=0,pdfRevision=-1,pdfBlob=null,pdfUrl=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -196,11 +196,71 @@ function renderTemplateState(){
   els.paperSheet.style.setProperty("--master-footer-skip",info.footSkipMm+"mm");
   renderTemplateMenu();
 }
+function newQuestion(section){
+  return {
+    id:"local-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),
+    content:"",options:[],type:"解答题",section:section||"",gap:0,showOptions:false,breakBefore:false,source:"local",latexEnabled:false
+  };
+}
+function uniqueSections(){
+  var out=[];
+  state.questions.forEach(function(q){var n=cleanText(q.section||"");if(n&&!out.includes(n))out.push(n)});
+  return out;
+}
+function mutateState(fn,msg){
+  undoStack.push(snapshot());if(undoStack.length>60)undoStack.shift();redoStack.length=0;
+  fn();save(false);render();if(msg)toast(msg);
+}
+function renderSectionManager(){
+  if(!els.sectionList)return;
+  var sections=uniqueSections();els.sectionList.replaceChildren();
+  sections.forEach(function(name,i){
+    var row=document.createElement("div");row.className="section-manage-row";
+    var label=document.createElement("strong");label.textContent=name;
+    var count=document.createElement("span");count.textContent=state.questions.filter(function(q){return q.section===name}).length+" 题";
+    var rename=document.createElement("button");rename.type="button";rename.className="text-btn";rename.textContent="重命名";
+    rename.onclick=function(){
+      var next=prompt("大题名称",name);next=cleanText(next||"");if(!next||next===name)return;
+      mutateState(function(){state.questions.forEach(function(q){if(q.section===name)q.section=next})},"已重命名大题");
+    };
+    var up=document.createElement("button");up.type="button";up.className="text-btn";up.textContent="↑";up.disabled=i===0;
+    var down=document.createElement("button");down.type="button";down.className="text-btn";down.textContent="↓";down.disabled=i===sections.length-1;
+    function moveSection(delta){
+      var order=uniqueSections(),to=i+delta;if(to<0||to>=order.length)return;
+      var tmp=order[i];order[i]=order[to];order[to]=tmp;
+      mutateState(function(){
+        var grouped={},unsectioned=[];
+        state.questions.forEach(function(q){
+          if(q.section){(grouped[q.section]||(grouped[q.section]=[])).push(q)}
+          else unsectioned.push(q);
+        });
+        state.questions=order.flatMap(function(n){return grouped[n]||[]}).concat(unsectioned);
+      },"已调整大题顺序");
+    }
+    up.onclick=function(){moveSection(-1)};down.onclick=function(){moveSection(1)};
+    row.append(label,count,rename,up,down);els.sectionList.appendChild(row);
+  });
+  if(!sections.length){
+    var empty=document.createElement("p");empty.className="section-empty";empty.textContent="还没有大题。";els.sectionList.appendChild(empty);
+  }
+  if(els.batchSectionSelect){
+    els.batchSectionSelect.replaceChildren();
+    var keep=document.createElement("option");keep.value="";keep.textContent="移动到大题…";els.batchSectionSelect.appendChild(keep);
+    sections.forEach(function(name){var o=document.createElement("option");o.value=name;o.textContent=name;els.batchSectionSelect.appendChild(o)});
+  }
+}
+function updateBatchBar(){
+  if(!els.batchBar)return;
+  els.batchCount.textContent=String(selectedIds.size);
+  els.batchBar.hidden=selectedIds.size===0;
+  renderSectionManager();
+}
+
 function renderOrder(){
   els.orderList.replaceChildren();
   state.questions.forEach(function(q,i){
-    var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"");row.draggable=true;row.dataset.index=i;
-    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
+    var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=true;row.dataset.index=i;
+    var check=document.createElement("input");check.type="checkbox";check.className="order-check";check.checked=selectedIds.has(q.id);check.setAttribute("aria-label","选择第 "+(i+1)+" 题");check.onclick=function(e){e.stopPropagation();if(check.checked)selectedIds.add(q.id);else selectedIds.delete(q.id);renderOrder();updateBatchBar()};\n    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";c.tabIndex=0;c.setAttribute("role","button");
     var b=document.createElement("b");b.textContent=clip(q.content,42)||"未命名题目";
@@ -210,7 +270,7 @@ function renderOrder(){
     var ctr=document.createElement("span");ctr.className="order-controls";
     var up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.onclick=function(){move(i,i-1)};
     var dn=document.createElement("button");dn.type="button";dn.textContent="↓";dn.disabled=i===state.questions.length-1;dn.onclick=function(){move(i,i+1)};
-    ctr.append(up,dn);row.append(h,n,c,ctr);els.orderList.appendChild(row);
+    ctr.append(up,dn);row.append(check,h,n,c,ctr);els.orderList.appendChild(row);
   });
 }
 function measureChoiceWidth(text,fontPt){
@@ -274,7 +334,7 @@ function renderPaper(){
 }
 function render(){
   els.paperName.textContent=state.title;els.questionCount.textContent=state.questions.length;els.sourceName.textContent=state.sourceName;
-  renderOrder();renderPaper();renderQuestionEditor();updateHistoryButtons();
+  renderOrder();renderPaper();renderQuestionEditor();renderSectionManager();updateBatchBar();updateHistoryButtons();
 }
 function updatePages(){
   requestAnimationFrame(function(){
@@ -310,11 +370,11 @@ function renderQuestionEditor(){
   var idx=state.questions.indexOf(q),h=document.createElement("div");h.className="question-editor-head";
   var title=document.createElement("h3");title.textContent="第 "+(idx+1)+" 题";
   var actions=document.createElement("div");
-  var duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-btn";duplicate.textContent="复制";
+  var insert=document.createElement("button");insert.type="button";insert.className="text-btn";insert.textContent="后插题";insert.onclick=function(){mutateState(function(){var nq=newQuestion(q.section);state.questions.splice(idx+1,0,nq);selectedId=nq.id},"已插入新题")};\n  var duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-btn";duplicate.textContent="复制";
   duplicate.onclick=function(){undoStack.push(snapshot());var copy=deepClone(q);copy.id="local-copy-"+Date.now().toString(36);state.questions.splice(idx+1,0,copy);selectedId=copy.id;save(false);render()};
   var removeQ=document.createElement("button");removeQ.type="button";removeQ.className="text-btn danger";removeQ.textContent="删除";
-  removeQ.onclick=function(){if(!confirm("删除第 "+(idx+1)+" 题？"))return;undoStack.push(snapshot());state.questions.splice(idx,1);selectedId=(state.questions[idx]||state.questions[idx-1]||{}).id||null;save(false);render()};
-  actions.append(duplicate,removeQ);h.append(title,actions);root.appendChild(h);
+  removeQ.onclick=function(){if(!confirm("删除第 "+(idx+1)+" 题？"))return;mutateState(function(){selectedIds.delete(q.id);state.questions.splice(idx,1);selectedId=(state.questions[idx]||state.questions[idx-1]||{}).id||null},"已删除题目")};
+  actions.append(insert,duplicate,removeQ);h.append(title,actions);root.appendChild(h);
 
   function touch(){save();renderPaper();renderOrder()}
   function inputField(label,key,kind){
@@ -380,7 +440,7 @@ function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","pdfPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
    "headerInput","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton",
-   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate"
+   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
   selectedId=state.questions[0].id;syncInputs();bindDrag(els.orderList);
@@ -388,6 +448,28 @@ function init(){
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
   els.printButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
+  els.addQuestionButton.onclick=function(){
+    var current=state.questions.find(function(q){return q.id===selectedId});
+    mutateState(function(){var nq=newQuestion(current?current.section:"");var pos=current?state.questions.indexOf(current)+1:state.questions.length;state.questions.splice(pos,0,nq);selectedId=nq.id},"已添加题目");
+  };
+  els.sectionManageButton.onclick=function(){els.sectionPanel.hidden=!els.sectionPanel.hidden;renderSectionManager()};
+  els.addSectionButton.onclick=function(){
+    var name=cleanText(prompt("新建大题名称","一、选择题")||"");if(!name)return;
+    if(uniqueSections().includes(name)){toast("这个大题已经存在");return}
+    mutateState(function(){var nq=newQuestion(name);state.questions.push(nq);selectedId=nq.id},"已新建大题并添加空题");
+  };
+  els.batchGapApplyButton.onclick=function(){
+    var value=Math.max(0,Math.min(100,Number(els.batchGapInput.value)||0));
+    mutateState(function(){state.questions.forEach(function(q){if(selectedIds.has(q.id))q.gap=value})},"已批量设置题后留白");
+  };
+  els.batchGapResetButton.onclick=function(){
+    mutateState(function(){state.questions.forEach(function(q){if(selectedIds.has(q.id))q.gap=0})},"已恢复模板默认留白");
+  };
+  els.batchMoveSectionButton.onclick=function(){
+    var name=els.batchSectionSelect.value;if(!name){toast("先选择目标大题");return}
+    mutateState(function(){state.questions.forEach(function(q){if(selectedIds.has(q.id))q.section=name})},"已移动到 "+name);
+  };
+  els.batchClearButton.onclick=function(){selectedIds.clear();renderOrder();updateBatchBar()};
   els.titleInput.oninput=function(){state.title=els.titleInput.value;save();els.paperName.textContent=state.title;renderPaper()};
   els.coverTitleInput.oninput=function(){state.coverTitle=els.coverTitleInput.value;save();renderPaper()};
   els.headerInput.oninput=function(){state.header=els.headerInput.value;save();renderPaper()};
