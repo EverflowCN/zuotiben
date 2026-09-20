@@ -392,3 +392,13 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap
   .table-wrap>.table:not(.resource-table){min-width:680px}
   .card{max-width:100%}
 }
+
+/* Auth boot fallback */
+.auth-loading-card{min-height:220px;display:flex;flex-direction:column;justify-content:center}
+.auth-loading-line{
+  height:3px;margin-top:5px;border-radius:999px;overflow:hidden;
+  background:linear-gradient(90deg,rgba(64,120,168,.10),rgba(64,120,168,.55),rgba(64,120,168,.10));
+  background-size:180% 100%;animation:auth-loading-slide 1.15s linear infinite
+}
+.auth-reload-fallback{margin-top:14px;justify-content:center}
+@keyframes auth-loading-slide{to{background-position:-180% 0}}
