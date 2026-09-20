@@ -226,7 +226,7 @@ function renderPaper(){
     line.append(num,body);sec.appendChild(line);
     if(q.showOptions&&q.options.length){
       var opts=document.createElement("div");opts.className="options "+choiceClass(q.options);
-      q.options.forEach(function(o,j){var d=document.createElement("div");d.className="option";d.textContent="("+String.fromCharCode(65+j)+") "+o;opts.appendChild(d)});
+      q.options.forEach(function(o,j){var d=document.createElement("div");d.className="option";var l=document.createElement("span");l.className="option-label";l.textContent="("+String.fromCharCode(65+j)+")";var b=document.createElement("span");b.className="option-body";b.textContent=o;d.append(l,b);opts.appendChild(d)});
       sec.appendChild(opts);
     }
     els.paperQuestions.appendChild(sec);renderMath(sec);
