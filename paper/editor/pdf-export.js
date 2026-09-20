@@ -47,7 +47,7 @@ function layoutSpec(state) {
     bottomMm: book ? 14 : 12,
     leftMm: book ? 18 : 20,
     rightMm: book ? 18 : 20,
-    fontSize: book ? 12 : 10.5,
+    fontSize: book ? 10.5 : 9,
     lineHeight: 1.56,
     columns: 1,
     columnGapMm: 0,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   coverSignature: {
     position: "absolute", left: 18 * MM, right: 18 * MM, top: 148.05 * MM,
-    textAlign: "center", fontSize: 14.3462, lineHeight: 18 / 14.3462, fontWeight: 700
+    textAlign: "center", fontSize: 18.3313, lineHeight: 18 / 18.3313, fontWeight: 700
   },
   coverBottomLine: {
     position: "absolute", left: 18 * MM, top: 266 * MM, width: 50 * MM,
@@ -323,7 +323,7 @@ function renderQuestion(q,index,spec) {
 
 function sectionHeading(text,key,spec,breakBefore=false) {
   return h(View,{key,break:breakBefore,minPresenceAhead:spec.fontSize*spec.lineHeight*3,style:{marginBottom:.35*spec.fontSize}},
-    mixedText(text,{key:key+"-text",size:spec.kind==="book"?12:12,lineHeight:1.35,bold:true,sans:true})
+    mixedText(text,{key:key+"-text",size:spec.kind==="book"?12:spec.fontSize,lineHeight:spec.kind==="book"?1.35:spec.lineHeight,bold:true,sans:true})
   );
 }
 
@@ -415,10 +415,10 @@ function coverPageNode(state) {
   const exportDate=state.exportDate||"";
   const dateColor=state.template==="exam"?"#ff0000":"#24272b";
   return h(Page,{size:"A4",style:styles.coverPage,wrap:false},
-    mixedText(title,{key:"cover-title",size:24.7871,lineHeight:30/24.7871,bold:true,style:styles.coverTitle}),
-    mixedText("· Everflow · 彼时流年若水 ·",{key:"cover-signature",size:14.3462,lineHeight:18/14.3462,bold:true,style:styles.coverSignature}),
+    mixedText(title,{key:"cover-title",size:state.template==="book"?21.9178:24.7871,lineHeight:30/(state.template==="book"?21.9178:24.7871),bold:true,style:[styles.coverTitle,{fontSize:state.template==="book"?21.9178:24.7871}]}),
+    mixedText("·彼时流年若水·",{key:"cover-signature",size:18.3313,lineHeight:18/18.3313,bold:true,style:styles.coverSignature}),
     h(View,{key:"cover-line",style:styles.coverBottomLine}),
-    mixedText("Everflow · 彼时流年若水",{key:"cover-brand",size:9.4645,lineHeight:12/9.4645,bold:true,style:styles.coverBrand}),
+    mixedText("Everflow·彼时流年若水",{key:"cover-brand",size:9.4645,lineHeight:12/9.4645,bold:true,style:styles.coverBrand}),
     mixedText("> > > 更新时间："+exportDate,{key:"cover-date",size:8.9664,lineHeight:11/8.9664,bold:true,color:dateColor,style:styles.coverDate})
   );
 }
@@ -447,7 +447,7 @@ function buildBookOnePerPage(state,assets,spec) {
   const questions=Array.isArray(state.questions)?state.questions:[];
   return questions.map((q,i)=>{
     const nodes=[...fixedAssets(assets),bookHeader(state,spec),staticBookFooter(i+1,questions.length,spec)].filter(Boolean);
-    if(q.section)nodes.push(sectionHeading(q.section,"sec-"+i,spec,false));
+    if(q.section&&(i===0||questions[i-1].section!==q.section))nodes.push(sectionHeading(q.section,"sec-"+i,spec,false));
     nodes.push(renderQuestion({...q,gap:0,breakBefore:false},i,spec));
     return h(Page,{key:"bp-"+i,size:[spec.pageWidthPt,spec.pageHeightPt],style:pageStyle(spec),wrap:false},...nodes);
   });
