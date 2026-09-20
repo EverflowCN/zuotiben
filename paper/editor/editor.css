@@ -100,15 +100,7 @@ body.preview-mode .editor-sidebar{display:none}body.preview-mode .editor-shell{g
 #pdfPreview[hidden]{display:none}.paper-running-head.book-head{display:flex;justify-content:space-between;gap:12px}.paper-running-head.book-head span{max-width:45%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 @media(max-width:760px){.editor-topbar{height:auto;min-height:58px;flex-wrap:wrap;padding:8px 10px;gap:6px}.editor-top-actions{flex-wrap:wrap}.editor-top-actions .ghost-btn{display:inline-flex;padding:6px;font-size:10px}.editor-sidebar{max-height:none}.editor-sidebar .order-list{max-height:180px;flex:auto}.question-editor{max-height:45dvh}.editor-toolbar{position:relative;top:auto;flex-wrap:wrap;gap:8px}.editor-toolbar-actions{flex-wrap:wrap}.mode-switch button{padding:7px 10px}}
 
-@font-face{font-family:"Everflow Song";src:url("https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Regular/FandolSong-Regular.otf") format("opentype");font-weight:400;font-display:swap}
-
-@font-face{font-family:"Everflow Song";src:url("https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Bold/FandolSong-Bold.otf") format("opentype");font-weight:700;font-display:swap}
-
-@font-face{font-family:"Everflow Hei";src:url("https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Regular/FandolHei-Regular.otf") format("opentype");font-weight:400;font-display:swap}
-
-@font-face{font-family:"Everflow Hei";src:url("https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf") format("opentype");font-weight:700;font-display:swap}
-
-.paper-sheet,.paper-running-head,.paper-footer{font-family:"Times New Roman","Everflow Song",serif}.paper-header h1{font-family:"Everflow Hei",sans-serif}
+.paper-sheet,.paper-running-head,.paper-footer{font-family:"Times New Roman","Everflow Song",serif;font-synthesis:none}.paper-header h1{font-family:"Everflow Hei",sans-serif}
 
 @media(max-width:760px){#templateButton{display:inline-flex}.editor-main .paper-sheet{width:210mm;min-width:210mm;max-width:none;transform:none;zoom:var(--preview-scale,0.45)}.editor-main .paper-stage{min-height:0}}
 
