@@ -10,28 +10,16 @@ const MM = 72 / 25.4;
 let fontsRegistered = false;
 let qrPromise = null;
 
+// Full CJK TTFs: Fontsource's split web subsets cannot be registered as one PDF font.
 const FONT_URLS = {
-  termesRegular: "https://cdn.jsdelivr.net/gh/fred-wang/MathFonts@98197e063ef6f61c8232b9ade256c6b4107641c6/TeXGyreTermes/texgyretermes-regular.woff",
-  termesBold: "https://cdn.jsdelivr.net/gh/fred-wang/MathFonts@98197e063ef6f61c8232b9ade256c6b4107641c6/TeXGyreTermes/texgyretermes-bold.woff",
-  termesItalic: "https://cdn.jsdelivr.net/gh/fred-wang/MathFonts@98197e063ef6f61c8232b9ade256c6b4107641c6/TeXGyreTermes/texgyretermes-italic.woff",
-  termesBoldItalic: "https://cdn.jsdelivr.net/gh/fred-wang/MathFonts@98197e063ef6f61c8232b9ade256c6b4107641c6/TeXGyreTermes/texgyretermes-bolditalic.woff",
-  notoSerifRegular: "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.9/files/noto-serif-sc-chinese-simplified-400-normal.woff",
-  notoSerifBold: "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.9/files/noto-serif-sc-chinese-simplified-700-normal.woff",
-  notoSansRegular: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/files/noto-sans-sc-chinese-simplified-400-normal.woff",
-  notoSansBold: "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/files/noto-sans-sc-chinese-simplified-700-normal.woff"
+  notoSerifRegular: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Serif/Variable/TTF/Subset/NotoSerifSC-VF.ttf",
+  notoSerifBold: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Serif/Variable/TTF/Subset/NotoSerifSC-VF.ttf",
+  notoSansRegular: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf",
+  notoSansBold: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf"
 };
 
 function registerFonts() {
   if (fontsRegistered) return;
-  Font.register({
-    family: "EverflowTermes",
-    fonts: [
-      { src: FONT_URLS.termesRegular, fontWeight: 400 },
-      { src: FONT_URLS.termesBold, fontWeight: 700 },
-      { src: FONT_URLS.termesItalic, fontStyle: "italic", fontWeight: 400 },
-      { src: FONT_URLS.termesBoldItalic, fontStyle: "italic", fontWeight: 700 }
-    ]
-  });
   Font.register({
     family: "EverflowNotoSerif",
     fonts: [
@@ -84,7 +72,7 @@ const styles = StyleSheet.create({
   questionNumber: {
     width: 2.25 * 10.5,
     paddingRight: 0.55 * 10.5,
-    fontFamily: "EverflowTermes",
+    fontFamily: "Times-Roman",
     fontWeight: 700,
     fontSize: 10.5,
     lineHeight: 1.76
@@ -172,7 +160,7 @@ function mixedText(text, options = {}) {
         {
           key: `${key}-${i}`,
           style: {
-            fontFamily: run.cjk ? (sans ? "EverflowNotoSans" : "EverflowNotoSerif") : "EverflowTermes",
+            fontFamily: run.cjk ? (sans ? "EverflowNotoSans" : "EverflowNotoSerif") : (bold ? "Times-Bold" : "Times-Roman"),
             fontWeight: bold ? 700 : 400
           }
         },
@@ -294,13 +282,13 @@ function renderOptions(options, qIndex) {
 }
 
 function renderQuestion(q, index) {
-  const hasOptions = Array.isArray(q.options) && q.options.length > 0;
+  const hasOptions = q.showOptions !== false && Array.isArray(q.options) && q.options.length > 0;
   return h(
     View,
     {
       key: q.id || `q-${index}`,
-      style: styles.question,
-      wrap: false
+      style: [styles.question, q.gap ? { marginBottom: q.gap * MM } : {}],
+      wrap: true
     },
     h(
       View,
@@ -341,7 +329,8 @@ function sanitizeFileName(name) {
   return safe || "Everflow-试卷";
 }
 
-function headerNode() {
+function headerNode(state) {
+  if(state.template === "book") return h(View, {fixed:true,style:[styles.header,{justifyContent:"space-between"}]}, ...["彼时流年若水",state.header||"","https://zuotiben.top"].map((text,i)=>mixedText(text,{key:`book-head-${i}`,size:8,lineHeight:1,style:{maxWidth:"45%"}})));
   return h(
     View,
     { fixed: true, style: styles.header },
@@ -356,13 +345,13 @@ function footerNode() {
     mixedText("第 ", { key: "foot-a", size: 8, lineHeight: 1 }),
     h(Text, {
       key: "foot-page",
-      style: { fontFamily: "EverflowTermes", fontSize: 8, lineHeight: 1 },
+      style: { fontFamily: "Times-Roman", fontSize: 8, lineHeight: 1 },
       render: ({ pageNumber }) => String(pageNumber)
     }),
     mixedText(" 页（共 ", { key: "foot-b", size: 8, lineHeight: 1 }),
     h(Text, {
       key: "foot-pages",
-      style: { fontFamily: "EverflowTermes", fontSize: 8, lineHeight: 1 },
+      style: { fontFamily: "Times-Roman", fontSize: 8, lineHeight: 1 },
       render: ({ totalPages }) => String(totalPages)
     }),
     mixedText(" 页）", { key: "foot-c", size: 8, lineHeight: 1 })
@@ -373,7 +362,7 @@ function buildDocument(state, assets) {
   const title = state.title || "试卷";
   const questions = Array.isArray(state.questions) ? state.questions : [];
   const fixedNodes = [
-    headerNode(),
+    headerNode(state),
     footerNode(),
     assets.watermark ? h(Image, { fixed: true, key: "watermark", src: assets.watermark, style: styles.watermark }) : null,
     assets.qr ? h(
@@ -404,12 +393,12 @@ function buildDocument(state, assets) {
         sans: true,
         style: styles.title
       }),
-      ...questions.map(renderQuestion)
+      ...questions.flatMap((q,i) => [q.section && (i===0 || questions[i-1].section!==q.section) ? mixedText(q.section,{key:`section-${i}`,bold:true,style:{marginBottom:6}}) : null, renderQuestion(q,i)].filter(Boolean))
     )
   );
 }
 
-export async function downloadPdf(state, hooks = {}) {
+export async function createPdf(state, hooks = {}) {
   registerFonts();
   const { onStatus = () => {} } = hooks;
   onStatus("正在准备字体与模板…");
@@ -423,17 +412,16 @@ export async function downloadPdf(state, hooks = {}) {
   const doc = buildDocument(state, { qr, watermark });
   const blob = await pdf(doc).toBlob();
 
-  onStatus("正在下载…");
+  return blob;
+}
+
+export async function downloadPdf(state, hooks = {}) {
+  const blob = await createPdf(state, hooks);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `${sanitizeFileName(state.title)}.pdf`;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.body.appendChild(a);a.click();a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
-
-  onStatus("done");
   return blob;
 }

@@ -1,0 +1,29 @@
+name: Editor browser and PDF verification
+on:
+  push:
+    branches: [main]
+    paths: ['paper/**', 'scripts/editor-smoke.cjs', '.github/workflows/editor-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Verify editing and real PDF download
+        run: |
+          mkdir -p test-results
+          python3 -m http.server 8765 &
+          node scripts/editor-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-verification
+          path: test-results/

@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/700.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
   <link rel="stylesheet" href="../styles.css?v=20260921-editor1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-direct1">
+  <link rel="stylesheet" href="./editor.css?v=20260921-unified2">
 </head>
 <body class="editor-page">
 <header class="editor-topbar">
@@ -26,7 +26,7 @@
   <div class="editor-top-actions">
     <button class="ghost-btn" id="templateButton" type="button">模板：Exam</button>
     <button class="ghost-btn" id="saveProjectButton" type="button">保存 .everflow</button>
-    <button class="primary-btn" id="compileModeButton" type="button">进入编译模式</button>
+    <div class="mode-switch" role="group" aria-label="编辑器模式"><button id="editModeButton" type="button" aria-pressed="true">编辑</button><button id="previewModeButton" type="button" aria-pressed="false">预览</button></div>
   </div>
 </header>
 
@@ -39,8 +39,8 @@
       </div>
       <b id="questionCount">0</b>
     </div>
-    <div class="sidebar-note">拖动题目调整顺序。后续题干、选项、题型、大题与间距编辑都放在这里。</div>
-    <div class="order-list" id="orderList"></div>
+    <div class="sidebar-note">点击题目编辑题干与选项，拖动或使用箭头调整顺序。修改自动保存在本机。</div>
+    <div class="paper-settings"><label>试卷名称<input id="titleInput"></label><label id="bookHeaderLabel" hidden>中间眉头<input id="headerInput"></label></div><div class="order-list" id="orderList"></div><div id="questionEditor" class="question-editor"></div>
     <footer class="sidebar-foot">
       <a class="text-btn" href="../">重新导入</a>
       <button class="text-btn" id="resetOrderButton" type="button">恢复顺序</button>
@@ -58,23 +58,12 @@
       <div class="editor-toolbar-actions">
         <span class="preview-chip">A4</span>
         <span class="preview-chip"><i></i> 本地渲染</span>
-        <button class="ghost-btn" id="printButton" type="button">下载 PDF</button>
+        <button class="ghost-btn" id="compileButton" type="button">编译预览</button><button class="primary-btn" id="printButton" type="button">下载 PDF</button>
       </div>
     </div>
 
-    <div class="compile-bar" id="compileBar" hidden>
-      <div class="compile-bar-copy">
-        <span>EVERFLOW COMPILE MODE</span>
-        <strong>编译模式 · 固定模板</strong>
-        <small>本地浏览器排版；整题可移动，模板字体与版式锁定。</small>
-      </div>
-      <div class="compile-bar-actions">
-        <button class="ghost-btn" id="compileOrderButton" type="button">题目移动：开启</button>
-        <button class="ghost-btn" id="compileExitButton" type="button">退出编译模式</button>
-        <button class="primary-btn" id="compilePrintButton" type="button">下载 PDF</button>
-      </div>
-    </div>
-
+    <div class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></div>
+    <iframe id="pdfPreview" title="编译后的试卷 PDF" hidden></iframe>
     <div class="paper-stage">
       <article class="paper-sheet" id="paperSheet">
         <div class="paper-running-head" aria-hidden="true">Everflow·彼时流年若水</div>
@@ -99,6 +88,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script defer src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
-<script src="./editor.js?v=20260921-direct1"></script>
+<script src="./editor.js?v=20260921-unified2"></script>
 </body>
 </html>

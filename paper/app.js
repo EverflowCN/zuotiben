@@ -19,7 +19,7 @@ function normalizeQuestion(raw,index){
     importedIndex:index,
     content:cleanText(raw.content||raw.stem||raw.question||raw.text||raw.title||""),
     options:options,
-    source:"local",latexEnabled:false
+    source:"local",latexEnabled:false,type:raw.type,section:raw.section,gap:raw.gap,showOptions:raw.showOptions
   };
 }
 function parseMarkdown(text,fileName){
@@ -58,7 +58,7 @@ function parseJson(text,fileName){
   if(Array.isArray(data))list=data;
   else if(data&&Array.isArray(data.questions)){list=data.questions;title=cleanText(data.title||data.name||title)}
   else throw new Error("JSON 中没有 questions 数组");
-  return {title:title,questions:list.map(normalizeQuestion).filter(function(q){return q.content||q.options.length})};
+  return {title:title,template:data.template,header:data.header,originalIds:data.originalIds,questions:list.map(normalizeQuestion).filter(function(q){return q.content||q.options.length})};
 }
 function parseFile(file,text){
   var lower=file.name.toLowerCase();
@@ -66,10 +66,10 @@ function parseFile(file,text){
 }
 function saveAndOpen(parsed,fileName){
   var payload={
-    version:1,type:"everflow-local-paper",title:parsed.title||"本地试卷",sourceName:fileName||"本地文件",
+    template:parsed.template,header:parsed.header,version:1,type:"everflow-local-paper",title:parsed.title||"本地试卷",sourceName:fileName||"本地文件",
     savedAt:new Date().toISOString(),
-    questions:parsed.questions.map(function(q){return {localId:q.id,content:q.content,options:q.options,source:"local",latexEnabled:false}}),
-    originalIds:parsed.questions.map(function(q){return q.id})
+    questions:parsed.questions.map(function(q){return Object.assign({},q,{localId:q.id,source:"local",latexEnabled:false})}),
+    originalIds:parsed.originalIds||parsed.questions.map(function(q){return q.id})
   };
   localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
   location.href="./editor/";
