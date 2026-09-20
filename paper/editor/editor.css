@@ -347,3 +347,32 @@ body[data-template="book"] .cover-main-title{font-size:21.9178pt!important;line-
 }
 .editor-main #paperSheet .option-label{display:block;white-space:nowrap}
 .editor-main #paperSheet .option-body{display:block;min-width:0}
+
+
+/* Single-source master variables: preview must follow template-modes.js */
+.editor-main #paperSheet{
+  box-sizing:border-box!important;
+  padding:var(--master-top) var(--master-right) var(--master-bottom) var(--master-left)!important;
+  font-size:var(--master-font)!important;
+  line-height:var(--master-leading)!important;
+}
+.editor-main #paperSheet .question{
+  margin-bottom:var(--master-question-gap)!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+}
+.editor-main #paperSheet .question[style*="margin-bottom"]{
+  /* inline per-question override intentionally wins through style attribute */
+}
+.editor-main #paperSheet .options{
+  margin-top:var(--master-choice-before)!important;
+}
+body[data-template="book"][data-layout="single"] .editor-main #paperSheet .question,
+body[data-template="book"][data-layout="padl"] .editor-main #paperSheet .question,
+body[data-template="book"][data-layout="padp"] .editor-main #paperSheet .question{
+  margin-bottom:0!important;
+}
+body[data-template="exam"][data-layout="a3"] .editor-main #paperSheet .paper-questions,
+body[data-template="exam"][data-layout="mixed"] .editor-main #paperSheet .paper-questions{
+  column-gap:var(--master-column-gap)!important;
+}
