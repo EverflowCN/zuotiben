@@ -97,6 +97,7 @@ async function handleAdmin(request, env, url, identity) {
     return json(await getAdminBootstrap(env,identity),200,request,env);
   }
   if (url.pathname.startsWith('/admin/accounts')) return handleAdminAccounts(request,env,url,identity);
+  if (url.pathname.startsWith('/admin/files')) return handleAdminFiles(request,env,url,identity);
   if (url.pathname==='/admin/studio-sync') {
     const denied=requireRole(identity,'editor',request,env); if(denied)return denied;
     return handleStudioSync(request,env,identity);
@@ -136,15 +137,22 @@ async function handleAdmin(request, env, url, identity) {
 }
 
 async function getAdminBootstrap(env, identity) {
-  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','site_settings','admin_profiles','audit_logs'];
+  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','files','site_settings','admin_profiles','audit_logs'];
   const data={ok:true,identity};
-  for(const table of tables){const order=table==='audit_logs'?'created_at DESC':(table==='site_settings'?'key':'updated_at DESC');data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;}
+  for(const table of tables){
+    const order=table==='audit_logs'?'created_at DESC':(table==='site_settings'?'key':(table==='files'?'updated_at DESC, created_at DESC':'updated_at DESC'));
+    data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;
+  }
+  data.studio_revision=await getStudioRevision(env);
   return data;
 }
 
 async function handleStudioSync(request, env, identity) {
   if (request.method !== 'PUT') return json({ok:false,error:'method_not_allowed'},405,request,env);
   const body = await readJson(request);
+  const requestedRevision=Number.isFinite(Number(body.base_revision))?Number(body.base_revision):null;
+  const revisionClaim=await claimStudioRevision(env,requestedRevision);
+  if(!revisionClaim.ok)return json({ok:false,error:'sync_conflict',current_revision:revisionClaim.current},409,request,env);
   const subjects = Array.isArray(body.subjects) ? body.subjects : [];
   const resources = Array.isArray(body.resources) ? body.resources : [];
   const versions = Array.isArray(body.versions) ? body.versions : [];
@@ -196,8 +204,92 @@ async function handleStudioSync(request, env, identity) {
     await env.DB.prepare("INSERT INTO site_settings (key,value_json,updated_at) VALUES ('public.copy',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=CURRENT_TIMESTAMP")
       .bind(JSON.stringify(body.copy)).run();
   }
-  await audit(env,identity.email,'sync','studio','snapshot',{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length});
-  return json({ok:true,counts:{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length}},200,request,env);
+  await audit(env,identity.email,'sync','studio','snapshot',{revision:revisionClaim.next,subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length});
+  return json({ok:true,studio_revision:revisionClaim.next,counts:{subjects:subjects.length,resources:resources.length,versions:versions.length,links:links.length,errata:errata.length,experiences:experiences.length,announcements:announcements.length}},200,request,env);
+}
+
+
+async function handleAdminFiles(request,env,url,identity){
+  const needed=request.method==='GET'?'reviewer':'editor';
+  const denied=requireRole(identity,needed,request,env); if(denied)return denied;
+  const parts=url.pathname.split('/').filter(Boolean);
+  const id=parts[2]?decodeURIComponent(parts[2]):null;
+
+  if(request.method==='GET'){
+    if(id){
+      const item=await env.DB.prepare("SELECT * FROM files WHERE id=?").bind(id).first();
+      return item?json({ok:true,item},200,request,env):json({ok:false,error:'not_found'},404,request,env);
+    }
+    const rows=await env.DB.prepare("SELECT * FROM files ORDER BY updated_at DESC,created_at DESC LIMIT 1000").all();
+    return json({ok:true,items:rows.results},200,request,env);
+  }
+
+  if(request.method==='POST'){
+    const body=await readJson(request);
+    const fileId=String(body.id||crypto.randomUUID());
+    const objectKey=String(body.object_key||('external-'+fileId)).slice(0,500);
+    const name=String(body.name||'未命名文件').slice(0,300);
+    const mimeType=String(body.mime_type||'application/octet-stream').slice(0,160);
+    const sizeBytes=Math.max(0,Math.floor(Number(body.size_bytes)||0));
+    const externalUrl=String(body.external_url||'').trim().slice(0,4000);
+    const usageNote=String(body.usage_note||'').trim().slice(0,1000);
+    const isPublic=body.is_public===false?0:1;
+    const resourceId=body.resource_id||null;
+    const versionId=body.version_id||null;
+    await env.DB.prepare("INSERT INTO files (id,object_key,name,mime_type,size_bytes,is_public,resource_id,version_id,external_url,usage_note,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)")
+      .bind(fileId,objectKey,name,mimeType,sizeBytes,isPublic,resourceId,versionId,externalUrl,usageNote).run();
+    const item=await env.DB.prepare("SELECT * FROM files WHERE id=?").bind(fileId).first();
+    await audit(env,identity.email,'create','files',fileId,{name,external_url:externalUrl,resource_id:resourceId,version_id:versionId});
+    return json({ok:true,item},201,request,env);
+  }
+
+  if(request.method==='PUT'&&id){
+    const existing=await env.DB.prepare("SELECT * FROM files WHERE id=?").bind(id).first();
+    if(!existing)return json({ok:false,error:'not_found'},404,request,env);
+    const body=await readJson(request);
+    const objectKey=('object_key' in body)?String(body.object_key||('external-'+id)).slice(0,500):existing.object_key;
+    const name=('name' in body)?String(body.name||'未命名文件').slice(0,300):existing.name;
+    const mimeType=('mime_type' in body)?String(body.mime_type||'application/octet-stream').slice(0,160):existing.mime_type;
+    const sizeBytes=('size_bytes' in body)?Math.max(0,Math.floor(Number(body.size_bytes)||0)):Number(existing.size_bytes||0);
+    const externalUrl=('external_url' in body)?String(body.external_url||'').trim().slice(0,4000):(existing.external_url||'');
+    const usageNote=('usage_note' in body)?String(body.usage_note||'').trim().slice(0,1000):(existing.usage_note||'');
+    const isPublic=('is_public' in body)?(body.is_public===false?0:1):Number(existing.is_public||0);
+    const resourceId=('resource_id' in body)?(body.resource_id||null):existing.resource_id;
+    const versionId=('version_id' in body)?(body.version_id||null):existing.version_id;
+    await env.DB.prepare("UPDATE files SET object_key=?,name=?,mime_type=?,size_bytes=?,is_public=?,resource_id=?,version_id=?,external_url=?,usage_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(objectKey,name,mimeType,sizeBytes,isPublic,resourceId,versionId,externalUrl,usageNote,id).run();
+    const item=await env.DB.prepare("SELECT * FROM files WHERE id=?").bind(id).first();
+    await audit(env,identity.email,'update','files',id,{name,external_url:externalUrl,resource_id:resourceId,version_id:versionId});
+    return json({ok:true,item},200,request,env);
+  }
+
+  if(request.method==='DELETE'&&id){
+    await env.DB.prepare("DELETE FROM files WHERE id=?").bind(id).run();
+    await audit(env,identity.email,'delete','files',id,{});
+    return json({ok:true},200,request,env);
+  }
+
+  return json({ok:false,error:'method_not_allowed'},405,request,env);
+}
+
+async function ensureStudioRevision(env){
+  await env.DB.prepare("INSERT OR IGNORE INTO site_settings (key,value_json,updated_at) VALUES ('internal.studio_revision','0',CURRENT_TIMESTAMP)").run();
+}
+async function getStudioRevision(env){
+  await ensureStudioRevision(env);
+  const row=await env.DB.prepare("SELECT value_json FROM site_settings WHERE key='internal.studio_revision'").first();
+  const parsed=safeJson(row?.value_json,0);
+  return Number.isFinite(Number(parsed))?Number(parsed):0;
+}
+async function claimStudioRevision(env,baseRevision){
+  await ensureStudioRevision(env);
+  const current=await getStudioRevision(env);
+  if(baseRevision!==null&&baseRevision!==current)return {ok:false,current};
+  const next=current+1;
+  const result=await env.DB.prepare("UPDATE site_settings SET value_json=?,updated_at=CURRENT_TIMESTAMP WHERE key='internal.studio_revision' AND value_json=?")
+    .bind(JSON.stringify(next),JSON.stringify(current)).run();
+  if(Number(result?.meta?.changes||0)!==1)return {ok:false,current:await getStudioRevision(env)};
+  return {ok:true,current,next};
 }
 
 async function handleAdminSettings(request, env, url, identity) {
