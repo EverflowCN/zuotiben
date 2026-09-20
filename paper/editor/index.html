@@ -4,43 +4,70 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Everflow 本地试卷编辑器">
-  <title>试卷编辑器 · 研库</title>
+  <meta name="description" content="Everflow 本地试卷与做题本编辑器">
+  <title>本地排版编辑器 · 研库</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/400.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/700.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/400.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/700.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
-  <link rel="stylesheet" href="../styles.css?v=20260921-editor1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-unified2">
+  <link rel="stylesheet" href="../styles.css?v=20260921-editor2">
+  <link rel="stylesheet" href="./editor.css?v=20260921-cnmode1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar">
   <div class="editor-brand-wrap">
     <a class="brand" href="../" aria-label="返回本地组卷入口">
       <span class="brand-mark">E</span>
-      <span>Everflow<small>研库 · 试卷编辑器</small></span>
+      <span>Everflow<small>研库 · 本地排版编辑器</small></span>
     </a>
-    <span class="local-pill"><i></i> 本地编辑</span>
+    <span class="local-pill"><i></i> 全程本地</span>
   </div>
   <div class="editor-top-actions">
-    <button class="ghost-btn" id="templateButton" type="button">模板：Exam</button>
-    <button class="ghost-btn" id="saveProjectButton" type="button">保存 .everflow</button>
-    <div class="mode-switch" role="group" aria-label="编辑器模式"><button id="editModeButton" type="button" aria-pressed="true">编辑</button><button id="previewModeButton" type="button" aria-pressed="false">预览</button></div>
+    <div class="history-actions" role="group" aria-label="撤销与重做">
+      <button class="icon-text-btn" id="undoButton" type="button" title="撤销 Ctrl/⌘+Z">↶</button>
+      <button class="icon-text-btn" id="redoButton" type="button" title="重做 Ctrl/⌘+Shift+Z">↷</button>
+    </div>
+    <span class="save-state" id="saveState"><i></i> 已保存到本机</span>
+    <div class="template-control">
+      <button class="ghost-btn template-trigger" id="templateButton" type="button" aria-haspopup="true" aria-expanded="false">
+        <span id="templateButtonLabel">试卷 · A4 试卷</span><b>⌄</b>
+      </button>
+      <div class="template-popover" id="templatePopover" hidden>
+        <div class="template-popover-head"><strong>选择版式</strong><small>只切换固定模板，不开放字体和页边距</small></div>
+        <div id="templateMenu"></div>
+      </div>
+    </div>
+    <button class="ghost-btn" id="saveProjectButton" type="button">保存项目</button>
+    <div class="mode-switch" role="group" aria-label="编辑器模式">
+      <button id="editModeButton" type="button" aria-pressed="true">编辑</button>
+      <button id="previewModeButton" type="button" aria-pressed="false">预览</button>
+    </div>
   </div>
 </header>
 
 <main class="editor-shell">
   <aside class="editor-sidebar">
     <div class="sidebar-head">
-      <div>
-        <span>QUESTIONS</span>
-        <strong id="paperName">未命名试卷</strong>
-      </div>
+      <div><span>CONTENT</span><strong id="paperName">未命名试卷</strong></div>
       <b id="questionCount">0</b>
     </div>
-    <div class="sidebar-note">点击题目编辑题干与选项，拖动或使用箭头调整顺序。修改自动保存在本机。</div>
-    <div class="paper-settings"><label>试卷名称<input id="titleInput"></label><label id="bookHeaderLabel" hidden>中间眉头<input id="headerInput"></label></div><div class="order-list" id="orderList"></div><div id="questionEditor" class="question-editor"></div>
+    <div class="sidebar-note">题目、公式、排序和设置仅保存在当前设备。修改后右侧立即更新预览。</div>
+
+    <div class="paper-settings">
+      <label>项目名称<input id="titleInput" autocomplete="off"></label>
+      <label>封面标题<input id="coverTitleInput" autocomplete="off"></label>
+      <label id="bookHeaderLabel" hidden>做题本中间页眉<input id="headerInput" autocomplete="off" placeholder="例如：第 1 部分 / CO+OS"></label>
+      <div class="locked-row"><span>封面更新时间</span><b id="exportDateDisplay">按导出日期自动生成</b><em>自动</em></div>
+    </div>
+
+    <div class="order-toolbar">
+      <strong>题目结构</strong>
+      <span>拖动排序</span>
+    </div>
+    <div class="order-list" id="orderList"></div>
+    <div id="questionEditor" class="question-editor"></div>
+
     <footer class="sidebar-foot">
       <a class="text-btn" href="../">重新导入</a>
       <button class="text-btn" id="resetOrderButton" type="button">恢复顺序</button>
@@ -51,22 +78,31 @@
   <section class="editor-main">
     <div class="editor-toolbar">
       <div>
-        <span>PREVIEW</span>
-        <strong>Everflow 固定模板预览</strong>
+        <span>LIVE PREVIEW</span>
+        <strong id="templateSummary">试卷 · A4 试卷</strong>
         <small id="sourceName">浏览器本地文件</small>
       </div>
       <div class="editor-toolbar-actions">
-        <span class="preview-chip">A4</span>
-        <span class="preview-chip"><i></i> 本地渲染</span>
-        <button class="ghost-btn" id="compileButton" type="button">编译预览</button><button class="primary-btn" id="printButton" type="button">下载 PDF</button>
+        <span class="preview-chip" id="pageSizeChip">A4</span>
+        <span class="preview-chip"><i></i> 实时本地预览</span>
+        <button class="primary-btn" id="printButton" type="button">下载 PDF</button>
       </div>
     </div>
 
     <div class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></div>
-    <iframe id="pdfPreview" title="编译后的试卷 PDF" hidden></iframe>
-    <div class="paper-stage">
+    <iframe id="pdfPreview" title="生成后的 PDF" hidden></iframe>
+
+    <div class="paper-stage" id="paperStage">
+      <article class="paper-sheet cover-sheet" id="coverSheet" aria-label="封面预览">
+        <div class="cover-main-title" id="coverPreviewTitle">未命名试卷</div>
+        <div class="cover-signature">·彼时流年若水·</div>
+        <div class="cover-bottom-line"></div>
+        <div class="cover-brand">Everflow·彼时流年若水</div>
+        <div class="cover-date" id="coverPreviewDate">&gt;&gt;&gt; 更新时间：按导出日期</div>
+      </article>
+
       <article class="paper-sheet" id="paperSheet">
-        <div class="paper-running-head" aria-hidden="true">Everflow·彼时流年若水</div>
+        <div class="paper-running-head" aria-hidden="true"></div>
         <div class="paper-watermark" aria-hidden="true"></div>
         <aside class="paper-qr" aria-label="zuotiben.top 二维码">
           <div class="paper-qr-code"><img src="../assets/zuotiben-qr.svg" alt="" aria-hidden="true"></div>
@@ -88,6 +124,8 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script defer src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
-<script src="./editor.js?v=20260921-unified2"></script>
+<script src="./template-modes.js?v=20260921-cnmode1"></script>
+<script src="./save-manager.js?v=20260921-cnmode1"></script>
+<script src="./editor.js?v=20260921-cnmode1"></script>
 </body>
 </html>
