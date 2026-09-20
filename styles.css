@@ -2712,3 +2712,33 @@ a,
   background:var(--dark-panel-2);
 }
 
+
+/* About: readable editorial layout with container-based wrapping. */
+#aboutView{width:100%;max-width:960px;min-width:0;margin-inline:auto;container-type:inline-size}
+#aboutView .about-lead{max-width:none;padding:clamp(20px,4vw,36px);margin-bottom:8px;border:1px solid var(--border);border-radius:18px;background:var(--surface-solid)}
+#aboutView .about-lead p{max-width:64ch;color:var(--text);font-size:clamp(14px,1.5vw,16px);line-height:1.9;overflow-wrap:anywhere}
+#aboutView .about-lead p+p{color:var(--muted)}
+#aboutView .about-section{grid-template-columns:88px minmax(0,1fr);gap:24px;padding:28px 4px;min-width:0;border-color:var(--border)}
+#aboutView .about-section>*{min-width:0}
+#aboutView .about-section-label{font-size:12px;color:var(--muted);letter-spacing:.06em}
+#aboutView .about-section-body h2{font-size:clamp(18px,2vw,22px);line-height:1.5;color:var(--text)}
+#aboutView .about-section-body p,#aboutView .about-principles p,#aboutView .about-contribution-row p{font-size:14px;line-height:1.85;color:var(--muted);overflow-wrap:anywhere}
+#aboutView .about-contributions{border-top:0}
+#aboutView .about-contribution-row{grid-template-columns:minmax(0,1fr);gap:6px;min-height:0;padding:16px 0;border-color:var(--border)}
+#aboutView .about-contribution-row:first-child{padding-top:0}
+#aboutView strong{color:var(--text);font-size:inherit}
+#aboutView .about-principles{gap:16px}
+#aboutView .about-actions{display:flex;gap:10px;flex-wrap:wrap}
+#aboutView .about-action{width:auto;min-height:44px;padding:10px 18px;font-size:13px;white-space:normal;line-height:1.5;background:var(--surface-solid);color:var(--text);border-color:var(--border)}
+#aboutView .about-action.primary{background:var(--blue);color:#fff;border-color:transparent}
+#aboutView .about-action:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+@container(max-width:620px){
+  #aboutView .about-section{grid-template-columns:minmax(0,1fr);gap:12px;padding:24px 0}
+  #aboutView .about-section-label{color:var(--blue)}
+}
+@media(max-width:560px){
+  #aboutView .about-lead{padding:20px;border-radius:14px}
+  #aboutView .about-section{grid-template-columns:minmax(0,1fr);gap:12px;padding:22px 0}
+  #aboutView .about-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  #aboutView .about-action{width:100%}
+}
