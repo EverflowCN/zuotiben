@@ -15,7 +15,7 @@ var state={
   questions:[],
   originalIds:[]
 };
-var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfBlob=null,pdfUrl=null;
+var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,pdfUrl=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -442,7 +442,7 @@ async function createLatestPdf(){
     var exporter=await import("./pdf-export.js?v=20260921-masterparity3");
     var blob=await exporter.createPdf(snapshotState,{onStatus:function(s){els.pdfStatus.textContent=s}});
     if(current!==revision){els.pdfStatus.textContent="内容刚刚发生变化，正在使用最新内容重新生成…";pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");return createLatestPdf()}
-    if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfBlob=blob;pdfRevision=current;pdfUrl=URL.createObjectURL(blob);
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;pdfUrl=URL.createObjectURL(blob);
     els.pdfPreview.src=pdfUrl;els.pdfStatus.textContent="PDF 已在本机生成。";
     return blob;
   }finally{
@@ -451,7 +451,7 @@ async function createLatestPdf(){
 }
 async function downloadPdf(){
   try{
-    var blob=(pdfBlob&&pdfRevision===revision)?pdfBlob:await createLatestPdf();if(!blob)return;
+    var today=localDate();var blob=(pdfBlob&&pdfRevision===revision&&pdfExportDate===today)?pdfBlob:await createLatestPdf();if(!blob)return;
     var name=(state.coverTitle||state.title||"Everflow")+"";
     var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf"});
     if(result.method!=="cancelled")toast("PDF 已交给浏览器保存");
