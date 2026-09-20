@@ -493,7 +493,7 @@ function renderNav(){
     if(!items.length)return '';
     return '<div class="nav-group">'+g.label+'</div>'+items.map(([id,label,ic])=>'<button class="nav-item '+(state.section===id?'active':'')+'" data-section="'+id+'">'+icon(ic)+'<span>'+label+'</span>'+badge(id)+'</button>').join('');
   }).join('');
-  $('#nav [data-section]').forEach(b=>b.onclick=()=>{state.section=b.dataset.section;render();closeSide()});
+  $$('#nav [data-section]').forEach(b=>b.onclick=()=>{state.section=b.dataset.section;render();closeSide()});
 }
 function badge(id){const n={resources:state.resources.length,experience:state.experiences.length,errata:state.errata.length,announcements:state.announcements.length,admins:state.admins.length}[id];return n?'<b>'+n+'</b>':''}
 function head(title,desc,action=''){return '<div class="page-head"><div><div class="eyebrow">'+titles[state.section][0]+'</div><h1>'+title+'</h1><p>'+desc+'</p></div><div class="page-actions">'+action+'</div></div>'}
@@ -851,7 +851,7 @@ function bind(){
   $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料；原属于该科目的资料将变为未分类。',()=>{const category=state.categories.find(x=>sameId(x.id,b.dataset.deleteCategory));if(category){state.resources.forEach(r=>{if(r.subjectName===category.name&&r.subjectCode===category.code){r.subjectName='';r.subjectCode=''}})}state.categories=state.categories.filter(x=>!sameId(x.id,b.dataset.deleteCategory));saveStudioCollections();render();toast('科目已删除')}));
   $('[data-upload]')?.addEventListener('click',()=>openFile());
   $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.editFile));
-  $('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','只删除 D1 中的文件元数据，不会删除外部网盘或直链文件。',async()=>{
+  $$('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','只删除 D1 中的文件元数据，不会删除外部网盘或直链文件。',async()=>{
     const id=b.dataset.deleteFile;
     try{
       await studioApi('/admin/files/'+encodeURIComponent(id),{method:'DELETE'});
