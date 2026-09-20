@@ -143,18 +143,27 @@
   }
 
   function renderMath(root){
-    if(typeof window.renderMathInElement!=="function")return;
     try{
-      window.renderMathInElement(root,{
-        delimiters:[
-          {left:"$$",right:"$$",display:true},
-          {left:"\\[",right:"\\]",display:true},
-          {left:"$",right:"$",display:false},
-          {left:"\\(",right:"\\)",display:false}
-        ],
-        throwOnError:false,
-        strict:false
-      });
+      var delimiters=[
+        {left:"$",right:"$",display:true},
+        {left:"\\[",right:"\\]",display:true},
+        {left:"\\(",right:"\\)",display:false},
+        {left:"$",right:"$",display:false}
+      ];
+      if(window.temml&&typeof window.temml.renderMathInElement==="function"){
+        window.temml.renderMathInElement(root,{
+          delimiters:delimiters,
+          throwOnError:false,
+          strict:false,
+          trust:false,
+          maxExpand:1000,
+          maxSize:50
+        });
+        return;
+      }
+      if(typeof window.renderMathInElement==="function"){
+        window.renderMathInElement(root,{delimiters:delimiters,throwOnError:false,strict:false});
+      }
     }catch(e){}
   }
 
