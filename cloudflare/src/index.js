@@ -140,7 +140,8 @@ async function getAdminBootstrap(env, identity) {
   const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','files','site_settings'];
   const data={ok:true,identity};
   for(const table of tables){
-    const order=table==='site_settings'?'key':(table==='files'?'updated_at DESC, created_at DESC':'updated_at DESC');
+    // files.updated_at was added in migration 0003; older databases must still boot.
+    const order=table==='site_settings'?'key':(table==='files'?'created_at DESC':'updated_at DESC');
     data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;
   }
 
