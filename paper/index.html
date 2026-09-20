@@ -6,7 +6,7 @@
   <meta name="description" content="研库本地组卷：题目文件仅在浏览器中处理，不上传服务器，套用固定 Everflow A4 模板并直接导出 PDF。">
   <meta name="theme-color" content="#ffffff">
   <title>本地组卷 · 研库</title>
-  <link rel="stylesheet" href="./styles.css?v=20260921-local1">
+  <link rel="stylesheet" href="./styles.css?v=20260921-compile2">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
 <body>
@@ -100,9 +100,26 @@
       <div class="workspace-actions">
         <button class="ghost-btn" id="replaceButton" type="button">重新导入</button>
         <button class="ghost-btn" id="exportProjectButton" type="button">保存 .everflow</button>
-        <button class="primary-btn" id="printButton" type="button">导出 PDF</button>
+        <button class="ghost-btn compile-entry" id="compileModeButton" type="button">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v4H8zM6 10h12v10H6zM9 14h6"/></svg>
+  <span>进入编译模式</span>
+</button>
+<button class="primary-btn" id="printButton" type="button">导出 PDF</button>
       </div>
     </header>
+
+    <div class="compile-bar" id="compileBar" hidden>
+      <div class="compile-bar-copy">
+        <span>EVERFLOW COMPILE MODE</span>
+        <strong>编译模式 · 固定 exam-A4 模板</strong>
+        <small>本地浏览器排版，不上传题目；整题可移动，题干与模板均锁定。</small>
+      </div>
+      <div class="compile-bar-actions">
+        <button class="ghost-btn" id="compileOrderButton" type="button">题目移动：开启</button>
+        <button class="ghost-btn" id="compileExitButton" type="button">退出编译模式</button>
+        <button class="primary-btn" id="compilePrintButton" type="button">导出 PDF</button>
+      </div>
+    </div>
 
     <div class="workspace-grid">
       <aside class="order-panel">
@@ -134,6 +151,12 @@
 
         <div class="paper-stage">
           <article class="paper-sheet" id="paperSheet">
+            <div class="paper-running-head" aria-hidden="true">Everflow·彼时流年若水</div>
+            <div class="paper-watermark" aria-hidden="true"></div>
+            <aside class="paper-qr" aria-label="zuotiben.top 二维码">
+              <div class="paper-qr-code" id="paperQrCode"></div>
+              <span>zuotiben.top</span>
+            </aside>
             <header class="paper-header">
               <div class="paper-brand">EVERFLOW · 彼时流年若水</div>
               <h1 id="previewTitle">试卷</h1>
@@ -141,8 +164,8 @@
             </header>
             <main class="paper-questions" id="paperQuestions"></main>
             <footer class="paper-footer">
-              <span>Everflow · zuotiben.top</span>
-              <span>本地浏览器排版</span>
+              <span>Everflow·彼时流年若水</span>
+              <span>第 <b id="previewPageCurrent">1</b> 页（共 <b id="previewPageTotal">1</b> 页）</span>
             </footer>
           </article>
         </div>
@@ -204,6 +227,7 @@ D. $2$
 
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script src="./app.js?v=20260921-local1"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="./app.js?v=20260921-compile2"></script>
 </body>
 </html>
