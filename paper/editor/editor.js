@@ -123,7 +123,7 @@ function semanticLines(text){
   var src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
   src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
   src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");
-  src=src.replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n");
+  src=(" "+src).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n").slice(1);
   return src.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
 }
 function renderMath(root){
@@ -213,13 +213,34 @@ function renderOrder(){
     ctr.append(up,dn);row.append(h,n,c,ctr);els.orderList.appendChild(row);
   });
 }
+function measureChoiceWidth(text,fontPt){
+  try{
+    var canvas=measureChoiceWidth.canvas||(measureChoiceWidth.canvas=document.createElement("canvas"));
+    var ctx=canvas.getContext("2d");
+    ctx.font=(fontPt*96/72)+'px "Everflow Song","Times New Roman",serif';
+    return ctx.measureText(String(text||"")).width*72/96;
+  }catch(e){
+    return Array.from(String(text||"")).reduce(function(sum,ch){
+      return sum+(/[^\x00-\xff]/.test(ch)?fontPt:fontPt*.55);
+    },0);
+  }
+}
 function choiceClass(options){
-  var max=options.reduce(function(m,o){return Math.max(m,String(o).replace(/\s+/g,"").length)},0),n=options.length;
-  if(n===3)return max<=14?"cols-3":max<=34?"cols-2":"cols-1";
-  if(n===4)return max<=14?"cols-4":max<=34?"cols-2":"cols-1";
-  if(n===5)return max<=34?"cols-2":"cols-1";
-  if(n===6)return max<=14?"cols-3":max<=34?"cols-2":"cols-1";
-  return max<=34&&n>1?"cols-2":"cols-1";
+  var info=modeInfo(),n=options.length;
+  var textWidthMm=info.widthMm-info.leftMm-info.rightMm-((info.columns||1)===2?(info.columnGapMm||0):0);
+  var columnWidthPt=((info.columns||1)===2?(textWidthMm/2):textWidthMm)*72/25.4;
+  var lineWidth=columnWidthPt-(info.questionLabelWidthEm+info.questionLabelSepEm)*info.fontPt;
+  var max=0;
+  options.forEach(function(o,i){
+    max=Math.max(max,measureChoiceWidth("(" + String.fromCharCode(65+i) + ") " + String(o||""),info.fontPt));
+  });
+  var short=max<=info.choiceFourColumnThreshold*lineWidth;
+  var medium=max<=info.choiceTwoColumnThreshold*lineWidth;
+  if(n===3)return short?"cols-3":medium?"cols-2":"cols-1";
+  if(n===4)return short?"cols-4":medium?"cols-2":"cols-1";
+  if(n===5)return medium?"cols-2":"cols-1";
+  if(n===6)return short?"cols-3":medium?"cols-2":"cols-1";
+  return medium&&n>1?"cols-2":"cols-1";
 }
 function renderPaper(){
   renderTemplateState();
