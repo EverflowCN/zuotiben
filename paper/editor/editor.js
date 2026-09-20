@@ -236,7 +236,7 @@ function renderPaper(){
       var heading=document.createElement("h2");heading.className="paper-section-heading";heading.textContent=q.section;els.paperQuestions.appendChild(heading);
     }
     var sec=document.createElement("section");sec.className="question";sec.dataset.index=i;sec.dataset.questionId=q.id;
-    if(q.gap)sec.style.marginBottom=q.gap+"mm";if(q.breakBefore)sec.classList.add("force-break-before");
+    if(q.gap)sec.style.setProperty("--question-gap",q.gap+"mm");if(q.breakBefore)sec.classList.add("force-break-before");
     sec.onclick=function(){selectedId=q.id;renderOrder();renderQuestionEditor()};
     var line=document.createElement("div");line.className="question-line";
     var num=document.createElement("div");num.className="question-number";num.textContent=(i+1)+".";
