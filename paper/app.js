@@ -231,6 +231,8 @@
       if(q.options.length){
         var options=document.createElement("div");
         options.className="options";
+        var maxOptionLength=q.options.reduce(function(max,opt){return Math.max(max,String(opt||"").replace(/\s+/g,"").length)},0);
+        options.classList.add(maxOptionLength<=14?"cols-4":maxOptionLength<=34?"cols-2":"cols-1");
         q.options.forEach(function(opt,optIndex){
           var item=document.createElement("div");
           item.className="option";
