@@ -504,6 +504,19 @@
     }
   }
 
+  async function printPaper(){
+    if(!state.questions.length){toast("请先导入题目");return}
+    try{
+      if(document.fonts&&document.fonts.ready){
+        toast("正在准备模板字体…");
+        await document.fonts.ready;
+      }
+    }catch(e){}
+    renderPaper();
+    await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve)})});
+    window.print();
+  }
+
   function showModal(show){
     els.formatModal.hidden=!show;
     document.body.style.overflow=show?"hidden":"";
@@ -569,14 +582,8 @@
     els.compileModeButton.addEventListener("click",function(){setCompileMode(!compileMode)});
     els.compileExitButton.addEventListener("click",function(){setCompileMode(false)});
     els.compileOrderButton.addEventListener("click",function(){setQuestionMoveEnabled(!questionMoveEnabled)});
-    els.compilePrintButton.addEventListener("click",function(){
-      if(!state.questions.length){toast("请先导入题目");return}
-      window.print();
-    });
-    els.printButton.addEventListener("click",function(){
-      if(!state.questions.length){toast("请先导入题目");return}
-      window.print();
-    });
+    els.compilePrintButton.addEventListener("click",printPaper);
+    els.printButton.addEventListener("click",printPaper);
     els.resetOrderButton.addEventListener("click",resetOrder);
     els.clearButton.addEventListener("click",clearPaper);
     document.querySelectorAll("[data-modal-close]").forEach(function(el){el.addEventListener("click",function(){showModal(false)})});
