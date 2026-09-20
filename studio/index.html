@@ -8,9 +8,18 @@
   <meta name="theme-color" content="#f6f0e5">
   <script>if(location.hostname==='zuotiben.top'&&location.protocol==='http:'){location.replace('https://'+location.host+location.pathname+location.search+location.hash)}</script>
   <title>Studio</title>
-  <link rel="stylesheet" href="./styles.css?v=20260920-studio16">
+  <link rel="stylesheet" href="./styles.css?v=20260920-studio17">
 </head>
 <body class="auth-locked">
+  <section id="authGate" class="auth-gate" aria-live="polite">
+    <div class="auth-card auth-loading-card">
+      <div class="auth-brand"><span class="brand-mark">研</span><div><strong>Studio</strong><small>资源管理</small></div></div>
+      <h1>正在载入后台</h1>
+      <p>正在检查管理员会话与云端认证状态。</p>
+      <div class="auth-loading-line" aria-hidden="true"></div>
+      <button class="btn subtle auth-reload-fallback" type="button" onclick="location.reload()">重新载入</button>
+    </div>
+  </section>
   <div id="app" class="app">
     <aside class="sidebar">
       <div class="side-head">
@@ -61,6 +70,6 @@
   <section id="confirmModal" class="confirm-modal" hidden role="dialog" aria-modal="true"></section>
 
   <div id="toastStack" class="toast-stack"></div>
-  <script src="./app.js?v=20260920-studio31"></script>
+  <script src="./app.js?v=20260920-studio32"></script>
 </body>
 </html>
