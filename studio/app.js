@@ -34,7 +34,15 @@ const storedPinnedResources=safeLocalJson('yanku-pinned-resource-titles',[]);
 const storedPinnedAnnouncements=safeLocalJson('yanku-pinned-announcement-titles',[]);
 const pinnedResourceTitles=new Set(Array.isArray(storedPinnedResources)?storedPinnedResources:[]);
 const pinnedAnnouncementTitles=new Set(Array.isArray(storedPinnedAnnouncements)?storedPinnedAnnouncements:[]);
-const storedAnnouncements=safeLocalJson('yanku-announcements-v2',null);
+const storedAnnouncementsRaw=safeLocalJson('yanku-announcements-v2',null);
+const storedAnnouncements=Array.isArray(storedAnnouncementsRaw)?storedAnnouncementsRaw:null;
+
+function safeLocalText(key,fallback=''){
+  try{
+    const value=localStorage.getItem(key);
+    return value===null?fallback:value;
+  }catch{return fallback}
+}
 
 const siteCopyDefaults={
   brandName:'研库',
@@ -165,7 +173,7 @@ const state={
   announcementSelection:new Set(),
   copy:loadSiteCopy(),
   account:{displayName:'主管理员',username:'owner',email:'',role:'Owner',mfa:false,lastLogin:'当前会话'},
-  settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:localStorage.getItem('yanku-errata-submit-url')||''}
+  settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:safeLocalText('yanku-errata-submit-url','')}
 };
 function loadStudioCollections(){
   const value=safeLocalJson('yanku-studio-collections-v1',null);
@@ -390,6 +398,8 @@ function renderAuthGate(mode,setupStatus={},message=''){
   };
 }
 async function bootstrapStudioCloud(){
+  const gate=ensureAuthGate();
+  if(document.body.classList.contains('auth-locked'))gate.hidden=false;
   try{
     const data=await studioApi('/admin/bootstrap');
     applyCloudBootstrap(data);
@@ -1189,5 +1199,19 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus();$('#globalSearch').select()}
   if(e.key==='Escape'){closeGlobalSearch();closeDrawer();closeConfirm();closeSide()}
 });
-render();
 bootstrapStudioCloud();
+
+window.addEventListener('error',event=>{
+  if(!document.body.classList.contains('auth-locked'))return;
+  try{
+    renderAuthGate('login',{},'后台脚本初始化异常，请重新登录。');
+    console.error('Studio boot error:',event.error||event.message);
+  }catch{}
+});
+window.addEventListener('unhandledrejection',event=>{
+  if(!document.body.classList.contains('auth-locked'))return;
+  try{
+    renderAuthGate('login',{},'后台初始化请求异常，请重新登录。');
+    console.error('Studio boot rejection:',event.reason);
+  }catch{}
+});
