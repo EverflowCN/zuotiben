@@ -95,7 +95,8 @@ function load(){
 }
 function save(markDirty){
   if(markDirty!==false){revision++;checkpoint()}
-  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；正在等待最新排版。";\n  schedulePdfPreview();
+  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；正在等待最新排版。";
+  schedulePdfPreview();
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
