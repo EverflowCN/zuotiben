@@ -4,6 +4,8 @@
   var STORAGE_KEY="zuotiben-local-paper-v1";
   var THEME_KEY="zuotiben-paper-theme-v1";
   var state={title:"未命名试卷",sourceName:"本地文件",questions:[],originalIds:[],loadedAt:null};
+  var compileMode=false;
+  var questionMoveEnabled=true;
 
   var els={};
   function byId(id){return document.getElementById(id)}
@@ -217,6 +219,21 @@
     state.questions.forEach(function(q,index){
       var article=document.createElement("section");
       article.className="question";
+      article.dataset.index=String(index);
+      article.draggable=Boolean(compileMode&&questionMoveEnabled);
+
+      var moveTools=document.createElement("div");
+      moveTools.className="question-move-tools";
+      var grip=document.createElement("span");
+      grip.className="move-grip";grip.textContent="⋮⋮";grip.title="拖动整道题";
+      var moveUp=document.createElement("button");
+      moveUp.type="button";moveUp.textContent="↑";moveUp.title="上移整道题";moveUp.disabled=index===0;
+      var moveDown=document.createElement("button");
+      moveDown.type="button";moveDown.textContent="↓";moveDown.title="下移整道题";moveDown.disabled=index===state.questions.length-1;
+      moveUp.addEventListener("click",function(e){e.stopPropagation();moveQuestion(index,index-1)});
+      moveDown.addEventListener("click",function(e){e.stopPropagation();moveQuestion(index,index+1)});
+      moveTools.appendChild(grip);moveTools.appendChild(moveUp);moveTools.appendChild(moveDown);
+      article.appendChild(moveTools);
 
       var line=document.createElement("div");
       line.className="question-line";
@@ -244,7 +261,89 @@
       els.paperQuestions.appendChild(article);
       renderMath(article);
     });
-    requestAnimationFrame(syncPaperScale);
+    requestAnimationFrame(function(){syncPaperScale();updatePageEstimate()});
+  }
+
+  function updatePageEstimate(){
+    if(!els.paperSheet||!els.previewPageTotal)return;
+    var a4Px=1122.52;
+    var pages=Math.max(1,Math.ceil(els.paperSheet.scrollHeight/a4Px));
+    els.previewPageTotal.textContent=String(pages);
+    els.previewPageCurrent.textContent="1";
+  }
+
+  function setQuestionMoveEnabled(enabled){
+    questionMoveEnabled=Boolean(enabled);
+    document.body.classList.toggle("question-move-on",questionMoveEnabled);
+    if(els.compileOrderButton)els.compileOrderButton.textContent="题目移动："+(questionMoveEnabled?"开启":"关闭");
+    renderPaper();
+  }
+
+  function setCompileMode(enabled){
+    compileMode=Boolean(enabled);
+    document.body.classList.toggle("compile-mode",compileMode);
+    document.body.classList.toggle("question-move-on",compileMode&&questionMoveEnabled);
+    if(els.compileBar)els.compileBar.hidden=!compileMode;
+    if(els.compileModeButton){
+      var label=els.compileModeButton.querySelector("span");
+      if(label)label.textContent=compileMode?"退出编译模式":"进入编译模式";
+    }
+    renderPaper();
+    requestAnimationFrame(function(){
+      syncPaperScale();
+      if(compileMode)window.scrollTo({top:0,behavior:"smooth"});
+      else els.workspace.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+  }
+
+  function bindPaperDrag(){
+    var dragIndex=null;
+    els.paperQuestions.addEventListener("dragstart",function(e){
+      if(!compileMode||!questionMoveEnabled)return;
+      var row=e.target.closest(".question");
+      if(!row)return;
+      dragIndex=Number(row.dataset.index);
+      row.classList.add("paper-dragging");
+      if(e.dataTransfer){e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(dragIndex))}
+    });
+    els.paperQuestions.addEventListener("dragend",function(){
+      dragIndex=null;
+      els.paperQuestions.querySelectorAll(".question").forEach(function(row){row.classList.remove("paper-dragging","paper-drop-before")});
+    });
+    els.paperQuestions.addEventListener("dragover",function(e){
+      if(!compileMode||!questionMoveEnabled)return;
+      var row=e.target.closest(".question");
+      if(!row)return;
+      e.preventDefault();
+      els.paperQuestions.querySelectorAll(".question").forEach(function(item){item.classList.remove("paper-drop-before")});
+      row.classList.add("paper-drop-before");
+    });
+    els.paperQuestions.addEventListener("drop",function(e){
+      if(!compileMode||!questionMoveEnabled||dragIndex==null)return;
+      var row=e.target.closest(".question");
+      if(!row)return;
+      e.preventDefault();
+      var target=Number(row.dataset.index);
+      if(target!==dragIndex)moveQuestion(dragIndex,target);
+    });
+  }
+
+  function renderQr(){
+    if(!els.paperQrCode||els.paperQrCode.childNodes.length)return;
+    if(typeof window.QRCode!=="function"){
+      setTimeout(renderQr,120);
+      return;
+    }
+    try{
+      new window.QRCode(els.paperQrCode,{
+        text:"https://zuotiben.top/",
+        width:128,
+        height:128,
+        colorDark:"#111111",
+        colorLight:"#ffffff",
+        correctLevel:window.QRCode.CorrectLevel.M
+      });
+    }catch(e){}
   }
 
   function renderAll(){
@@ -458,12 +557,15 @@
       "toast","startGrid","workspace","paperName","questionCount","sourceName","orderCount","orderList",
       "paperQuestions","previewTitle","previewMeta","paperSheet","fileInput","importButton","openProjectButton",
       "copyPromptButton","downloadTemplateButton","howButton","replaceButton","exportProjectButton","printButton",
-      "resetOrderButton","clearButton","formatModal","themeToggle"
+      "resetOrderButton","clearButton","formatModal","themeToggle","compileModeButton","compileBar","compileOrderButton",
+      "compileExitButton","compilePrintButton","paperQrCode","previewPageCurrent","previewPageTotal"
     ].forEach(function(id){els[id]=byId(id)});
     els.paperStage=document.querySelector(".paper-stage");
 
     initTheme();
     bindDrag();
+    bindPaperDrag();
+    renderQr();
 
     els.importButton.addEventListener("click",function(){els.fileInput.click()});
     els.openProjectButton.addEventListener("click",function(){els.fileInput.click()});
@@ -473,6 +575,13 @@
     els.downloadTemplateButton.addEventListener("click",downloadTemplate);
     els.howButton.addEventListener("click",function(){showModal(true)});
     els.exportProjectButton.addEventListener("click",exportProject);
+    els.compileModeButton.addEventListener("click",function(){setCompileMode(!compileMode)});
+    els.compileExitButton.addEventListener("click",function(){setCompileMode(false)});
+    els.compileOrderButton.addEventListener("click",function(){setQuestionMoveEnabled(!questionMoveEnabled)});
+    els.compilePrintButton.addEventListener("click",function(){
+      if(!state.questions.length){toast("请先导入题目");return}
+      window.print();
+    });
     els.printButton.addEventListener("click",function(){
       if(!state.questions.length){toast("请先导入题目");return}
       window.print();
@@ -481,12 +590,12 @@
     els.clearButton.addEventListener("click",clearPaper);
     document.querySelectorAll("[data-modal-close]").forEach(function(el){el.addEventListener("click",function(){showModal(false)})});
     document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!els.formatModal.hidden)showModal(false)});
-    window.addEventListener("resize",function(){requestAnimationFrame(syncPaperScale)});
+    window.addEventListener("resize",function(){requestAnimationFrame(function(){syncPaperScale();updatePageEstimate()})});
 
     if(restoreLocal())renderAll();
     else renderAll();
 
-    window.addEventListener("load",function(){renderPaper();syncPaperScale()});
+    window.addEventListener("load",function(){renderQr();renderPaper();syncPaperScale();updatePageEstimate()});
   }
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
