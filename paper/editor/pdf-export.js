@@ -38,49 +38,31 @@ function registerFonts() {
 }
 
 function layoutSpec(state) {
+  const registry = window.EverflowTemplateModes;
   const book = state.template === "book";
-  const layout = state.layout || (book ? "standard" : "a4");
-  const spec = {
-    kind: book ? "book" : "exam",
-    layout,
-    widthMm: 210,
-    heightMm: 297,
-    topMm: book ? 14 : 16,
-    bottomMm: book ? 14 : 12,
-    leftMm: book ? 18 : 20,
-    rightMm: book ? 18 : 20,
-    fontSize: book ? 10.5 : 9,
-    lineHeight: 1.56,
-    columns: 1,
-    columnGapMm: 0,
-    onePerPage: false,
-    gapPt: 0,
-    footSkipMm: book ? 9 : 5.3,
-    header: book
+  const fallback = {
+    id: book ? "standard" : "a4",
+    widthMm:210,heightMm:297,topMm:book?14:16,bottomMm:book?14:12,leftMm:book?18:20,rightMm:book?18:20,
+    fontPt:book?10.5:9,baselinePt:book?16.38:14.04,lineHeight:book?(16.38/10.5):(14.04/9),
+    columns:1,columnGapMm:0,onePerPage:false,footSkipMm:book?9:5.3,
+    questionLabelWidthEm:2.25,questionLabelSepEm:.55,choiceLabelWidthEm:2.25,choiceColumnGapEm:1.2,
+    choiceFourColumnThreshold:.22,choiceTwoColumnThreshold:.46,choiceBeforeSkipBaseline:.45,choiceRowGapEm:.22,
+    questionGapMm:book?25:undefined,questionGapBaseline:book?undefined:.45
   };
-  const baselinePt = spec.fontSize * spec.lineHeight;
-  if (book) {
-    if (layout === "compact") spec.gapPt = baselinePt * 0.35;
-    else if (layout === "standard") spec.gapPt = 25 * MM;
-    else if (layout === "loose") spec.gapPt = 75 * MM;
-    else if (layout === "single") { spec.gapPt = 0; spec.onePerPage = true; }
-    else if (layout === "padl") {
-      Object.assign(spec,{widthMm:200,heightMm:150,topMm:10,bottomMm:12,leftMm:12,rightMm:12,footSkipMm:7,gapPt:0,onePerPage:true});
-    } else if (layout === "padp") {
-      Object.assign(spec,{widthMm:200,heightMm:250,topMm:14,bottomMm:12,leftMm:14,rightMm:14,footSkipMm:8,gapPt:0,onePerPage:true});
-    }
-  } else {
-    spec.gapPt = baselinePt * 0.45;
-    if (layout === "a3" || layout === "mixed") {
-      Object.assign(spec,{widthMm:420,heightMm:297,topMm:14,bottomMm:11,leftMm:18,rightMm:18,columns:2,columnGapMm:24,footSkipMm:5.3});
-    }
-  }
+  const src = registry ? registry.mode(book ? "book" : "exam", state.layout) : fallback;
+  const spec = Object.assign({}, fallback, src, {
+    kind: book ? "book" : "exam",
+    layout: src.id || state.layout || fallback.id
+  });
+  spec.fontSize = spec.fontPt;
+  if (typeof spec.questionGapMm === "number") spec.gapPt = spec.questionGapMm * MM;
+  else spec.gapPt = spec.baselinePt * Number(spec.questionGapBaseline || 0);
   spec.pageWidthPt = spec.widthMm * MM;
   spec.pageHeightPt = spec.heightMm * MM;
   spec.textWidthPt = (spec.widthMm - spec.leftMm - spec.rightMm) * MM;
   spec.contentHeightPt = (spec.heightMm - spec.topMm - spec.bottomMm) * MM;
   spec.columnWidthPt = spec.columns === 2
-    ? ((spec.widthMm - spec.leftMm - spec.rightMm - spec.columnGapMm) / 2) * MM
+    ? ((spec.widthMm - spec.leftMm - spec.rightMm - (spec.columnGapMm || 0)) / 2) * MM
     : spec.textWidthPt;
   return spec;
 }
@@ -179,8 +161,16 @@ function NaturalMath({value,fontSize,inline=true}) {
   return React.cloneElement(element,{ width: box[2] * scale, height: box[3] * scale });
 }
 
+function normalizeTemplateMacros(text) {
+  return String(text || "")
+    .replace(/\\par\b/g,"\n")
+    .replace(/\\blankbox\b/g,"（\u2002\u2002\u2002）")
+    .replace(/（\s*\\hspace\{1\.5em\}\s*）/g,"（\u2002\u2002\u2002）")
+    .replace(/\\blankline\b/g,"＿＿＿")
+    .replace(/\\quad\b/g,"\u2003");
+}
 function semanticLines(text) {
-  let src = String(text || "").replace(/\r\n?/g,"\n");
+  let src = normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
   src = src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
   src = src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");
   src = src.replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n");
@@ -243,10 +233,10 @@ function plainMeasureText(text,fontSize) {
 
 function choiceColumns(options,spec) {
   const n=options.length;
-  const lineWidth = spec.columnWidthPt - (2.25+.55)*spec.fontSize;
+  const lineWidth = spec.columnWidthPt - (spec.questionLabelWidthEm+spec.questionLabelSepEm)*spec.fontSize;
   let max=0;
   options.forEach((o,i)=>{max=Math.max(max,plainMeasureText("("+String.fromCharCode(65+i)+") "+String(o||""),spec.fontSize))});
-  const short=max < .22*lineWidth, medium=max < .46*lineWidth;
+  const short=max < spec.choiceFourColumnThreshold*lineWidth, medium=max < spec.choiceTwoColumnThreshold*lineWidth;
   if(n===3)return short?3:(medium?2:1);
   if(n===4)return short?4:(medium?2:1);
   if(n===5)return medium?2:1;
@@ -256,7 +246,7 @@ function choiceColumns(options,spec) {
 
 function renderOptionCell(content,label,key,spec) {
   return h(View,{key,style:{flexDirection:"row",alignItems:"flex-start",minWidth:0}},
-    mixedText(label,{key:key+"-label",size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:2.25*spec.fontSize}}),
+    mixedText(label,{key:key+"-label",size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:spec.choiceLabelWidthEm*spec.fontSize}}),
     h(View,{style:{flexGrow:1,flexShrink:1,minWidth:0}},renderInlineLine(String(content||""),key+"-body",spec))
   );
 }
@@ -264,9 +254,9 @@ function renderOptionCell(content,label,key,spec) {
 function renderOptions(options,qIndex,spec) {
   if(!options||!options.length)return null;
   const cols=choiceColumns(options,spec),rows=[];
-  const columnGapEm=cols===4?.55:(cols===3?.8:(cols===2?1.2:0));
-  const indent=(2.25+.55)*spec.fontSize;
-  const rowGap=.22*spec.fontSize;
+  const columnGapEm=cols===4?.55:(cols===3?.8:(cols===2?spec.choiceColumnGapEm:0));
+  const indent=(spec.questionLabelWidthEm+spec.questionLabelSepEm)*spec.fontSize;
+  const rowGap=spec.choiceRowGapEm*spec.fontSize;
   for(let i=0;i<options.length;i+=cols){
     const cells=[];
     for(let j=0;j<cols;j++){
@@ -281,7 +271,7 @@ function renderOptions(options,qIndex,spec) {
     }
     rows.push(h(View,{key:"q"+qIndex+"-row-"+i,style:[styles.optionRow,{marginBottom:i+cols<options.length?rowGap:0}]},...cells));
   }
-  return h(View,{style:{marginTop:.45*spec.fontSize*spec.lineHeight,marginLeft:indent}},...rows);
+  return h(View,{style:{marginTop:spec.choiceBeforeSkipBaseline*spec.baselinePt,marginLeft:indent}},...rows);
 }
 
 function questionGapPt(q,spec) {
@@ -297,7 +287,7 @@ function estimateUnits(text) {
 }
 
 function estimateQuestionHeight(q,index,spec,prevSection) {
-  const bodyWidth=Math.max(80,spec.columnWidthPt-(2.25+.55)*spec.fontSize);
+  const bodyWidth=Math.max(80,spec.columnWidthPt-(spec.questionLabelWidthEm+spec.questionLabelSepEm)*spec.fontSize);
   let lines=0;
   semanticLines(q.content).forEach(line=>{
     lines+=Math.max(1,Math.ceil(estimateUnits(line)*spec.fontSize/bodyWidth));
@@ -306,7 +296,7 @@ function estimateQuestionHeight(q,index,spec,prevSection) {
   if(q.showOptions!==false&&q.options&&q.options.length){
     const cols=choiceColumns(q.options,spec);
     const rows=Math.ceil(q.options.length/cols);
-    height+=.45*spec.fontSize*spec.lineHeight + rows*spec.fontSize*spec.lineHeight + Math.max(0,rows-1)*.22*spec.fontSize;
+    height+=spec.choiceBeforeSkipBaseline*spec.baselinePt + rows*spec.baselinePt + Math.max(0,rows-1)*spec.choiceRowGapEm*spec.fontSize;
   }
   height+=questionGapPt(q,spec);
   if(q.section&&q.section!==prevSection)height+=spec.fontSize*2.2;
@@ -323,7 +313,7 @@ function renderQuestion(q,index,spec) {
     style:{marginBottom:questionGapPt(q,spec)}
   },
     h(View,{style:styles.questionRow},
-      mixedText(String(index+1)+".",{key:"num-"+index,size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:2.25*spec.fontSize,textAlign:"right",marginRight:.55*spec.fontSize}}),
+      mixedText(String(index+1)+".",{key:"num-"+index,size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:spec.questionLabelWidthEm*spec.fontSize,textAlign:"right",marginRight:spec.questionLabelSepEm*spec.fontSize}}),
       h(View,{style:styles.questionBody},...renderQuestionBody(q.content,index,spec))
     ),
     hasOptions?renderOptions(q.options,index,spec):null
