@@ -24,8 +24,8 @@ function clip(v,n){var s=String(v||"").replace(/\s+/g," ").trim();return s.lengt
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 function toast(msg){els.toast.textContent=msg;els.toast.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){els.toast.classList.remove("show")},1800)}
 function localDate(){
-  var d=new Date(),p=function(n){return String(n).padStart(2,"0")};
-  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
+  var d=new Date();
+  return d.getFullYear()+" 年 "+(d.getMonth()+1)+" 月 "+d.getDate()+" 日";
 }
 function modeInfo(){return MODES.mode(state.template,state.layout)}
 function modeLabel(){return MODES.label(state.template,state.layout)}
@@ -196,8 +196,12 @@ function renderOrder(){
   });
 }
 function choiceClass(options){
-  var max=options.reduce(function(m,o){return Math.max(m,String(o).replace(/\s+/g,"").length)},0);
-  return max<=14?"cols-4":max<=34?"cols-2":"cols-1";
+  var max=options.reduce(function(m,o){return Math.max(m,String(o).replace(/\s+/g,"").length)},0),n=options.length;
+  if(n===3)return max<=14?"cols-3":max<=34?"cols-2":"cols-1";
+  if(n===4)return max<=14?"cols-4":max<=34?"cols-2":"cols-1";
+  if(n===5)return max<=34?"cols-2":"cols-1";
+  if(n===6)return max<=14?"cols-3":max<=34?"cols-2":"cols-1";
+  return max<=34&&n>1?"cols-2":"cols-1";
 }
 function renderPaper(){
   renderTemplateState();
@@ -222,7 +226,7 @@ function renderPaper(){
     line.append(num,body);sec.appendChild(line);
     if(q.showOptions&&q.options.length){
       var opts=document.createElement("div");opts.className="options "+choiceClass(q.options);
-      q.options.forEach(function(o,j){var d=document.createElement("div");d.className="option";d.textContent=String.fromCharCode(65+j)+". "+o;opts.appendChild(d)});
+      q.options.forEach(function(o,j){var d=document.createElement("div");d.className="option";d.textContent="("+String.fromCharCode(65+j)+") "+o;opts.appendChild(d)});
       sec.appendChild(opts);
     }
     els.paperQuestions.appendChild(sec);renderMath(sec);
