@@ -376,3 +376,38 @@ body[data-template="exam"][data-layout="a3"] .editor-main #paperSheet .paper-que
 body[data-template="exam"][data-layout="mixed"] .editor-main #paperSheet .paper-questions{
   column-gap:var(--master-column-gap)!important;
 }
+
+
+/* Batch selection + major-section manager */
+.order-toolbar-actions{display:flex;align-items:center;gap:6px}
+.order-toolbar-actions .text-btn{font-size:9px}
+.order-check{width:14px;height:14px;margin:0 2px 0 0;accent-color:var(--red);flex:0 0 auto}
+.order-item.is-multi-selected{background:color-mix(in srgb,var(--red) 7%,var(--soft));box-shadow:inset 3px 0 0 var(--red)}
+.batch-bar{
+  margin:6px 8px 2px;padding:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:11px;background:var(--soft);font-size:9px
+}
+.batch-bar[hidden]{display:none}
+.batch-bar span{font-weight:800}
+.batch-bar label{display:flex;align-items:center;gap:4px;color:var(--muted)}
+.batch-bar input{width:58px;padding:5px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text)}
+.batch-bar select{min-width:112px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit}
+.section-panel{
+  margin:6px 8px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--soft)
+}
+.section-panel[hidden]{display:none}
+.section-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.section-panel-head strong{font-size:10px}
+.section-manage-row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;align-items:center;gap:4px;
+  padding:6px 2px;border-top:1px solid var(--line)
+}
+.section-manage-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.section-manage-row>span{color:var(--muted);font-size:8px;white-space:nowrap}
+.section-manage-row .text-btn{padding:4px;font-size:8px}
+.section-empty{margin:8px 2px;color:var(--muted);font-size:9px}
+@media(max-width:760px){
+  .batch-bar{position:sticky;top:0;z-index:5}
+  .section-manage-row{grid-template-columns:minmax(0,1fr) auto auto auto}
+  .section-manage-row>span{display:none}
+}
