@@ -885,7 +885,7 @@ function renderResources() {
           <div class="compact-resource-actions">
             ${renderQuickChannel(item,sourceIndex,"百度","百度网盘")}
             ${renderQuickChannel(item,sourceIndex,"夸克","夸克网盘")}
-            <button class="resource-errata-trigger" type="button" data-resource-action="openResourceErrata" data-resource-index="${sourceIndex}" aria-label="查看${esc(item.title)}的勘误">${icon("errata")}<span>勘误</span><b>${resourceErrataGroups(item).reduce((n,g)=>n+g.items.length,0)}</b></button>
+            <button class="resource-errata-trigger" type="button" data-resource-action="openErrataSubmit" data-resource-index="${sourceIndex}" aria-label="提交${esc(item.title)}的勘误">${icon("errata")}<span>勘误提交</span></button>
             <button class="resource-detail-toggle" type="button" data-resource-detail="${sourceIndex}">详情 <span>›</span></button>
           </div>
         </div>
