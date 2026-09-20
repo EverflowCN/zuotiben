@@ -513,18 +513,21 @@ function renderSections() {
 
   let html = "";
   sections.forEach(section => {
-    html += '<div class="nav-block">';
-    html += '<button class="nav-main' + (state.section === section.id ? ' active' : '') + '" type="button" data-section="' + section.id + '">';
-    html += icon(section.icon, "nav-icon") + '<span>' + section.label + '</span>';
-    if (section.count) html += '<b>' + section.count + '</b>';
+    const active = state.section === section.id;
+    const open = section.id === "resources" && active;
+    html += '<div class="nav-block' + (open ? ' is-open' : '') + '">';
+    html += '<button class="nav-main' + (active ? ' active' : '') + '" type="button" data-section="' + section.id + '"' + (section.id === "resources" ? ' aria-expanded="' + String(open) + '"' : '') + '>';
+    html += '<span class="nav-main-leading">' + icon(section.icon, "nav-icon") + '<span class="nav-main-label">' + esc(section.label) + '</span></span>';
+    html += '<span class="nav-main-trailing">';
+    if (section.count) html += '<span class="nav-count-badge">' + section.count + '</span>';
     if (section.id === "resources") html += icon("chevron", "nav-chevron");
-    html += '</button>';
+    html += '</span></button>';
 
-    if (section.id === "resources" && state.section === "resources") {
-      html += '<div class="nav-children">';
-      html += '<button class="nav-child' + (state.subject === "全部科目" ? ' active' : '') + '" type="button" data-nav-subject="全部科目"><span>' + esc(siteCopy.allResourcesLabel) + '</span><b>' + resources.length + '</b></button>';
+    if (open) {
+      html += '<div class="nav-children" aria-label="资料子目录">';
+      html += '<button class="nav-child' + (state.subject === "全部科目" ? ' active' : '') + '" type="button" data-nav-subject="全部科目"><span class="nav-child-label">' + esc(siteCopy.allResourcesLabel) + '</span><span class="nav-count-badge">' + resources.length + '</span></button>';
       getVisibleSubjects().forEach(subject => {
-        html += '<button class="nav-child' + (state.subject === subject ? ' active' : '') + '" type="button" data-nav-subject="' + esc(subject) + '"><span>' + esc(subject) + '</span><b>' + subjectCount(subject) + '</b></button>';
+        html += '<button class="nav-child' + (state.subject === subject ? ' active' : '') + '" type="button" data-nav-subject="' + esc(subject) + '"><span class="nav-child-label">' + esc(subject) + '</span><span class="nav-count-badge">' + subjectCount(subject) + '</span></button>';
       });
       html += '</div>';
     }
