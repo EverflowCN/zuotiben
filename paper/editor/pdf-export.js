@@ -10,12 +10,12 @@ const MM = 72 / 25.4;
 let fontsRegistered = false;
 let qrPromise = null;
 
-// Full CJK TTFs: Fontsource's split web subsets cannot be registered as one PDF font.
+// Fixed Fandol font files shared with the original LaTeX template.
 const FONT_URLS = {
-  notoSerifRegular: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Serif/Variable/TTF/Subset/NotoSerifSC-VF.ttf",
-  notoSerifBold: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Serif/Variable/TTF/Subset/NotoSerifSC-VF.ttf",
-  notoSansRegular: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf",
-  notoSansBold: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf"
+  notoSerifRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Regular/FandolSong-Regular.otf",
+  notoSerifBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Bold/FandolSong-Bold.otf",
+  notoSansRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Regular/FandolHei-Regular.otf",
+  notoSansBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf"
 };
 
 function registerFonts() {
