@@ -341,3 +341,9 @@ body[data-template="book"] .paper-section-heading{
 body[data-template="exam"] .cover-main-title{font-size:24.7871pt!important;line-height:30pt!important}
 body[data-template="book"] .cover-main-title{font-size:21.9178pt!important;line-height:30pt!important}
 .cover-signature{font-size:18.3313pt!important;line-height:18pt!important;top:147.0mm!important}
+
+.editor-main #paperSheet .option{
+  display:grid!important;grid-template-columns:2.25em minmax(0,1fr)!important;align-items:start!important;
+}
+.editor-main #paperSheet .option-label{display:block;white-space:nowrap}
+.editor-main #paperSheet .option-body{display:block;min-width:0}
