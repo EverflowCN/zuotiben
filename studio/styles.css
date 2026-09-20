@@ -318,7 +318,7 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap
 @media(max-width:560px){.custom-link-row{align-items:flex-start}.custom-link-row .pill{flex:0 0 auto}}
 
 /* Cloud admin auth */
-.auth-locked .app{filter:blur(5px);pointer-events:none;user-select:none}
+.auth-locked .app{visibility:hidden;pointer-events:none;user-select:none}
 .auth-gate{
   position:fixed;z-index:130;inset:0;padding:24px;display:grid;place-items:center;
   background:rgba(246,240,229,.82);backdrop-filter:blur(18px)
@@ -378,3 +378,17 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap
   .global-search-results{position:fixed;top:68px;left:14px;right:14px}
 }
 
+
+/* Mobile table containment */
+@media(max-width:560px){
+  .table-wrap{
+    width:100%;
+    max-width:100%;
+    overflow-x:auto!important;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+  }
+  .table-wrap>.table:not(.resource-table){min-width:680px}
+  .card{max-width:100%}
+}
