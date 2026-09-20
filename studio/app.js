@@ -471,22 +471,22 @@ function renderResources(){
   const visible=state.resources.filter(x=>x.visible).length;
   const hidden=state.resources.length-visible;
   const rows=state.resources.slice().sort((a,b)=>Number(b.pinned)-Number(a.pinned)).map(x=>'<tr>'+
-    '<td class="resource-main-cell"><div class="title-cell resource-title-cell"><span class="resource-table-icon">'+icon('box')+'</span><span><strong>'+x.title+(x.pinned?' <span class="mini-pin">置顶</span>':'')+'</strong><small>#'+x.id+' · '+x.releaseVersion+'</small></span></div></td>'+
-    '<td class="subject-cell"><strong>'+subjectLabel(x)+'</strong></td>'+
-    '<td class="type-cell"><span class="pill">'+x.type+'</span></td>'+
-    '<td class="release-cell"><strong>'+x.releaseVersion+'</strong><small class="cell-sub">'+x.publishedAt+'</small></td>'+
-    '<td class="version-cell"><strong>'+x.versions+'</strong><small class="cell-sub"> 个版本</small></td>'+
+    '<td class="resource-main-cell"><div class="title-cell resource-title-cell"><span class="resource-table-icon">'+icon('box')+'</span><span><strong>'+escapeHtml(x.title)+(x.pinned?' <span class="mini-pin">置顶</span>':'')+'</strong><small>#'+escapeHtml(x.id)+' · '+escapeHtml(x.releaseVersion)+'</small></span></div></td>'+
+    '<td class="subject-cell"><strong>'+escapeHtml(subjectLabel(x))+'</strong></td>'+
+    '<td class="type-cell"><span class="pill">'+escapeHtml(x.type)+'</span></td>'+
+    '<td class="release-cell"><strong>'+escapeHtml(x.releaseVersion)+'</strong><small class="cell-sub">'+escapeHtml(x.publishedAt)+'</small></td>'+
+    '<td class="version-cell"><strong>'+escapeHtml(x.versions)+'</strong><small class="cell-sub"> 个版本</small></td>'+
     '<td class="toggle-cell">'+toggle('resource',x.id,x.visible)+'</td>'+
     '<td class="pin-cell">'+pinButton('resource',x.id,x.pinned)+'</td>'+
-    '<td class="status-cell"><span class="pill orange">'+x.status+'</span></td>'+
-    '<td class="actions-cell"><div class="row-actions"><button class="btn small" data-edit-resource="'+x.id+'">编辑</button><button class="icon-danger" aria-label="删除" data-delete-resource="'+x.id+'">×</button></div></td>'+
+    '<td class="status-cell"><span class="pill orange">'+escapeHtml(x.status)+'</span></td>'+
+    '<td class="actions-cell"><div class="row-actions"><button class="btn small" data-edit-resource="'+escapeHtml(x.id)+'">编辑</button><button class="icon-danger" aria-label="删除" data-delete-resource="'+escapeHtml(x.id)+'">×</button></div></td>'+
   '</tr>').join('');
   return head('资料','统一管理资料本体、科目、发布版本、下载入口、打印与勘误。','<button class="btn primary page-create" data-new-resource>＋ 新建资料</button>')+
   '<section class="resource-summary"><button class="summary-chip active"><strong>'+state.resources.length+'</strong><span>全部</span></button><button class="summary-chip"><strong>'+visible+'</strong><span>显示</span></button><button class="summary-chip"><strong>'+hidden+'</strong><span>隐藏</span></button><button class="summary-chip"><strong>'+state.resources.filter(x=>x.pinned).length+'</strong><span>置顶</span></button></section>'+
   '<section class="card data-card"><div class="toolbar"><label class="table-search">'+icon('search')+'<input class="control grow" placeholder="搜索标题、科目或代码"></label><div class="toolbar-spacer"></div><select class="control"><option>全部类型</option><option>做题本</option><option>书籍</option><option>讲义</option><option>真题</option></select><select class="control"><option>全部状态</option><option>显示</option><option>隐藏</option></select></div><div class="table-wrap"><table class="table resource-table"><thead><tr><th>资源</th><th>科目</th><th>类型</th><th>发布版本 / 日期</th><th>版本数</th><th>显示</th><th>置顶</th><th>状态</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'
 }
 function renderExperience(){
-  const rows=state.experiences.map(x=>'<tr><td><div class="title-cell"><strong>'+x.title+'</strong><small>'+(x.author||'未填写作者')+' · '+(x.year||'未填年份')+'</small></div></td><td>'+((x.school||'')+(x.major?' / '+x.major:''))+'</td><td><span class="pill">'+(x.stage||'未分类')+'</span></td><td>'+toggle('experience',x.id,x.visible)+'</td><td><div class="row-actions"><button class="btn small" data-edit-experience="'+x.id+'">编辑</button><button class="icon-danger" data-delete-experience="'+x.id+'" aria-label="删除">×</button></div></td></tr>').join('');
+  const rows=state.experiences.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(x.author||'未填写作者')+' · '+escapeHtml(x.year||'未填年份')+'</small></div></td><td>'+escapeHtml((x.school||'')+(x.major?' / '+x.major:''))+'</td><td><span class="pill">'+escapeHtml(x.stage||'未分类')+'</span></td><td>'+toggle('experience',x.id,x.visible)+'</td><td><div class="row-actions"><button class="btn small" data-edit-experience="'+escapeHtml(x.id)+'">编辑</button><button class="icon-danger" data-delete-experience="'+escapeHtml(x.id)+'" aria-label="删除">×</button></div></td></tr>').join('');
   return head('经验贴','按院校、专业、年份和阶段整理，并保留原始来源。','<button class="btn primary" data-new-experience>＋ 新建经验贴</button>')+
   '<section class="card data-card"><div class="toolbar"><input class="control grow" placeholder="搜索标题、院校、专业或作者"><select class="control"><option>全部阶段</option><option>初试</option><option>复试</option><option>择校</option></select></div>'+
   (state.experiences.length?'<div class="table-wrap"><table class="table"><thead><tr><th>标题</th><th>院校 / 专业</th><th>阶段</th><th>显示</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><strong>暂无经验贴</strong><p>点击右上角“新建经验贴”即可创建。</p></div>')+
@@ -497,7 +497,7 @@ function errataResourceName(item){const r=state.resources.find(x=>sameId(x.id,it
 function errataVersionName(item){const r=state.resources.find(x=>sameId(x.id,item.resourceId));const v=(r?.extraVersions||[]).find(x=>sameId(x.id,item.versionId));return v?.name||(item.versionId?'未找到版本':'资源级')}
 function renderErrata(){
   const count=status=>state.errata.filter(x=>errataStatusLabel(x.status)===status).length;
-  const rows=state.errata.map(x=>'<tr><td><div class="title-cell"><strong>'+x.title+'</strong><small>'+errataResourceName(x)+' · '+errataVersionName(x)+'</small></div></td><td><span class="pill">'+errataStatusLabel(x.status)+'</span></td><td>'+(x.visible?'<span class="pill green">公开</span>':'<span class="pill">隐藏</span>')+'</td><td><div class="row-actions"><button class="btn small" data-edit-errata="'+x.id+'">编辑</button><button class="icon-danger" data-delete-errata="'+x.id+'" aria-label="删除">×</button></div></td></tr>').join('');
+  const rows=state.errata.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(errataResourceName(x))+' · '+escapeHtml(errataVersionName(x))+'</small></div></td><td><span class="pill">'+escapeHtml(errataStatusLabel(x.status))+'</span></td><td>'+(x.visible?'<span class="pill green">公开</span>':'<span class="pill">隐藏</span>')+'</td><td><div class="row-actions"><button class="btn small" data-edit-errata="'+escapeHtml(x.id)+'">编辑</button><button class="icon-danger" data-delete-errata="'+escapeHtml(x.id)+'" aria-label="删除">×</button></div></td></tr>').join('');
   return head('勘误','将问题关联到具体资源和版本，并跟踪处理状态；只有“已修正 + 公开”会出现在主页。','<button class="btn primary" data-new-errata>＋ 新建勘误</button>')+
   '<div class="metric-grid">'+metric('待核对',count('待核对'),'尚未确认')+metric('已确认',count('已确认'),'等待修正')+metric('已修正',count('已修正'),'可公开记录')+metric('已忽略',count('已忽略'),'保留原因')+'</div>'+
   '<section class="card"><div class="toolbar"><input class="control grow" placeholder="搜索资源、题号或问题"></div>'+
@@ -509,13 +509,13 @@ function renderAnnouncements(){
   const scheduled=state.announcements.filter(x=>x.status==='scheduled').length;
   const rows=state.announcements.slice().sort((a,b)=>Number(b.pinned)-Number(a.pinned)||String(b.updated).localeCompare(String(a.updated))).map(x=>
     '<tr>'+
-      '<td class="select-cell"><input class="row-check" type="checkbox" data-select-announcement="'+x.id+'" '+(state.announcementSelection.has(String(x.id))?'checked':'')+'></td>'+
-      '<td><div class="title-cell"><strong>'+x.title+(x.pinned?' <span class="mini-pin">置顶</span>':'')+'</strong><small>'+x.kind+' · '+x.audience+'</small></div></td>'+
-      '<td><span class="pill '+(x.status==='published'?'green':x.status==='scheduled'?'blue':x.status==='draft'?'':'orange')+'">'+announcementStatusLabel(x)+'</span></td>'+
+      '<td class="select-cell"><input class="row-check" type="checkbox" data-select-announcement="'+escapeHtml(x.id)+'" '+(state.announcementSelection.has(String(x.id))?'checked':'')+'></td>'+
+      '<td><div class="title-cell"><strong>'+escapeHtml(x.title)+(x.pinned?' <span class="mini-pin">置顶</span>':'')+'</strong><small>'+escapeHtml(x.kind)+' · '+escapeHtml(x.audience)+'</small></div></td>'+
+      '<td><span class="pill '+(x.status==='published'?'green':x.status==='scheduled'?'blue':x.status==='draft'?'':'orange')+'">'+escapeHtml(announcementStatusLabel(x))+'</span></td>'+
       '<td>'+pinButton('announcement',x.id,x.pinned)+'</td>'+
       '<td>'+toggle('announcement',x.id,x.visible)+'</td>'+
-      '<td><div class="announcement-time"><strong>'+((x.publishAt||'').replace('T',' ')||'立即')+'</strong><small>'+(x.expiresAt?'至 '+x.expiresAt.replace('T',' '):'长期有效')+'</small></div></td>'+
-      '<td><div class="row-actions"><button class="btn small" data-preview-announcement="'+x.id+'">预览</button><button class="btn small" data-edit-announcement="'+x.id+'">编辑</button><button class="btn small" data-duplicate-announcement="'+x.id+'">复制</button><button class="icon-danger" aria-label="删除" data-delete-announcement="'+x.id+'">×</button></div></td>'+
+      '<td><div class="announcement-time"><strong>'+escapeHtml((x.publishAt||'').replace('T',' ')||'立即')+'</strong><small>'+escapeHtml(x.expiresAt?'至 '+x.expiresAt.replace('T',' '):'长期有效')+'</small></div></td>'+
+      '<td><div class="row-actions"><button class="btn small" data-preview-announcement="'+escapeHtml(x.id)+'">预览</button><button class="btn small" data-edit-announcement="'+escapeHtml(x.id)+'">编辑</button><button class="btn small" data-duplicate-announcement="'+escapeHtml(x.id)+'">复制</button><button class="icon-danger" aria-label="删除" data-delete-announcement="'+escapeHtml(x.id)+'">×</button></div></td>'+
     '</tr>'
   ).join('');
   return head('公告','独立管理前台总览公告：发布、草稿、定时、过期、置顶和显示策略。','<button class="btn primary" data-new-announcement>＋ 新建公告</button>')+
@@ -551,7 +551,7 @@ function renderCopy(){
     '<div class="design-note">动态数据（资源数量、版本数量、发布日期等）仍由对应内容模块生成；其余主要前台文案都集中在这里维护。</div>'
 }
 function renderTaxonomy(){
-  const rows=state.categories.map(x=>'<tr><td><strong>'+x.name+'</strong><small class="cell-sub">（'+x.code+'）</small></td><td>'+x.count+'</td><td>'+x.order+'</td><td>'+toggle('category',x.id,x.visible)+'</td><td><div class="row-actions"><button class="btn small" data-edit-category="'+x.id+'">编辑</button><button class="btn small danger" data-delete-category="'+x.id+'">删除</button></div></td></tr>').join('');
+  const rows=state.categories.map(x=>'<tr><td><strong>'+escapeHtml(x.name)+'</strong><small class="cell-sub">（'+escapeHtml(x.code)+'）</small></td><td>'+escapeHtml(x.count)+'</td><td>'+escapeHtml(x.order)+'</td><td>'+toggle('category',x.id,x.visible)+'</td><td><div class="row-actions"><button class="btn small" data-edit-category="'+escapeHtml(x.id)+'">编辑</button><button class="btn small danger" data-delete-category="'+escapeHtml(x.id)+'">删除</button></div></td></tr>').join('');
   return head('科目管理','统一使用「科目名称（科目代码）」；不再维护“公共课 / 专业课”这种上级分类。','<button class="btn primary" data-new-category>＋ 新建科目</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>科目</th><th>资源数</th><th>排序</th><th>显示</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'
 }
@@ -573,7 +573,7 @@ function renderAccount(){
   '<div class="design-note" style="margin-top:14px">账号、密码哈希与登录会话均由 Worker + D1 管理；浏览器不会保存管理员密码。</div>'
 }
 function renderAdmins(){
-  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role)+'</span></td><td><span class="pill '+(x.status==='active'?'green':'red')+'">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+x.last+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+x.id+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+x.id+'">删除</button></div></td></tr>').join('');
+  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.name)+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+escapeHtml(({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role))+'</span></td><td><span class="pill '+(x.status==='active'?'green':'red')+'">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+escapeHtml(x.last)+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+escapeHtml(x.id)+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+escapeHtml(x.id)+'">删除</button></div></td></tr>').join('');
   return head('成员与权限','主管理员拥有全部权限，可创建多个管理员并逐项授权。','<button class="btn primary" data-new-admin>＋ 新增成员</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>成员</th><th>角色</th><th>状态</th><th>最近活动</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
   '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>权限矩阵</h2><p>Owner 始终拥有全部权限，不允许其他角色修改 Owner。</p></div></div><div class="card-body">'+permissionMatrix()+'</div></section>'
@@ -592,7 +592,7 @@ function renderSettings(){
 }
 function settingRow(k){const labels={resources:'资料栏目',experience:'经验贴栏目'};return '<div class="list-row"><div><strong>'+labels[k]+'</strong><small>前台显示</small></div>'+toggle('settings',k,state.settings[k])+'</div>'}
 function renderAudit(){
-  const rows=(state.audit||[]).map(x=>'<tr><td>'+String(x.created_at||'').replace('T',' ').slice(0,19)+'</td><td>'+ (x.actor_email||'系统') +'</td><td>'+x.action+'</td><td>'+x.entity_type+' · '+(x.entity_id||'')+'</td><td><span class="pill green">成功</span></td></tr>').join('');
+  const rows=(state.audit||[]).map(x=>'<tr><td>'+escapeHtml(String(x.created_at||'').replace('T',' ').slice(0,19))+'</td><td>'+escapeHtml(x.actor_email||'系统')+'</td><td>'+escapeHtml(x.action)+'</td><td>'+escapeHtml(x.entity_type)+' · '+escapeHtml(x.entity_id||'')+'</td><td><span class="pill green">成功</span></td></tr>').join('');
   return head('审计日志','记录高权限操作，包括创建、修改、删除、权限变更和同步。','<button class="btn" type="button" data-export-audit>导出日志</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>时间</th><th>成员</th><th>动作</th><th>对象</th><th>结果</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5">暂无审计记录</td></tr>')+'</tbody></table></div></section>'
 }
