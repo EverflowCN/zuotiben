@@ -114,6 +114,57 @@ const styles = StyleSheet.create({
     width: 6.62 * MM,
     height: 34 * MM,
     opacity: 0.09
+  },
+  coverPage: {
+    position: "relative",
+    backgroundColor: "#ffffff",
+    color: "#111111"
+  },
+  coverTitle: {
+    position: "absolute",
+    left: 18 * MM,
+    right: 18 * MM,
+    top: 117 * MM,
+    textAlign: "center",
+    fontFamily: "EverflowNotoSans",
+    fontWeight: 700,
+    fontSize: 24,
+    lineHeight: 1.18
+  },
+  coverSignature: {
+    position: "absolute",
+    left: 18 * MM,
+    right: 18 * MM,
+    top: 146 * MM,
+    textAlign: "center",
+    fontFamily: "EverflowNotoSerif",
+    fontSize: 11,
+    lineHeight: 1
+  },
+  coverBottomLine: {
+    position: "absolute",
+    left: 18 * MM,
+    top: 266 * MM,
+    width: 50 * MM,
+    borderTopWidth: 0.45,
+    borderTopColor: "#111111",
+    borderTopStyle: "solid"
+  },
+  coverBrand: {
+    position: "absolute",
+    left: 18 * MM,
+    top: 271.5 * MM,
+    fontFamily: "EverflowNotoSerif",
+    fontSize: 9,
+    lineHeight: 1
+  },
+  coverDate: {
+    position: "absolute",
+    left: 18 * MM,
+    top: 278 * MM,
+    fontFamily: "EverflowNotoSerif",
+    fontSize: 8,
+    lineHeight: 1
   }
 });
 
@@ -356,15 +407,51 @@ function footerNode() {
     h(Text, {
       key: "foot-page",
       style: { fontFamily: "Times-Roman", fontSize: 8, lineHeight: 1 },
-      render: ({ pageNumber }) => String(pageNumber)
+      render: ({ pageNumber }) => String(Math.max(1, pageNumber - 1))
     }),
     mixedText(" 页（共 ", { key: "foot-b", size: 8, lineHeight: 1 }),
     h(Text, {
       key: "foot-pages",
       style: { fontFamily: "Times-Roman", fontSize: 8, lineHeight: 1 },
-      render: ({ totalPages }) => String(totalPages)
+      render: ({ totalPages }) => String(Math.max(1, totalPages - 1))
     }),
     mixedText(" 页）", { key: "foot-c", size: 8, lineHeight: 1 })
+  );
+}
+
+function coverPageNode(state) {
+  const title = state.coverTitle || state.title || "未命名试卷";
+  const exportDate = state.exportDate || new Date().toISOString().slice(0, 10);
+  return h(
+    Page,
+    { size: "A4", style: styles.coverPage, wrap: false },
+    mixedText(title, {
+      key: "cover-title",
+      size: 24,
+      lineHeight: 1.18,
+      bold: true,
+      sans: true,
+      style: styles.coverTitle
+    }),
+    mixedText("·彼时流年若水·", {
+      key: "cover-signature",
+      size: 11,
+      lineHeight: 1,
+      style: styles.coverSignature
+    }),
+    h(View, { key: "cover-line", style: styles.coverBottomLine }),
+    mixedText("Everflow·彼时流年若水", {
+      key: "cover-brand",
+      size: 9,
+      lineHeight: 1,
+      style: styles.coverBrand
+    }),
+    mixedText(">>> 更新时间：" + exportDate, {
+      key: "cover-date",
+      size: 8,
+      lineHeight: 1,
+      style: styles.coverDate
+    })
   );
 }
 
@@ -391,6 +478,7 @@ function buildDocument(state, assets) {
       subject: "Everflow local paper",
       creator: "zuotiben.top"
     },
+    coverPageNode(state),
     h(
       Page,
       { size: "A4", style: styles.page, wrap: true },
