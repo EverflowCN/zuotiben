@@ -734,8 +734,8 @@ function renderChannel(channel,resourceIndex,versionIndex,channelIndex) {
         ${channel.note ? `<span>${esc(channel.note)}</span>` : ""}
       </div>
       <div class="channel-actions">
-        <button type="button" onclick="openChannel(${resourceIndex},${versionIndex},${channelIndex})">${ready ? "打开" : "未添加"}</button>
-        <button type="button" onclick="copyChannel(${resourceIndex},${versionIndex},${channelIndex})">复制</button>
+        <button type="button" data-resource-action="openChannel" data-resource-index="${resourceIndex}" data-version-index="${versionIndex}" data-channel-index="${channelIndex}">${ready ? "打开" : "未添加"}</button>
+        <button type="button" data-resource-action="copyChannel" data-resource-index="${resourceIndex}" data-version-index="${versionIndex}" data-channel-index="${channelIndex}">复制</button>
       </div>
     </div>`;
 }
@@ -797,7 +797,7 @@ function renderVersion(version,resourceIndex,versionIndex) {
           <div class="channel-row errata-channel">
             <div class="channel-name">${icon("errata","channel-icon")}<span>勘误</span></div>
             <div class="channel-extra"><span>${(version.errata || []).length ? (version.errata || []).length + " 条公开记录" : "暂无公开勘误"}</span></div>
-            <div class="channel-actions"><button type="button" onclick="openErrata(${resourceIndex},${versionIndex})">查看</button><button type="button" onclick="openErrataSubmit(${resourceIndex},${versionIndex})">申请提交</button></div>
+            <div class="channel-actions"><button type="button" data-resource-action="openErrata" data-resource-index="${resourceIndex}" data-version-index="${versionIndex}">查看</button><button type="button" data-resource-action="openErrataSubmit" data-resource-index="${resourceIndex}" data-version-index="${versionIndex}">申请提交</button></div>
           </div>
         </div>
       </div>
@@ -832,12 +832,24 @@ function renderQuickChannel(item,sourceIndex,keyword,label){
   const ref=findQuickChannel(item,keyword);
   const ready=Boolean(ref?.channel?.url);
   return '<span class="quick-channel '+(ready?'ready':'unavailable')+'">'+
-    '<button type="button" class="quick-open" '+(ready?'onclick="openChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+'>'+
+    '<button type="button" class="quick-open" '+(ready?'data-resource-action="openChannel" data-resource-index="'+sourceIndex+'" data-version-index="'+ref.versionIndex+'" data-channel-index="'+ref.channelIndex+'"':'disabled')+'>'+
       icon("cloud","quick-channel-icon")+'<span>'+label+'</span>'+(ready?'':'<small>未添加</small>')+
     '</button>'+
-    '<button type="button" class="quick-copy" '+(ready?'onclick="copyChannel('+sourceIndex+','+ref.versionIndex+','+ref.channelIndex+')"':'disabled')+' aria-label="复制'+label+'链接">复制</button>'+
+    '<button type="button" class="quick-copy" '+(ready?'data-resource-action="copyChannel" data-resource-index="'+sourceIndex+'" data-version-index="'+ref.versionIndex+'" data-channel-index="'+ref.channelIndex+'"':'disabled')+' aria-label="复制'+label+'链接">复制</button>'+
   '</span>';
 }
+
+function handleResourceAction(event){
+  const button=event.target.closest('[data-resource-action]');
+  if(!button||!list.contains(button)||button.disabled)return;
+  const handlers={openChannel,copyChannel,openErrata,openErrataSubmit};
+  const action=handlers[button.dataset.resourceAction];
+  if(!action)return;
+  event.preventDefault();
+  action(Number(button.dataset.resourceIndex),Number(button.dataset.versionIndex),Number(button.dataset.channelIndex));
+}
+list.addEventListener('click',handleResourceAction);
+
 function renderResources() {
   const items = getFilteredResources();
   count.textContent = `${items.length} 项已收录`;
