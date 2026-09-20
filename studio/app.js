@@ -164,7 +164,6 @@ function saveStudioCollections(){
     experiences:state.experiences,
     errata:state.errata,
     categories:state.categories,
-    files:state.files,
     admins:state.admins
   };
   localStorage.setItem('yanku-studio-collections-v1',JSON.stringify(data));
@@ -176,7 +175,6 @@ if(persistedCollections){
   if(Array.isArray(persistedCollections.experiences)) state.experiences=persistedCollections.experiences;
   if(Array.isArray(persistedCollections.errata)) state.errata=persistedCollections.errata;
   if(Array.isArray(persistedCollections.categories)) state.categories=persistedCollections.categories;
-  if(Array.isArray(persistedCollections.files)) state.files=persistedCollections.files;
   if(Array.isArray(persistedCollections.admins)){
     const owner=state.admins.find(x=>x.locked);
     state.admins=persistedCollections.admins.filter(x=>!x.locked);
@@ -185,11 +183,12 @@ if(persistedCollections){
 }
 
 const STUDIO_API_BASE=location.hostname.endsWith('zuotiben.top')?'https://api.zuotiben.top':'https://zuotiben-api.bm9h54b4t9.workers.dev';
-const cloudState={status:'checking',message:'正在检测 D1',syncTimer:null,lastError:''};
+const cloudState={status:'checking',message:'正在检测 D1',syncTimer:null,lastError:'',revision:0,syncInFlight:false,syncPending:false};
 
 function cloudStatusLabel(){
   if(cloudState.status==='connected') return 'D1 已连接';
   if(cloudState.status==='syncing') return '正在同步 D1';
+  if(cloudState.status==='conflict') return '检测到并发更新';
   if(cloudState.status==='setup') return '等待初始化';
   if(cloudState.status==='auth') return '未登录';
   if(cloudState.status==='error') return '云端暂不可用';
@@ -217,6 +216,7 @@ async function studioApi(path,options={}){
       const error=new Error(data?.error||('http_'+response.status));
       error.status=response.status;
       error.code=data?.error||'';
+      error.data=data||null;
       throw error;
     }
     return data;
@@ -294,6 +294,8 @@ function applyCloudBootstrap(data){
   state.experiences=(data.experiences||[]).map(x=>({id:x.id,title:x.title,sourceUrl:x.source_url||'',school:x.school||'',major:x.major||'',year:x.year||'',stage:x.stage||'',author:x.author||'',body:x.body||'',status:x.status,visible:Boolean(x.visible),publishedAt:x.published_at||''}));
   state.errata=(data.errata||[]).map(x=>({id:x.id,resourceId:x.resource_id||'',versionId:x.version_id||'',title:x.title||'',body:x.body||'',status:x.status||'recorded',visible:Boolean(x.visible),updated:(x.updated_at||'').slice(0,10)}));
   state.announcements=(data.announcements||[]).map(x=>({id:x.id,title:x.title,kind:x.kind||'更新通知',body:x.body||'',status:x.status||'draft',visible:Boolean(x.visible),pinned:Boolean(x.pinned),dismissible:Boolean(x.dismissible),audience:x.audience||'所有访客',publishAt:toLocalDateTime(x.publish_at),expiresAt:toLocalDateTime(x.expires_at),ctaText:x.cta_text||'',ctaUrl:x.cta_url||'',updated:(x.updated_at||'').slice(0,10)}));
+  if(Array.isArray(data.files))state.files=data.files.map(x=>({id:x.id,name:x.name||'',kind:fileKindFromMime(x.mime_type,x.name),mimeType:x.mime_type||'application/octet-stream',url:x.external_url||'',usage:x.usage_note||'',sizeBytes:Number(x.size_bytes)||0,size:formatFileSize(Number(x.size_bytes)||0),visible:Boolean(x.is_public),resourceId:x.resource_id||'',versionId:x.version_id||'',updated:x.updated_at||x.created_at||''}));
+  cloudState.revision=Number.isFinite(Number(data.studio_revision))?Number(data.studio_revision):cloudState.revision;
   const copyRow=(data.site_settings||[]).find(x=>x.key==='public.copy');
   if(copyRow){try{state.copy={...siteCopyDefaults,...JSON.parse(copyRow.value_json||'{}')}}catch{}}
   const settingsRow=(data.site_settings||[]).find(x=>x.key==='public.settings');
@@ -301,7 +303,8 @@ function applyCloudBootstrap(data){
   const profiles=data.admin_profiles||[];
   if(profiles.length)state.admins=profiles.map((x,index)=>({id:x.email||index+1,name:x.display_name||x.email,identifier:x.email,role:x.role||'admin',status:x.status||'active',last:'云端账号',locked:x.role==='owner'}));
   state.audit=data.audit_logs||[];
-  savePinnedResources();savePinnedAnnouncements();
+  localStorage.setItem('yanku-pinned-resource-titles',JSON.stringify(state.resources.filter(x=>x.pinned).map(x=>x.title)));
+  localStorage.setItem('yanku-pinned-announcement-titles',JSON.stringify(state.announcements.filter(x=>x.pinned).map(x=>x.title)));
 }
 function authErrorText(code){
   return ({
@@ -403,17 +406,45 @@ async function bootstrapStudioCloud(){
   }
 }
 function queueCloudSync(){
-  if(cloudState.status!=='connected')return;
+  if(!['connected','syncing'].includes(cloudState.status))return;
+  if(cloudState.syncInFlight){cloudState.syncPending=true;return}
   clearTimeout(cloudState.syncTimer);
-  cloudState.syncTimer=setTimeout(async()=>{
-    cloudState.status='syncing';refreshCloudStatus();
-    try{
-      await studioApi('/admin/studio-sync',{method:'PUT',body:JSON.stringify(buildCloudSnapshot())});
-      cloudState.status='connected';cloudState.lastError='';refreshCloudStatus();
-    }catch(error){
-      cloudState.lastError=error.code||error.message||'unknown';cloudState.status='error';refreshCloudStatus();toast('云端同步失败，本地副本已保留');
+  cloudState.syncTimer=setTimeout(flushCloudSync,450);
+}
+async function flushCloudSync(){
+  if(cloudState.syncInFlight){cloudState.syncPending=true;return}
+  if(!['connected','syncing'].includes(cloudState.status))return;
+  cloudState.syncInFlight=true;
+  cloudState.status='syncing';
+  refreshCloudStatus();
+  try{
+    const snapshot=buildCloudSnapshot();
+    snapshot.base_revision=cloudState.revision;
+    const result=await studioApi('/admin/studio-sync',{method:'PUT',body:JSON.stringify(snapshot)});
+    if(Number.isFinite(Number(result?.studio_revision)))cloudState.revision=Number(result.studio_revision);
+    cloudState.status='connected';
+    cloudState.lastError='';
+  }catch(error){
+    cloudState.lastError=error.code||error.message||'unknown';
+    if(error.status===409&&error.code==='sync_conflict'){
+      cloudState.status='conflict';
+      const remote=Number(error.data?.current_revision);
+      if(Number.isFinite(remote))cloudState.lastError='sync_conflict@'+remote;
+      toast('检测到其他管理员已更新云端。为避免覆盖，当前修改未继续同步，请刷新后台后重新操作。');
+    }else{
+      cloudState.status='error';
+      toast('云端同步失败，本地副本已保留');
     }
-  },450);
+  }finally{
+    cloudState.syncInFlight=false;
+    refreshCloudStatus();
+    if(cloudState.syncPending&&cloudState.status==='connected'){
+      cloudState.syncPending=false;
+      queueCloudSync();
+    }else if(cloudState.status!=='connected'){
+      cloudState.syncPending=false;
+    }
+  }
 }
 
 const navGroups=[
@@ -555,11 +586,63 @@ function renderTaxonomy(){
   return head('科目管理','统一使用「科目名称（科目代码）」；不再维护“公共课 / 专业课”这种上级分类。','<button class="btn primary" data-new-category>＋ 新建科目</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>科目</th><th>资源数</th><th>排序</th><th>显示</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'
 }
+
+function fileKindFromMime(mime,name=''){
+  const m=String(mime||'').toLowerCase(),n=String(name||'').toLowerCase();
+  if(m.includes('pdf')||n.endsWith('.pdf'))return 'PDF';
+  if(m.startsWith('image/')||/\.(png|jpe?g|gif|webp|svg)$/.test(n))return '图片';
+  if(/zip|rar|7z|gzip|tar/.test(m)||/\.(zip|rar|7z|tar|gz)$/.test(n))return '压缩包';
+  return '其他';
+}
+function fileMimeFromKind(kind,file){
+  if(file?.type)return file.type;
+  if(kind==='PDF')return 'application/pdf';
+  if(kind==='图片')return 'image/*';
+  if(kind==='压缩包')return 'application/zip';
+  return 'application/octet-stream';
+}
+function formatFileSize(bytes){
+  const n=Number(bytes)||0;
+  if(!n)return '未记录大小';
+  if(n<1024)return n+' B';
+  if(n<1024*1024)return (n/1024).toFixed(n<10240?1:0)+' KB';
+  return (n/1024/1024).toFixed(n<10*1024*1024?2:1)+' MB';
+}
+function fileAssociationLabel(file){
+  const resource=state.resources.find(r=>sameId(r.id,file.resourceId));
+  const version=resource?.extraVersions?.find(v=>sameId(v.id,file.versionId));
+  const linked=[resource?.title,version?.name].filter(Boolean).join(' · ');
+  return file.usage||linked||'未关联';
+}
+async function persistCloudFile(record,fileBlob){
+  const id=record.id||('file-'+Date.now());
+  const payload={
+    id,
+    object_key:record.objectKey||('external-'+id),
+    name:record.name||fileBlob?.name||'未命名文件',
+    mime_type:fileMimeFromKind(record.kind,fileBlob),
+    size_bytes:fileBlob?.size??record.sizeBytes??0,
+    is_public:record.visible!==false,
+    resource_id:record.resourceId||null,
+    version_id:record.versionId||null,
+    external_url:record.url||'',
+    usage_note:record.usage||''
+  };
+  try{
+    const data=await studioApi(record.id?'/admin/files/'+encodeURIComponent(record.id):'/admin/files',{method:record.id?'PUT':'POST',body:JSON.stringify(payload)});
+    return {cloud:true,item:data.item};
+  }catch(error){
+    if(error.status===404||error.code==='unknown_entity'){
+      return {cloud:false,error};
+    }
+    throw error;
+  }
+}
 function renderFiles(){
-  const rows=state.files.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+x.kind+' · '+(x.size||'外部链接')+'</small></div></td><td>'+(x.usage||'未关联')+'</td><td><span class="pill '+(x.visible?'green':'')+'">'+(x.visible?'公开':'隐藏')+'</span></td><td><div class="row-actions"><button class="btn small" data-edit-file="'+x.id+'">编辑</button><button class="icon-danger" data-delete-file="'+x.id+'" aria-label="删除">×</button></div></td></tr>').join('');
-  return head('文件','当前静态版可登记文件或外部文件链接；接入 Storage 后再保存真实文件。','<button class="btn primary" data-upload>＋ 上传 / 登记文件</button>')+
-  '<section class="card data-card"><div class="toolbar"><input class="control grow" placeholder="搜索文件名或资源"><select class="control"><option>全部文件</option><option>PDF</option><option>图片</option><option>其他</option></select></div>'+
-  (state.files.length?'<div class="table-wrap"><table class="table"><thead><tr><th>文件</th><th>用途 / 关联</th><th>状态</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><strong>尚未登记文件</strong><p>可以先登记本地文件元数据或外部文件链接；真正上传将在接入 Storage 后启用。</p></div>')+
+  const rows=state.files.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.name)+'</strong><small>'+escapeHtml(x.kind)+' · '+escapeHtml(x.size||formatFileSize(x.sizeBytes))+'</small></div></td><td>'+escapeHtml(fileAssociationLabel(x))+'</td><td><span class="pill '+(x.visible?'green':'')+'">'+(x.visible?'公开':'隐藏')+'</span></td><td><div class="row-actions">'+(x.url?'<a class="btn small" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener">打开</a>':'')+'<button class="btn small" data-edit-file="'+escapeHtml(x.id)+'">编辑</button><button class="icon-danger" data-delete-file="'+escapeHtml(x.id)+'" aria-label="删除">×</button></div></td></tr>').join('');
+  return head('文件','文件元数据保存在 Cloudflare D1；文件本体继续使用百度、夸克、直链或其他外部存储。','<button class="btn primary" data-upload>＋ 登记文件</button>')+
+  '<section class="card data-card"><div class="toolbar"><input class="control grow" placeholder="搜索文件名或关联资源"><select class="control"><option>全部文件</option><option>PDF</option><option>图片</option><option>压缩包</option><option>其他</option></select></div>'+
+  (state.files.length?'<div class="table-wrap"><table class="table"><thead><tr><th>文件</th><th>用途 / 关联</th><th>状态</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><strong>尚未登记文件</strong><p>可以登记外部文件链接并关联到资料或版本；文件内容本身不会上传到 D1。</p></div>')+
   '</section>'
 }
 function renderAccount(){
@@ -722,7 +805,19 @@ function bind(){
   $$('[data-delete-category]').forEach(b=>b.onclick=()=>confirmDelete('删除科目','不会删除资料；原属于该科目的资料将变为未分类。',()=>{const category=state.categories.find(x=>sameId(x.id,b.dataset.deleteCategory));if(category){state.resources.forEach(r=>{if(r.subjectName===category.name&&r.subjectCode===category.code){r.subjectName='';r.subjectCode=''}})}state.categories=state.categories.filter(x=>!sameId(x.id,b.dataset.deleteCategory));saveStudioCollections();render();toast('科目已删除')}));
   $('[data-upload]')?.addEventListener('click',()=>openFile());
   $$('[data-edit-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.editFile));
-  $$('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','当前只删除后台登记记录。',()=>{state.files=state.files.filter(x=>x.id!=b.dataset.deleteFile);saveStudioCollections();render();toast('文件记录已删除')}));
+  $('[data-delete-file]').forEach(b=>b.onclick=()=>confirmDelete('删除文件记录','只删除 D1 中的文件元数据，不会删除外部网盘或直链文件。',async()=>{
+    const id=b.dataset.deleteFile;
+    try{
+      await studioApi('/admin/files/'+encodeURIComponent(id),{method:'DELETE'});
+      state.files=state.files.filter(x=>!sameId(x.id,id));
+      render();toast('D1 文件记录已删除');
+    }catch(error){
+      if(error.status===404||error.code==='unknown_entity'){
+        state.files=state.files.filter(x=>!sameId(x.id,id));
+        render();toast('云端文件接口尚未部署，已从当前页面移除');
+      }else toast(authErrorText(error.code||error.message))
+    }
+  }));
   $('[data-jump-resources]')?.addEventListener('click',()=>{state.section='resources';render()});
   $('[data-jump-announcements]')?.addEventListener('click',()=>{state.section='announcements';render()});
   $('[data-jump-taxonomy]')?.addEventListener('click',()=>{state.section='taxonomy';render()});
@@ -917,12 +1012,48 @@ function openCategory(id){
   $('#drawer [data-toggle="draft-category-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
 }
 function openFile(id){
-  const x=state.files.find(x=>sameId(x.id,id))||{id:null,name:'',kind:'PDF',url:'',usage:'',size:'',visible:true};
-  const body='<div class="form-grid"><label class="field wide"><span>选择本地文件</span><input id="fLocal" type="file"></label><label class="field wide"><span>或外部文件 URL</span><input id="fUrl" type="url" value="'+x.url+'" placeholder="https://..."></label><label class="field wide"><span>显示名称</span><input id="fName" value="'+x.name+'" placeholder="留空时使用文件名"></label><label class="field"><span>类型</span><select id="fKind"><option>'+x.kind+'</option><option>PDF</option><option>图片</option><option>压缩包</option><option>其他</option></select></label><label class="field"><span>用途 / 关联资源</span><input id="fUsage" value="'+x.usage+'"></label></div><div class="design-note" style="margin-top:12px">当前没有文件服务器：本地文件只登记名称、类型和大小，不会上传文件内容；填外部 URL 可保存链接。</div><div class="setting-tile" style="margin-top:12px"><div><strong>公开</strong><small>控制后台登记状态</small></div>'+toggle('draft-file-visible','x',x.visible)+'</div>';
-  openDrawer(id?'编辑文件':'上传 / 登记文件',body,()=>{
-    const file=$('#fLocal').files?.[0];x.url=$('#fUrl').value.trim();x.name=$('#fName').value.trim()||file?.name||x.name||'未命名文件';x.kind=$('#fKind').value;x.usage=$('#fUsage').value.trim();if(file)x.size=(file.size/1024/1024).toFixed(2)+' MB';
-    if(!id){x.id=Date.now();state.files.unshift(x)}saveStudioCollections();render();toast(id?'文件记录已保存':'文件记录已创建')
+  const existing=state.files.find(x=>sameId(x.id,id));
+  const x=existing?{...existing}:{id:null,name:'',kind:'PDF',mimeType:'application/pdf',url:'',usage:'',sizeBytes:0,size:'',visible:true,resourceId:'',versionId:''};
+  const resourceOptions='<option value="">未关联资料</option>'+state.resources.map(r=>'<option value="'+escapeHtml(r.id)+'" '+(sameId(r.id,x.resourceId)?'selected':'')+'>'+escapeHtml(r.title)+'</option>').join('');
+  const versionOptions=resourceId=>{
+    const resource=state.resources.find(r=>sameId(r.id,resourceId));
+    return '<option value="">未关联版本</option>'+(resource?.extraVersions||[]).map(v=>'<option value="'+escapeHtml(v.id)+'" '+(sameId(v.id,x.versionId)?'selected':'')+'>'+escapeHtml(v.name)+' · '+escapeHtml(v.releaseVersion||'')+'</option>').join('');
+  };
+  const body='<div class="form-grid">'+
+    '<label class="field wide"><span>本地文件信息（可选）</span><input id="fLocal" type="file"><small>只读取文件名、类型和大小，不上传文件内容。</small></label>'+
+    '<label class="field wide"><span>外部文件 URL</span><input id="fUrl" type="url" value="'+escapeHtml(x.url)+'" placeholder="https://..."></label>'+
+    '<label class="field wide"><span>显示名称</span><input id="fName" value="'+escapeHtml(x.name)+'" placeholder="留空时使用本地文件名"></label>'+
+    '<label class="field"><span>类型</span><select id="fKind"><option '+(x.kind==='PDF'?'selected':'')+'>PDF</option><option '+(x.kind==='图片'?'selected':'')+'>图片</option><option '+(x.kind==='压缩包'?'selected':'')+'>压缩包</option><option '+(x.kind==='其他'?'selected':'')+'>其他</option></select></label>'+
+    '<label class="field"><span>关联资料</span><select id="fResource">'+resourceOptions+'</select></label>'+
+    '<label class="field wide"><span>关联版本</span><select id="fVersion">'+versionOptions(x.resourceId)+'</select></label>'+
+    '<label class="field wide"><span>用途 / 备注</span><input id="fUsage" value="'+escapeHtml(x.usage)+'" placeholder="例如：A4 打印版源文件"></label>'+
+    '</div>'+
+    '<div class="design-note" style="margin-top:12px">保存后元数据写入 Cloudflare D1；实际文件仍由外部 URL 提供，不会把文件字节写入 D1。</div>'+
+    '<div class="setting-tile" style="margin-top:12px"><div><strong>公开</strong><small>标记该文件记录可用于公开资源</small></div>'+toggle('draft-file-visible','x',x.visible)+'</div>';
+  openDrawer(id?'编辑文件':'登记文件',body,async()=>{
+    const file=$('#fLocal').files?.[0];
+    x.url=$('#fUrl').value.trim();
+    x.name=$('#fName').value.trim()||file?.name||x.name||'未命名文件';
+    x.kind=$('#fKind').value;
+    x.usage=$('#fUsage').value.trim();
+    x.resourceId=$('#fResource').value||'';
+    x.versionId=$('#fVersion').value||'';
+    if(file){x.sizeBytes=file.size;x.size=formatFileSize(file.size);x.mimeType=file.type||fileMimeFromKind(x.kind,file)}
+    try{
+      const saved=await persistCloudFile(x,file);
+      if(saved.cloud){
+        toast(id?'文件记录已同步到 D1':'文件记录已写入 D1');
+        await bootstrapStudioCloud();
+      }else{
+        if(!x.id)x.id='file-local-'+Date.now();
+        const index=state.files.findIndex(item=>sameId(item.id,x.id));
+        if(index>=0)state.files[index]=x;else state.files.unshift(x);
+        toast('云端文件接口尚未部署，当前记录仅保留在本次页面会话');
+        render();
+      }
+    }catch(error){toast(authErrorText(error.code||error.message))}
   });
+  $('#fResource')?.addEventListener('change',e=>{x.versionId='';$('#fVersion').innerHTML=versionOptions(e.target.value)});
   $('#drawer [data-toggle="draft-file-visible"]')?.addEventListener('click',e=>{e.preventDefault();x.visible=!x.visible;e.currentTarget.classList.toggle('on',x.visible)})
 }
 function ensureResourceRecord(x){
