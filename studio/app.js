@@ -19,9 +19,22 @@ const ICONS={
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||ICONS.box)+'</svg>'}
 $$('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 
-const pinnedResourceTitles=new Set(JSON.parse(localStorage.getItem('yanku-pinned-resource-titles')||'[]'));
-const pinnedAnnouncementTitles=new Set(JSON.parse(localStorage.getItem('yanku-pinned-announcement-titles')||'[]'));
-const storedAnnouncements=JSON.parse(localStorage.getItem('yanku-announcements-v2')||'null');
+function safeLocalJson(key,fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    if(raw===null||raw==='')return fallback;
+    const parsed=JSON.parse(raw);
+    return parsed??fallback;
+  }catch{
+    try{localStorage.removeItem(key)}catch{}
+    return fallback;
+  }
+}
+const storedPinnedResources=safeLocalJson('yanku-pinned-resource-titles',[]);
+const storedPinnedAnnouncements=safeLocalJson('yanku-pinned-announcement-titles',[]);
+const pinnedResourceTitles=new Set(Array.isArray(storedPinnedResources)?storedPinnedResources:[]);
+const pinnedAnnouncementTitles=new Set(Array.isArray(storedPinnedAnnouncements)?storedPinnedAnnouncements:[]);
+const storedAnnouncements=safeLocalJson('yanku-announcements-v2',null);
 
 const siteCopyDefaults={
   brandName:'研库',
@@ -95,8 +108,8 @@ const siteCopyDefaults={
   copySuccessText:'QQ群号已复制'
 };
 function loadSiteCopy(){
-  try{return {...siteCopyDefaults,...(JSON.parse(localStorage.getItem('yanku-site-copy-v1')||'{}'))}}
-  catch{return {...siteCopyDefaults}}
+  const saved=safeLocalJson('yanku-site-copy-v1',{});
+  return {...siteCopyDefaults,...(saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{})};
 }
 function saveSiteCopy(){localStorage.setItem('yanku-site-copy-v1',JSON.stringify(state.copy));queueCloudSync()}
 const copyGroups=[
@@ -155,8 +168,8 @@ const state={
   settings:{resources:true,experience:true,siteName:'研库',siteDescription:'考研学习资源索引与分发',errataSubmitUrl:localStorage.getItem('yanku-errata-submit-url')||''}
 };
 function loadStudioCollections(){
-  try{return JSON.parse(localStorage.getItem('yanku-studio-collections-v1')||'null')}
-  catch{return null}
+  const value=safeLocalJson('yanku-studio-collections-v1',null);
+  return value&&typeof value==='object'&&!Array.isArray(value)?value:null;
 }
 function saveStudioCollections(){
   const data={
@@ -331,7 +344,7 @@ function ensureAuthGate(){
   let gate=document.getElementById('authGate');
   if(!gate){
     gate=document.createElement('section');
-    gate.id='authGate';gate.className='auth-gate';gate.hidden=true;
+    gate.id='authGate';gate.className='auth-gate';
     document.body.appendChild(gate);
   }
   return gate;
@@ -403,7 +416,7 @@ async function bootstrapStudioCloud(){
       }
     }else{
       cloudState.status='error';
-      renderAuthGate('login',{},'云端服务暂不可用，请稍后刷新。');
+      renderAuthGate('login',{},'后台初始化失败。可以先重新登录；如果仍失败，请刷新页面。');
     }
     refreshCloudStatus();
   }
