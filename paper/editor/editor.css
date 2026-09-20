@@ -357,7 +357,7 @@ body[data-template="book"] .cover-main-title{font-size:21.9178pt!important;line-
   line-height:var(--master-leading)!important;
 }
 .editor-main #paperSheet .question{
-  margin-bottom:var(--master-question-gap)!important;
+  margin-bottom:var(--question-gap,var(--master-question-gap))!important;
   font-size:inherit!important;
   line-height:inherit!important;
 }
