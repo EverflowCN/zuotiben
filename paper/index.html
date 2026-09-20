@@ -3,15 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="description" content="研库本地组卷：题目文件仅在浏览器中处理，不上传服务器，套用固定 Everflow A4 模板并直接导出 PDF。">
+  <meta name="description" content="研库本地组卷：题目文件仅在浏览器中处理，不上传服务器，导入后进入独立试卷编辑器。">
   <meta name="theme-color" content="#ffffff">
   <title>本地组卷 · 研库</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/400.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/700.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/400.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/700.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
-  <link rel="stylesheet" href="./styles.css?v=20260921-compile6">
+  <link rel="stylesheet" href="./styles.css?v=20260921-landing2">
 </head>
 <body>
 <header class="topbar">
@@ -35,13 +30,10 @@
     <div>
       <div class="eyebrow">EVERFLOW · LOCAL PAPER</div>
       <h1>本地组卷</h1>
-      <p>将自己的题目文件导入浏览器，套用固定 Everflow A4 模板。题目内容不会上传至研库服务器，用户仅调整题目顺序，完成后直接由浏览器导出 PDF。</p>
+      <p>把自己的题目文件导入浏览器，再进入独立编辑器完成题目整理、模板排版与 PDF 导出。题目内容不上传研库服务器。</p>
     </div>
     <div class="hero-badges">
-      <span>不上传题目</span>
-      <span>无需登录</span>
-      <span>浏览器导出</span>
-      <span>固定模板</span>
+      <span>不上传题目</span><span>无需登录</span><span>独立编辑器</span><span>固定模板</span>
     </div>
   </section>
 
@@ -49,18 +41,16 @@
     <div class="notice-icon">◆</div>
     <div>
       <strong>本地隐私模式</strong>
-      <p>导入、排序、预览与项目保存均在当前浏览器中完成。此页面不提供 XeLaTeX 编译，也不会把本地题目发送到 Supabase、Railway 或研库 API。</p>
+      <p>导入文件只由当前浏览器读取。导入成功后会进入独立的试卷编辑器页面；本地题目不会发送到 Supabase、Railway 或研库 API。</p>
     </div>
   </section>
 
-  <section class="start-grid wrap" id="startGrid">
+  <section class="start-grid wrap">
     <article class="start-card primary-card">
       <span class="step">01</span>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v3h14v-3"/></svg>
-      </div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v3h14v-3"/></svg></div>
       <h2>导入本地题目</h2>
-      <p>支持 Everflow Markdown、JSON 与 .everflow 项目文件。文件由浏览器直接读取。</p>
+      <p>支持 Everflow Markdown、JSON 与 .everflow。导入后自动进入独立编辑器。</p>
       <div class="card-actions">
         <button class="primary-btn" id="importButton" type="button">选择题目文件</button>
         <button class="ghost-btn" id="openProjectButton" type="button">打开项目</button>
@@ -70,11 +60,9 @@
 
     <article class="start-card">
       <span class="step">02</span>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h8M8 13h5"/><path d="M5 4h14v16H5z"/></svg>
-      </div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M8 9h8M8 13h5"/><path d="M5 4h14v16H5z"/></svg></div>
       <h2>用 AI 整理题目</h2>
-      <p>可先使用豆包、ChatGPT、通义或 OCR 工具转录自己的 PDF、图片或 Word，再保存为 Everflow Markdown。</p>
+      <p>可先用豆包、ChatGPT、通义或 OCR 工具转录 PDF、图片或 Word，再保存为 Everflow Markdown。</p>
       <div class="card-actions">
         <button class="ghost-btn" id="copyPromptButton" type="button">复制 AI 提示词</button>
         <button class="ghost-btn" id="downloadTemplateButton" type="button">下载示例模板</button>
@@ -83,115 +71,29 @@
 
     <article class="start-card">
       <span class="step">03</span>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h4M8 13h8M8 17h6"/></svg>
-      </div>
-      <h2>浏览器直接导出</h2>
-      <p>完成排序后直接调用浏览器打印为 PDF。不会进入 Evera 的 LaTeX 编译队列。</p>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h4M8 13h8M8 17h6"/></svg></div>
+      <h2>进入独立编辑器</h2>
+      <p>编辑器与入口页完全分离。题目顺序、内容、大题、选项和间距等操作只在编辑器内进行。</p>
       <div class="card-actions">
+        <button class="ghost-btn" id="continueButton" type="button" hidden>继续上次编辑</button>
         <button class="ghost-btn" id="howButton" type="button">查看格式说明</button>
       </div>
     </article>
   </section>
 
-  <section class="workspace wrap" id="workspace" hidden>
-    <header class="workspace-head">
-      <div>
-        <div class="eyebrow">LOCAL WORKSPACE</div>
-        <h2 id="paperName">未命名试卷</h2>
-        <p><span id="questionCount">0</span> 题 · <span id="sourceName">本地文件</span> · 自动保存在当前浏览器</p>
-      </div>
-      <div class="workspace-actions">
-        <button class="ghost-btn" id="replaceButton" type="button">重新导入</button>
-        <button class="ghost-btn" id="exportProjectButton" type="button">保存 .everflow</button>
-        <button class="ghost-btn compile-entry" id="compileModeButton" type="button">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v4H8zM6 10h12v10H6zM9 14h6"/></svg>
-  <span>进入编译模式</span>
-</button>
-<button class="primary-btn" id="printButton" type="button">导出 PDF</button>
-      </div>
-    </header>
-
-    <div class="compile-bar" id="compileBar" hidden>
-      <div class="compile-bar-copy">
-        <span>EVERFLOW COMPILE MODE</span>
-        <strong>编译模式 · 固定 exam-A4 模板</strong>
-        <small>本地浏览器排版，不上传题目；整题可移动，题干与模板均锁定。</small>
-      </div>
-      <div class="compile-bar-actions">
-        <button class="ghost-btn" id="compileOrderButton" type="button">题目移动：开启</button>
-        <button class="ghost-btn" id="compileExitButton" type="button">退出编译模式</button>
-        <button class="primary-btn" id="compilePrintButton" type="button">导出 PDF</button>
-      </div>
-    </div>
-
-    <div class="workspace-grid">
-      <aside class="order-panel">
-        <div class="panel-head">
-          <div>
-            <strong>题目顺序</strong>
-            <small>拖动或使用箭头调整；题目正文不可编辑</small>
-          </div>
-          <span id="orderCount">0</span>
-        </div>
-        <div class="order-list" id="orderList"></div>
-        <div class="order-foot">
-          <button class="text-btn" id="resetOrderButton" type="button">恢复导入顺序</button>
-          <button class="text-btn danger" id="clearButton" type="button">清空</button>
-        </div>
-      </aside>
-
-      <section class="preview-panel">
-        <div class="preview-toolbar">
-          <div>
-            <strong>Everflow A4 固定模板</strong>
-            <small>快速版 · 浏览器排版</small>
-          </div>
-          <div class="preview-state">
-            <span><i></i> 本地渲染</span>
-            <span>A4</span>
-          </div>
-        </div>
-
-        <div class="paper-stage">
-          <article class="paper-sheet" id="paperSheet">
-            <div class="paper-running-head" aria-hidden="true">Everflow·彼时流年若水</div>
-            <div class="paper-watermark" aria-hidden="true"></div>
-            <aside class="paper-qr" aria-label="zuotiben.top 二维码">
-              <div class="paper-qr-code"><img src="./assets/zuotiben-qr.svg" alt="" aria-hidden="true"></div>
-              <span>zuotiben.top</span>
-            </aside>
-            <header class="paper-header">
-              <div class="paper-brand">EVERFLOW · 彼时流年若水</div>
-              <h1 id="previewTitle">试卷</h1>
-              <p id="previewMeta">本地排版 · 仅题目页</p>
-            </header>
-            <main class="paper-questions" id="paperQuestions"></main>
-            <footer class="paper-footer">
-              <span>Everflow·彼时流年若水</span>
-              <span>第 <b id="previewPageCurrent">1</b> 页（共 <b id="previewPageTotal">1</b> 页）</span>
-            </footer>
-          </article>
-        </div>
-      </section>
-    </div>
-  </section>
-
-  <section class="guide wrap" id="guide">
+  <section class="guide wrap">
     <div class="section-head">
       <div><span>FORMAT</span><h2>如何准备题目文件</h2></div>
-      <p>推荐让 AI 严格输出下面的 Everflow Markdown，再保存到手机“文件”或电脑本地。</p>
+      <p>推荐让 AI 严格输出 Everflow Markdown，然后保存到手机“文件”或电脑本地。</p>
     </div>
     <div class="guide-grid">
-      <div class="guide-flow">
-        <ol>
-          <li><b>准备原始资料</b><span>PDF、Word、图片或纸质试卷拍照。</span></li>
-          <li><b>使用 AI / OCR 转录</b><span>豆包、ChatGPT、通义等均可；请自行确认第三方服务的数据政策。</span></li>
-          <li><b>保存为 Markdown</b><span>将 AI 输出保存成 .md 文件，不需要上传到研库。</span></li>
-          <li><b>导入并排序</b><span>Everflow 只读取题目并套固定模板，用户只调整顺序。</span></li>
-          <li><b>浏览器导出 PDF</b><span>使用系统打印面板“另存为 PDF”。</span></li>
-        </ol>
-      </div>
+      <div class="guide-flow"><ol>
+        <li><b>准备原始资料</b><span>PDF、Word、图片或纸质试卷拍照。</span></li>
+        <li><b>使用 AI / OCR 转录</b><span>豆包、ChatGPT、通义等均可。</span></li>
+        <li><b>保存到本地</b><span>保存为 .md / .json / .everflow。</span></li>
+        <li><b>导入</b><span>浏览器读取后自动进入 /paper/editor/。</span></li>
+        <li><b>编辑并导出</b><span>所有试卷编辑集中在独立页面。</span></li>
+      </ol></div>
       <pre class="format-example"><code># 2026 数学模拟卷
 
 ## 1
@@ -213,23 +115,18 @@ D. $2$
 
 <div class="modal-layer" id="formatModal" hidden>
   <button class="modal-backdrop" type="button" data-modal-close aria-label="关闭"></button>
-  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="formatTitle">
-    <header>
-      <div><span>IMPORT FORMAT</span><h2 id="formatTitle">Everflow 本地导入格式</h2></div>
-      <button class="icon-btn" type="button" data-modal-close aria-label="关闭">×</button>
-    </header>
+  <section class="modal" role="dialog" aria-modal="true">
+    <header><div><span>IMPORT FORMAT</span><h2>Everflow 本地导入格式</h2></div><button class="icon-btn" type="button" data-modal-close>×</button></header>
     <div class="modal-body">
-      <p><b>Markdown：</b>使用 <code>## 1</code>、<code>## 2</code> 作为题目起始。选择题选项使用 <code>A.</code> 至 <code>D.</code>。行内数学公式使用 <code>$...$</code>，独立公式使用 <code>$$...$$</code>。</p>
+      <p><b>Markdown：</b>每题使用 <code>## 1</code>、<code>## 2</code> 开始；选择题选项使用 <code>A.</code> 至 <code>D.</code>；公式使用 LaTeX。</p>
       <p><b>JSON：</b>支持 <code>{"title":"试卷名","questions":[{"content":"题干","options":["A","B","C","D"]}]}</code>。</p>
-      <p><b>.everflow：</b>由本站“保存 .everflow”生成，可在同一页面重新打开继续排序。</p>
-      <div class="warning-box">AI/OCR 可能识别错公式、上下标、正负号与选项，请在导入前与原文核对。</div>
+      <p><b>.everflow：</b>由编辑器“保存 .everflow”生成，可重新打开继续编辑。</p>
+      <div class="warning-box">AI/OCR 识别可能出错，请重点核对公式、上下标、正负号和选项。</div>
     </div>
   </section>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<script defer src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
-<script src="./app.js?v=20260921-compile6"></script>
+<script src="./app.js?v=20260921-landing2"></script>
 </body>
 </html>
