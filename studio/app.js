@@ -1,5 +1,6 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const sameId=(a,b)=>String(a)===String(b);
+const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[char]));
 const ICONS={
   x:'<path d="M18 6 6 18M6 6l12 12"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.7-3.7"/>',home:'<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
@@ -416,11 +417,11 @@ function queueCloudSync(){
 }
 
 const navGroups=[
-  {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['experience','经验贴','article'],['announcements','公告','bell'],['copy','文案与说明','text']]},
+  {label:'内容',items:[['overview','概览','home'],['resources','资料','box'],['errata','勘误','errata'],['experience','经验贴','article'],['announcements','公告','bell'],['copy','文案与说明','text']]},
   {label:'资源管理',items:[['taxonomy','科目管理','tag'],['files','文件','folder']]},
   {label:'系统',items:[['account','账号中心','account'],['admins','成员与权限','users'],['settings','站点设置','settings'],['audit','审计日志','audit']]}
 ];
-const titles={overview:['OVERVIEW','概览'],resources:['RESOURCES','资料'],experience:['EXPERIENCE','经验贴'],announcements:['ANNOUNCEMENTS','公告'],copy:['COPY','文案与说明'],taxonomy:['SUBJECTS','科目管理'],files:['MEDIA','文件'],account:['ACCOUNT','账号中心'],admins:['ACCESS','成员与权限'],settings:['SETTINGS','站点设置'],audit:['AUDIT','审计日志']};
+const titles={overview:['OVERVIEW','概览'],resources:['RESOURCES','资料'],errata:['ERRATA','勘误'],experience:['EXPERIENCE','经验贴'],announcements:['ANNOUNCEMENTS','公告'],copy:['COPY','文案与说明'],taxonomy:['SUBJECTS','科目管理'],files:['MEDIA','文件'],account:['ACCOUNT','账号中心'],admins:['ACCESS','成员与权限'],settings:['SETTINGS','站点设置'],audit:['AUDIT','审计日志']};
 function subjectLabel(item){return item.subjectName+(item.subjectCode?'（'+item.subjectCode+'）':'')}
 function savePinnedResources(){localStorage.setItem('yanku-pinned-resource-titles',JSON.stringify(state.resources.filter(x=>x.pinned).map(x=>x.title)));queueCloudSync()}
 function savePinnedAnnouncements(){localStorage.setItem('yanku-pinned-announcement-titles',JSON.stringify(state.announcements.filter(x=>x.pinned).map(x=>x.title)));queueCloudSync()}
@@ -572,7 +573,7 @@ function renderAccount(){
   '<div class="design-note" style="margin-top:14px">账号、密码哈希与登录会话均由 Worker + D1 管理；浏览器不会保存管理员密码。</div>'
 }
 function renderAdmins(){
-  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role)+'</span></td><td><span class="pill green">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+x.last+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+x.id+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+x.id+'">删除</button></div></td></tr>').join('');
+  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+x.name+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role)+'</span></td><td><span class="pill '+(x.status==='active'?'green':'red')+'">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+x.last+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+x.id+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+x.id+'">删除</button></div></td></tr>').join('');
   return head('成员与权限','主管理员拥有全部权限，可创建多个管理员并逐项授权。','<button class="btn primary" data-new-admin>＋ 新增成员</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>成员</th><th>角色</th><th>状态</th><th>最近活动</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
   '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>权限矩阵</h2><p>Owner 始终拥有全部权限，不允许其他角色修改 Owner。</p></div></div><div class="card-body">'+permissionMatrix()+'</div></section>'
@@ -595,14 +596,79 @@ function renderAudit(){
   return head('审计日志','记录高权限操作，包括创建、修改、删除、权限变更和同步。','<button class="btn" type="button" data-export-audit>导出日志</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>时间</th><th>成员</th><th>动作</th><th>对象</th><th>结果</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5">暂无审计记录</td></tr>')+'</tbody></table></div></section>'
 }
+
+function globalSearchItems(){
+  const items=[];
+  state.resources.forEach(x=>items.push({kind:'资料',section:'resources',id:x.id,title:x.title,meta:[x.subjectName,x.subjectCode,x.releaseVersion,x.type].filter(Boolean).join(' · '),text:[x.title,x.description,x.subjectName,x.subjectCode,x.releaseVersion,x.type].join(' ')}));
+  state.errata.forEach(x=>items.push({kind:'勘误',section:'errata',id:x.id,title:x.title,meta:errataResourceName(x)+' · '+errataStatusLabel(x.status),text:[x.title,x.body,errataResourceName(x),errataVersionName(x),errataStatusLabel(x.status)].join(' ')}));
+  state.announcements.forEach(x=>items.push({kind:'公告',section:'announcements',id:x.id,title:x.title,meta:[x.kind,announcementStatusLabel(x)].filter(Boolean).join(' · '),text:[x.title,x.body,x.kind,announcementStatusLabel(x)].join(' ')}));
+  state.admins.forEach(x=>items.push({kind:'成员',section:'admins',id:x.id,title:x.name,meta:[x.identifier||'',({owner:'Owner',admin:'管理员',editor:'编辑',reviewer:'审核'}[x.role]||x.role)].filter(Boolean).join(' · '),text:[x.name,x.identifier,x.role,x.status].join(' ')}));
+  return items;
+}
+function closeGlobalSearch(){
+  const box=$('#globalSearchResults'),input=$('#globalSearch');
+  if(box)box.hidden=true;
+  if(input)input.setAttribute('aria-expanded','false');
+}
+function renderGlobalSearchResults(){
+  const input=$('#globalSearch'),box=$('#globalSearchResults');
+  if(!input||!box)return;
+  const query=input.value.trim().toLowerCase();
+  if(!query){closeGlobalSearch();box.innerHTML='';return}
+  const matches=globalSearchItems().filter(item=>item.text.toLowerCase().includes(query)).slice(0,10);
+  box.innerHTML=matches.length
+    ? '<div class="global-search-result-list">'+matches.map(item=>
+        '<button type="button" class="global-search-result" data-search-section="'+escapeHtml(item.section)+'" data-search-id="'+escapeHtml(item.id)+'">'+
+          '<span class="global-search-kind">'+escapeHtml(item.kind)+'</span>'+
+          '<span class="global-search-copy"><strong>'+escapeHtml(item.title)+'</strong><small>'+escapeHtml(item.meta||'')+'</small></span>'+
+        '</button>'
+      ).join('')+'</div>'
+    : '<div class="global-search-empty">没有匹配结果</div>';
+  box.hidden=false;
+  input.setAttribute('aria-expanded','true');
+  $$('#globalSearchResults [data-search-section]').forEach(button=>button.onclick=()=>{
+    const section=button.dataset.searchSection,id=button.dataset.searchId;
+    closeGlobalSearch();
+    input.value='';
+    state.section=section;
+    render();
+    if(section==='resources')openResource(id);
+    else if(section==='errata')openErrataEditor(id);
+    else if(section==='announcements')openAnnouncement(id);
+    else if(section==='admins')openAdmin(id);
+  });
+}
+
 function render(){
   renderNav(); const [ey,title]=titles[state.section]; $('#topEyebrow').textContent=ey;$('#topTitle').textContent=title;
-  const r={overview:renderOverview,resources:renderResources,experience:renderExperience,announcements:renderAnnouncements,copy:renderCopy,taxonomy:renderTaxonomy,files:renderFiles,account:renderAccount,admins:renderAdmins,settings:renderSettings,audit:renderAudit}[state.section];
+  const r={overview:renderOverview,resources:renderResources,errata:renderErrata,experience:renderExperience,announcements:renderAnnouncements,copy:renderCopy,taxonomy:renderTaxonomy,files:renderFiles,account:renderAccount,admins:renderAdmins,settings:renderSettings,audit:renderAudit}[state.section];
   $('#panelHost').innerHTML=r(); bind();
 }
 function bind(){
   $$('[data-pin]').forEach(button=>button.onclick=event=>{event.stopPropagation();const scope=button.dataset.pin,id=button.dataset.id;if(scope==='resource'){const item=state.resources.find(x=>x.id==id);if(item){item.pinned=!item.pinned;savePinnedResources();saveStudioCollections()}}if(scope==='announcement'){const item=state.announcements.find(x=>x.id==id);if(item){item.pinned=!item.pinned;saveAnnouncements()}}render();toast('置顶状态已更新')});
-  $$('[data-toggle]').forEach(b=>b.onclick=()=>{const s=b.dataset.toggle,id=b.dataset.id;if(s==='copy-visibility')return;if(s==='settings')state.settings[id]=!state.settings[id];if(s==='resource'){const x=state.resources.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);x.visible=!x.visible;saveAnnouncements()}if(s==='experience'){const x=state.experiences.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}if(s==='category'){const x=state.categories.find(x=>x.id==id);x.visible=!x.visible;saveStudioCollections()}render();toast('状态已更新')});
+  $$('[data-toggle]').forEach(b=>b.onclick=async()=>{
+    const s=b.dataset.toggle,id=b.dataset.id;
+    if(s==='copy-visibility')return;
+    if(s==='settings'){
+      const previous=Boolean(state.settings[id]);
+      state.settings[id]=!previous;
+      render();
+      try{
+        await studioApi('/admin/settings/public.settings',{method:'PUT',body:JSON.stringify({value:state.settings})});
+        toast('栏目设置已同步到云端');
+      }catch(error){
+        state.settings[id]=previous;
+        render();
+        toast('保存失败，已恢复原设置');
+      }
+      return;
+    }
+    if(s==='resource'){const x=state.resources.find(x=>x.id==id);if(x){x.visible=!x.visible;saveStudioCollections()}}
+    if(s==='announcement'){const x=state.announcements.find(x=>x.id==id);if(x){x.visible=!x.visible;saveAnnouncements()}}
+    if(s==='experience'){const x=state.experiences.find(x=>x.id==id);if(x){x.visible=!x.visible;saveStudioCollections()}}
+    if(s==='category'){const x=state.categories.find(x=>x.id==id);if(x){x.visible=!x.visible;saveStudioCollections()}}
+    render();toast('状态已更新')
+  });
   $$('[data-edit-resource]').forEach(b=>b.onclick=()=>openResource(b.dataset.editResource));
   $('[data-new-resource]')?.addEventListener('click',()=>openResource());
   $$('[data-delete-resource]').forEach(b=>b.onclick=()=>confirmDelete('删除资料','删除后将同时移除版本与渠道。',()=>{state.resources=state.resources.filter(x=>x.id!=b.dataset.deleteResource);saveStudioCollections();render();toast('已删除')}));
@@ -700,7 +766,7 @@ function openResource(id){
       '<div class="setting-tile"><div><strong>前台显示</strong><small>关闭后资源不会出现在公开列表</small></div>'+toggle('preview-resource-visible','x',x.visible)+'</div>'+
       '<div class="setting-tile"><div><strong>置顶资源</strong><small>在筛选结果和最近资源中优先展示</small></div>'+pinButton('resource',x.id||'new',x.pinned)+'</div>'+
       '<div class="form-grid"><label class="field"><span>发布版本</span><input id="dReleaseVersion" value="'+x.releaseVersion+'" placeholder="如：v1.2"></label><label class="field"><span>发布日期</span><input id="dPublishedAt" type="date" value="'+x.publishedAt+'"></label><label class="field"><span>更新时间</span><input id="dUpdated" type="date" value="'+x.updated+'"></label><label class="field"><span>排序权重</span><input id="dOrder" type="number" value="'+(x.order||100)+'"></label><label class="field wide"><span>版本说明</span><textarea placeholder="本次发布更新了什么"></textarea></label></div>'+
-      '<div class="design-note">发布版本、发布日期、更新时间都可由后台单独维护；以后接数据库后直接保存为正式字段。</div>'+
+      '<div class="design-note">发布版本、发布日期和更新时间会随资料配置同步到 Cloudflare D1。</div>'+
     '</div></div>';
 
   const save=()=>{
@@ -950,6 +1016,12 @@ $('#sideOpen').onclick=openSide;$('#sideClose').onclick=closeSide;$('#sideBackdr
 $('#openPublic').onclick=()=>window.open('../','_blank','noopener');
 $('#accountEntry').onclick=()=>{state.section='account';render();closeSide()};
 $('#logoutButton')?.addEventListener('click',async()=>{try{await studioApi('/auth/logout',{method:'POST'})}catch{}cloudState.status='auth';renderAuthGate('login',{needs_setup:false})});
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape'){closeDrawer();closeConfirm();closeSide()}});
+$('#globalSearch')?.addEventListener('input',renderGlobalSearchResults);
+$('#globalSearch')?.addEventListener('focus',()=>{if($('#globalSearch').value.trim())renderGlobalSearchResults()});
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('.global-search-wrap'))closeGlobalSearch()});
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus();$('#globalSearch').select()}
+  if(e.key==='Escape'){closeGlobalSearch();closeDrawer();closeConfirm();closeSide()}
+});
 render();
 bootstrapStudioCloud();
