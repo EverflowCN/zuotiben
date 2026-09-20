@@ -960,6 +960,8 @@ function renderExperience(){
 }
 
 function updatePageMode() {
+  const contentHead = document.querySelector(".content-head");
+  if (contentHead) contentHead.hidden = state.section === "overview";
   overviewView.hidden = state.section !== "overview";
   resourceView.hidden = state.section !== "resources";
   experienceView.hidden = state.section !== "experience";
