@@ -184,11 +184,11 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:
 body.dark .paper-stage{background:#090a0c}
 .paper-sheet{
   position:relative;width:210mm;min-height:297mm;margin:0 auto;padding:16mm 20mm 12mm;background:#fff;color:#111;
-  box-shadow:var(--page-shadow);font-family:"TeX Gyre Termes","Times New Roman","Noto Serif CJK SC","Songti SC","STSong",serif;
+  box-shadow:var(--page-shadow);font-family:"Times New Roman","Everflow Song","Songti SC","STSong",serif;font-synthesis:none;
 }
 .paper-header{padding-bottom:7mm;border-bottom:.35mm solid #1a1a1a;text-align:center}
 .paper-brand{font-family:Arial,"PingFang SC",sans-serif;font-size:8pt;letter-spacing:.14em}
-.paper-header h1{margin:4mm 0 2mm;font-size:18pt;line-height:1.15;font-weight:700}
+.paper-header h1{margin:4mm 0 2mm;font-family:"Everflow Hei",sans-serif;font-size:18pt;line-height:1.15;font-weight:700}
 .paper-header p{margin:0;font-size:9pt;color:#555}
 .paper-questions{padding:7mm 0 14mm}
 .question{
