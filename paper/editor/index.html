@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/700.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
   <link rel="stylesheet" href="../styles.css?v=20260921-editor1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-editor1">
+  <link rel="stylesheet" href="./editor.css?v=20260921-direct1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar">
@@ -58,7 +58,7 @@
       <div class="editor-toolbar-actions">
         <span class="preview-chip">A4</span>
         <span class="preview-chip"><i></i> 本地渲染</span>
-        <button class="ghost-btn" id="printButton" type="button">导出 PDF</button>
+        <button class="ghost-btn" id="printButton" type="button">下载 PDF</button>
       </div>
     </div>
 
@@ -71,7 +71,7 @@
       <div class="compile-bar-actions">
         <button class="ghost-btn" id="compileOrderButton" type="button">题目移动：开启</button>
         <button class="ghost-btn" id="compileExitButton" type="button">退出编译模式</button>
-        <button class="primary-btn" id="compilePrintButton" type="button">导出 PDF</button>
+        <button class="primary-btn" id="compilePrintButton" type="button">下载 PDF</button>
       </div>
     </div>
 
@@ -99,6 +99,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script defer src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
-<script src="./editor.js?v=20260921-editor1"></script>
+<script src="./editor.js?v=20260921-direct1"></script>
 </body>
 </html>
