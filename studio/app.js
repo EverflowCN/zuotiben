@@ -876,7 +876,7 @@ function bind(){
   $('[data-export-audit]')?.addEventListener('click',()=>{const text=JSON.stringify(state.audit||[],null,2);navigator.clipboard?.writeText(text).then(()=>toast('审计日志 JSON 已复制')).catch(()=>toast('复制失败'))});
 }
 function openResource(id){
-  const x=state.resources.find(x=>sameId(x.id,id))||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:'2026-09-19',updated:'2026-09-19',order:100};
+  const x=state.resources.find(x=>sameId(x.id,id))||{id:null,title:'',subjectName:'',subjectCode:'',type:'做题本',visible:true,pinned:false,status:'草稿',versions:0,defaultVersions:false,extraVersions:[],customLinks:[],releaseVersion:'v1.0',publishedAt:new Date().toISOString().slice(0,10),updated:new Date().toISOString().slice(0,10),order:100};
   x.extraVersions=x.extraVersions||[];x.customLinks=x.customLinks||[];
   const hasDefaultVersions=x.defaultVersions ?? [1,2].includes(Number(x.id));
   const defaultVersionCards=hasDefaultVersions?(
@@ -923,7 +923,7 @@ function openResource(id){
     x.releaseVersion=$('#dReleaseVersion')?.value.trim()||x.releaseVersion;
     x.publishedAt=$('#dPublishedAt')?.value||x.publishedAt;
     x.updated=$('#dUpdated')?.value||x.updated;
-    x.order=Number($('#dOrder')?.value)||100;
+    x.order=Number($('#dOrder')?.value||100);
     if(!x.id){x.id=Date.now();x.versions=0;state.resources.push(x)}
     savePinnedResources();saveStudioCollections();render();toast(id?'资料已保存':'已创建草稿')
   };
@@ -935,9 +935,9 @@ function openResource(id){
   });
   $$('[data-open-channel]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增获取入口',x.extraVersions?.[0]?.id)});
   $$('[data-add-custom-link]').forEach(button=>button.onclick=()=>{const rid=ensureResourceRecord(x);openCustomLink(rid,'新增自定义链接',button.dataset.versionId||x.extraVersions?.[0]?.id)});
-  $$('[data-edit-link]').forEach(button=>button.onclick=()=>openCustomLink(x.id,'编辑链接',button.dataset.versionId,button.dataset.editLink));
+  $$('[data-edit-link]').forEach(button=>button.onclick=()=>openCustomLink(ensureResourceRecord(x),'编辑链接',button.dataset.versionId,button.dataset.editLink));
   $$('[data-delete-link]').forEach(button=>button.onclick=()=>confirmDelete('删除链接','删除后主页将不再显示该获取入口。',()=>{const version=x.extraVersions.find(v=>sameId(v.id,button.dataset.versionId));if(version){version.links=(version.links||[]).filter(link=>!sameId(link.id,button.dataset.deleteLink));saveStudioCollections();openResource(x.id);toast('链接已删除')}}));
-  $$('[data-edit-version]').forEach(button=>button.onclick=()=>openVersionEditor(x.id,button.dataset.editVersion));
+  $$('[data-edit-version]').forEach(button=>button.onclick=()=>openVersionEditor(ensureResourceRecord(x),button.dataset.editVersion));
   $$('[data-delete-version]').forEach(button=>button.onclick=()=>confirmDelete('删除版本','删除后该版本的下载链接也会一并移除。',()=>{x.extraVersions=x.extraVersions.filter(v=>!sameId(v.id,button.dataset.deleteVersion));state.errata=state.errata.filter(e=>!sameId(e.versionId,button.dataset.deleteVersion));x.versions=(x.defaultVersions?2:0)+x.extraVersions.length;saveStudioCollections();openResource(x.id);toast('版本已删除')}));
   $$('[data-version-errata]').forEach(button=>button.onclick=()=>openErrataEditor(null,{resourceId:x.id,versionId:button.dataset.versionErrata}));
   $$('[data-open-errata]').forEach(button=>button.onclick=()=>openErrataEditor(null,{resourceId:x.id}));
@@ -957,7 +957,7 @@ function openResource(id){
 function openErrataEditor(id,preset={}){
   const existing=state.errata.find(x=>sameId(x.id,id));
   const firstResource=state.resources[0];
-  const x=existing||{id:null,resourceId:preset.resourceId||firstResource?.id||'',versionId:preset.versionId||'',title:'',body:'',status:'pending',visible:false};
+  const x=existing?structuredClone(existing):{id:null,resourceId:preset.resourceId||firstResource?.id||'',versionId:preset.versionId||'',title:'',body:'',status:'pending',visible:false};
   const resourceOptions=state.resources.map(r=>'<option value="'+r.id+'" '+(sameId(r.id,x.resourceId)?'selected':'')+'>'+r.title+'</option>').join('');
   const versionOptions=resourceId=>{
     const resource=state.resources.find(r=>sameId(r.id,resourceId));
@@ -965,12 +965,14 @@ function openErrataEditor(id,preset={}){
   };
   const body='<div class="form-grid"><label class="field wide"><span>关联资源</span><select id="erResource">'+resourceOptions+'</select></label><label class="field wide"><span>关联版本</span><select id="erVersion">'+versionOptions(x.resourceId)+'</select></label><label class="field wide"><span>标题</span><input id="erTitle" value="'+x.title+'" placeholder="如：第 12 页答案更正"></label><label class="field wide"><span>说明</span><textarea id="erBody">'+x.body+'</textarea></label><label class="field"><span>状态</span><select id="erStatus"><option value="'+x.status+'">'+errataStatusLabel(x.status)+'</option><option value="pending">待核对</option><option value="confirmed">已确认</option><option value="fixed">已修正</option><option value="ignored">已忽略</option></select></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>主页公开</strong><small>只有状态为“已修正”且开启后才会在公开页展示</small></div>'+toggle('draft-errata-visible','x',x.visible)+'</div>';
   openDrawer(existing?'编辑勘误':'新建勘误',body,()=>{
+    if(!$('#erResource').value){toast('请先创建资料，再添加勘误');return false}
     x.resourceId=$('#erResource').value;
     x.versionId=$('#erVersion').value;
     x.title=$('#erTitle').value.trim()||'未命名勘误';
     x.body=$('#erBody').value.trim();
     x.status=$('#erStatus').value||'pending';
-    if(!existing){x.id=Date.now();state.errata.unshift(x)}
+    if(existing)Object.assign(existing,x);
+    if(!existing){x.id=crypto.randomUUID();state.errata.unshift(x)}
     saveStudioCollections();render();toast(existing?'勘误已保存':'勘误已创建')
   });
   $('#erResource')?.addEventListener('change',e=>{$('#erVersion').innerHTML=versionOptions(e.target.value)});
@@ -1113,9 +1115,15 @@ function openFile(id){
 }
 function ensureResourceRecord(x){
   x.extraVersions=x.extraVersions||[];x.customLinks=x.customLinks||[];
-  if(!x.id){
-    x.title=$('#dTitle')?.value.trim()||'未命名资料';x.subjectName=$('#dSubjectName')?.value.trim()||'';x.subjectCode=$('#dSubjectCode')?.value.trim()||'';x.type=$('#dType')?.value||'做题本';x.status='草稿';x.id=Date.now();x.defaultVersions=false;state.resources.push(x)
+  // Capture the parent form before a child editor replaces its DOM.
+  for(const [key,selector] of Object.entries({title:'#dTitle',subjectName:'#dSubjectName',subjectCode:'#dSubjectCode',type:'#dType',description:'#dDescription',status:'#dStatus',releaseVersion:'#dReleaseVersion',publishedAt:'#dPublishedAt',updated:'#dUpdated'})){
+    const field=$(selector);
+    if(field)x[key]=field.value.trim();
   }
+  const order=$('#dOrder');
+  if(order&&order.value!==''&&Number.isFinite(Number(order.value)))x.order=Number(order.value);
+  x.title=x.title||'未命名资料';
+  if(!x.id){x.id=crypto.randomUUID();x.defaultVersions=false;state.resources.push(x)}
   saveStudioCollections();return x.id
 }
 function openVersionEditor(resourceId,versionId){
@@ -1128,7 +1136,7 @@ function openVersionEditor(resourceId,versionId){
     v.releaseVersion=$('#vReleaseVersion').value.trim()||resource.releaseVersion||'v1.0';
     v.publishedAt=$('#vPublishedAt').value||resource.publishedAt||null;
     v.format=$('#vFormat').value||'PDF';
-    v.order=Number($('#vOrder').value)||100;
+    v.order=Number($('#vOrder').value||100);
     v.note=$('#vNote').value.trim();
     v.links=v.links||[];
     if(!existing){v.id=Date.now();resource.extraVersions.push(v)}
@@ -1143,15 +1151,16 @@ function openCustomLink(resourceId,title='新增自定义链接',versionId,linkI
   if(!version)return toast('请先创建一个版本');
   version.links=version.links||[];
   const existing=version.links.find(link=>sameId(link.id,linkId));
-  const link=existing||{id:null,label:'',type:'网盘',url:'',code:'',order:100,note:'',visible:true};
+  const link=existing?structuredClone(existing):{id:null,label:'',type:'网盘',url:'',code:'',order:100,note:'',visible:true};
   openDrawer(title,'<div class="form-grid"><label class="field"><span>显示名称</span><input id="clName" value="'+(link.label||'')+'" placeholder="如：百度网盘 / 在线阅读"></label><label class="field"><span>链接类型</span><select id="clType"><option>'+((link.type)||'网盘')+'</option><option>网盘</option><option>直链下载</option><option>在线阅读</option><option>打印服务</option><option>表单</option><option>其他</option></select></label><label class="field wide"><span>URL</span><input id="clUrl" type="url" value="'+(link.url||'')+'" placeholder="https://..."></label><label class="field"><span>提取码 / 口令</span><input id="clCode" value="'+(link.code||'')+'"></label><label class="field"><span>排序</span><input id="clOrder" type="number" value="'+(link.order||100)+'"></label><label class="field wide"><span>说明</span><textarea id="clNote">'+(link.note||'')+'</textarea></label></div><div class="setting-tile" style="margin-top:12px"><div><strong>主页显示</strong><small>关闭后该入口保留在后台但不公开</small></div>'+toggle('draft-link-visible','x',link.visible!==false)+'</div>',()=>{
     link.label=$('#clName').value.trim()||'自定义链接';
     link.type=$('#clType').value;
     link.url=$('#clUrl').value.trim();
     link.code=$('#clCode').value.trim();
-    link.order=Number($('#clOrder').value)||100;
+    link.order=Number($('#clOrder').value||100);
     link.note=$('#clNote').value.trim();
-    if(!existing){link.id=Date.now();version.links.push(link)}
+    if(existing)Object.assign(existing,link);
+    if(!existing){link.id=crypto.randomUUID();version.links.push(link)}
     saveStudioCollections();openResource(resource.id);toast(existing?'链接已保存':'链接已创建')
   });
   $('#drawer [data-toggle="draft-link-visible"]')?.addEventListener('click',e=>{e.preventDefault();link.visible=link.visible===false; e.currentTarget.classList.toggle('on',link.visible)})
