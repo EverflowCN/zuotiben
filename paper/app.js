@@ -328,23 +328,6 @@
     });
   }
 
-  function renderQr(){
-    if(!els.paperQrCode||els.paperQrCode.childNodes.length)return;
-    if(typeof window.QRCode!=="function"){
-      setTimeout(renderQr,120);
-      return;
-    }
-    try{
-      new window.QRCode(els.paperQrCode,{
-        text:"https://zuotiben.top/",
-        width:128,
-        height:128,
-        colorDark:"#111111",
-        colorLight:"#ffffff",
-        correctLevel:window.QRCode.CorrectLevel.M
-      });
-    }catch(e){}
-  }
 
   function renderAll(){
     var has=state.questions.length>0;
@@ -558,14 +541,13 @@
       "paperQuestions","previewTitle","previewMeta","paperSheet","fileInput","importButton","openProjectButton",
       "copyPromptButton","downloadTemplateButton","howButton","replaceButton","exportProjectButton","printButton",
       "resetOrderButton","clearButton","formatModal","themeToggle","compileModeButton","compileBar","compileOrderButton",
-      "compileExitButton","compilePrintButton","paperQrCode","previewPageCurrent","previewPageTotal"
+      "compileExitButton","compilePrintButton","previewPageCurrent","previewPageTotal"
     ].forEach(function(id){els[id]=byId(id)});
     els.paperStage=document.querySelector(".paper-stage");
 
     initTheme();
     bindDrag();
     bindPaperDrag();
-    renderQr();
 
     els.importButton.addEventListener("click",function(){els.fileInput.click()});
     els.openProjectButton.addEventListener("click",function(){els.fileInput.click()});
@@ -595,7 +577,7 @@
     if(restoreLocal())renderAll();
     else renderAll();
 
-    window.addEventListener("load",function(){renderQr();renderPaper();syncPaperScale();updatePageEstimate()});
+    window.addEventListener("load",function(){renderPaper();syncPaperScale();updatePageEstimate()});
   }
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
