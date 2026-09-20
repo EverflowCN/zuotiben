@@ -321,7 +321,10 @@ function authErrorText(code){
     weak_password:'密码至少 12 位',
     invalid_email:'邮箱格式不正确',
     auth_required:'请先登录',
-    invalid_session:'登录已失效，请重新登录'
+    invalid_session:'登录已失效，请重新登录',
+    forbidden:'当前账号无权管理其他管理员',
+    owner_role_reserved:'主管理员角色为系统保留角色',
+    owner_account_protected:'主管理员账号受保护'
   })[code]||'操作失败，请检查后重试';
 }
 function ensureAuthGate(){
@@ -460,8 +463,13 @@ function saveAnnouncements(){localStorage.setItem('yanku-announcements-v2',JSON.
 function announcementStatusLabel(x){if(x.status==='draft')return '草稿';if(x.status==='scheduled')return '定时';if(x.status==='expired')return '已过期';return '已发布'}
 function pinButton(scope,id,on){return '<button class="pin-control '+(on?'active':'')+'" type="button" data-pin="'+scope+'" data-id="'+id+'" aria-label="'+(on?'取消置顶':'置顶')+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 6 3 3v2H5v-2l3-3Z"/><path d="M12 14v7"/></svg></button>'}
 function renderNav(){
-  $('#nav').innerHTML=navGroups.map(g=>'<div class="nav-group">'+g.label+'</div>'+g.items.map(([id,label,ic])=>'<button class="nav-item '+(state.section===id?'active':'')+'" data-section="'+id+'">'+icon(ic)+'<span>'+label+'</span>'+badge(id)+'</button>').join('')).join('');
-  $$('#nav [data-section]').forEach(b=>b.onclick=()=>{state.section=b.dataset.section;render();closeSide()});
+  const owner=state.account?.role==='Owner'||state.account?.role==='owner';
+  $('#nav').innerHTML=navGroups.map(g=>{
+    const items=g.items.filter(([id])=>id!=='admins'||owner);
+    if(!items.length)return '';
+    return '<div class="nav-group">'+g.label+'</div>'+items.map(([id,label,ic])=>'<button class="nav-item '+(state.section===id?'active':'')+'" data-section="'+id+'">'+icon(ic)+'<span>'+label+'</span>'+badge(id)+'</button>').join('');
+  }).join('');
+  $('#nav [data-section]').forEach(b=>b.onclick=()=>{state.section=b.dataset.section;render();closeSide()});
 }
 function badge(id){const n={resources:state.resources.length,experience:state.experiences.length,errata:state.errata.length,announcements:state.announcements.length,admins:state.admins.length}[id];return n?'<b>'+n+'</b>':''}
 function head(title,desc,action=''){return '<div class="page-head"><div><div class="eyebrow">'+titles[state.section][0]+'</div><h1>'+title+'</h1><p>'+desc+'</p></div><div class="page-actions">'+action+'</div></div>'}
@@ -656,15 +664,27 @@ function renderAccount(){
   '<div class="design-note" style="margin-top:14px">账号、密码哈希与登录会话均由 Worker + D1 管理；浏览器不会保存管理员密码。</div>'
 }
 function renderAdmins(){
-  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.name)+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+escapeHtml(({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role))+'</span></td><td><span class="pill '+(x.status==='active'?'green':'red')+'">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+escapeHtml(x.last)+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+escapeHtml(x.id)+'">'+(x.locked?'查看权限':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+escapeHtml(x.id)+'">删除</button></div></td></tr>').join('');
-  return head('成员与权限','主管理员拥有全部权限，可创建多个管理员并逐项授权。','<button class="btn primary" data-new-admin>＋ 新增成员</button>')+
+  const owner=state.account?.role==='Owner'||state.account?.role==='owner';
+  if(!owner)return head('成员与权限','管理员账号彼此隔离，只有主管理员可以管理其他成员。','');
+  const rows=state.admins.map(x=>'<tr><td><div class="title-cell"><strong>'+escapeHtml(x.name)+'</strong><small>'+(x.locked?'当前主管理员':'授权成员')+'</small></div></td><td><span class="pill blue">'+escapeHtml(({owner:'Owner',admin:'Admin',editor:'Editor',reviewer:'Reviewer'}[x.role]||x.role))+'</span></td><td><span class="pill '+(x.status==='active'?'green':'red')+'">'+(x.status==='active'?'启用':'停用')+'</span></td><td>'+escapeHtml(x.last)+'</td><td><div class="row-actions"><button class="btn small" data-edit-admin="'+escapeHtml(x.id)+'">'+(x.locked?'查看主管理员':'编辑')+'</button><button class="btn small danger" '+(x.locked?'disabled':'')+' data-delete-admin="'+escapeHtml(x.id)+'">删除</button></div></td></tr>').join('');
+  return head('成员与权限','管理员账号彼此隔离；只有主管理员可以查看、创建、修改或删除其他管理员。','<button class="btn primary" data-new-admin>＋ 新增成员</button>')+
   '<section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>成员</th><th>角色</th><th>状态</th><th>最近活动</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
-  '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>权限矩阵</h2><p>Owner 始终拥有全部权限，不允许其他角色修改 Owner。</p></div></div><div class="card-body">'+permissionMatrix()+'</div></section>'
+  '<section class="card" style="margin-top:14px"><div class="card-head"><div><h2>权限矩阵</h2><p>成员管理仅 Owner 可用；普通管理员之间互不可见、互不可管理。</p></div></div><div class="card-body">'+permissionMatrix()+'</div></section>'
 }
 function permissionMatrix(){
-  const rows=[['资料 / 渠道 / 勘误',1,1,1,0],['经验贴管理',1,1,1,0],['公告管理',1,1,1,0],['科目管理',1,1,1,0],['成员与权限',1,1,0,0],['站点设置',1,1,0,0],['查看后台数据',1,1,1,1],['审计日志',1,1,0,1]];
+  const rows=[
+    ['资料 / 渠道 / 勘误',1,1,1,0],
+    ['经验贴管理',1,1,1,0],
+    ['公告管理',1,1,1,0],
+    ['科目管理',1,1,1,0],
+    ['成员与权限',1,0,0,0],
+    ['站点设置',1,1,0,0],
+    ['查看后台数据',1,1,1,1],
+    ['审计日志',1,1,0,1]
+  ];
   let h='<div class="permission-grid"><div class="head">权限</div><div class="head">Owner</div><div class="head">管理员</div><div class="head">编辑</div><div class="head">审核</div>';
-  rows.forEach(r=>{h+='<div>'+r[0]+'</div>'+r.slice(1).map(v=>'<div class="'+(v?'yes':'no')+'">'+(v?'✓':'—')+'</div>').join('')});return h+'</div>'
+  rows.forEach(r=>{h+='<div>'+r[0]+'</div>'+r.slice(1).map(v=>'<div class="'+(v?'yes':'no')+'">'+(v?'✓':'—')+'</div>').join('')});
+  return h+'</div>'
 }
 function renderSettings(){
   return head('站点设置','控制公开站点的名称、说明、栏目、默认排序和整体显示。','<button class="btn primary" data-save-settings>保存设置</button>')+
@@ -685,7 +705,7 @@ function globalSearchItems(){
   state.resources.forEach(x=>items.push({kind:'资料',section:'resources',id:x.id,title:x.title,meta:[x.subjectName,x.subjectCode,x.releaseVersion,x.type].filter(Boolean).join(' · '),text:[x.title,x.description,x.subjectName,x.subjectCode,x.releaseVersion,x.type].join(' ')}));
   state.errata.forEach(x=>items.push({kind:'勘误',section:'errata',id:x.id,title:x.title,meta:errataResourceName(x)+' · '+errataStatusLabel(x.status),text:[x.title,x.body,errataResourceName(x),errataVersionName(x),errataStatusLabel(x.status)].join(' ')}));
   state.announcements.forEach(x=>items.push({kind:'公告',section:'announcements',id:x.id,title:x.title,meta:[x.kind,announcementStatusLabel(x)].filter(Boolean).join(' · '),text:[x.title,x.body,x.kind,announcementStatusLabel(x)].join(' ')}));
-  state.admins.forEach(x=>items.push({kind:'成员',section:'admins',id:x.id,title:x.name,meta:[x.identifier||'',({owner:'Owner',admin:'管理员',editor:'编辑',reviewer:'审核'}[x.role]||x.role)].filter(Boolean).join(' · '),text:[x.name,x.identifier,x.role,x.status].join(' ')}));
+  if(state.account?.role==='Owner'||state.account?.role==='owner')state.admins.forEach(x=>items.push({kind:'成员',section:'admins',id:x.id,title:x.name,meta:[x.identifier||'',({owner:'Owner',admin:'管理员',editor:'编辑',reviewer:'审核'}[x.role]||x.role)].filter(Boolean).join(' · '),text:[x.name,x.identifier,x.role,x.status].join(' ')}));
   return items;
 }
 function closeGlobalSearch(){
@@ -723,6 +743,8 @@ function renderGlobalSearchResults(){
 }
 
 function render(){
+  const owner=state.account?.role==='Owner'||state.account?.role==='owner';
+  if(state.section==='admins'&&!owner)state.section='account';
   renderNav(); const [ey,title]=titles[state.section]; $('#topEyebrow').textContent=ey;$('#topTitle').textContent=title;
   const r={overview:renderOverview,resources:renderResources,errata:renderErrata,experience:renderExperience,announcements:renderAnnouncements,copy:renderCopy,taxonomy:renderTaxonomy,files:renderFiles,account:renderAccount,admins:renderAdmins,settings:renderSettings,audit:renderAudit}[state.section];
   $('#panelHost').innerHTML=r(); bind();
