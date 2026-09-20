@@ -9,11 +9,11 @@ let fontsRegistered = false;
 let qrPromise = null;
 
 const FONT_URLS = {
-  songRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Regular/FandolSong-Regular.otf",
-  songBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Bold/FandolSong-Bold.otf",
-  heiRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Regular/FandolHei-Regular.otf",
-  heiBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf",
-  kaiRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolKai-Regular/FandolKai-Regular.otf"
+  songRegular: "../assets/fonts/fandol/FandolSong-Regular.woff2",
+  songBold: "../assets/fonts/fandol/FandolSong-Bold.woff2",
+  heiRegular: "../assets/fonts/fandol/FandolHei-Regular.woff2",
+  heiBold: "../assets/fonts/fandol/FandolHei-Bold.woff2",
+  kaiRegular: "../assets/fonts/fandol/FandolSong-Regular.woff2"
 };
 
 function registerFonts() {
