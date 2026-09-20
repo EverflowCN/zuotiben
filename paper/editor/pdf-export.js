@@ -189,6 +189,16 @@ function parseInlineMath(line) {
   return parts;
 }
 
+// MathJax viewBox uses 1000 units per em. Preserve glyph size for matrices,
+// fractions and limits instead of squeezing every expression to the same height.
+function NaturalMath(props) {
+  const element = PdfMath(props);
+  const box = String(element.props.viewBox || "").trim().split(/[ ,]+/).map(Number);
+  if (box.length !== 4 || !box.every(Number.isFinite)) return element;
+  const scale = 10.5 / 1000;
+  return React.cloneElement(element, { width: box[2] * scale, height: box[3] * scale });
+}
+
 function renderInlineLine(line, key, prefix = "") {
   const parts = parseInlineMath(line);
   if (!parts.some(p => p.type === "math")) {
@@ -198,7 +208,7 @@ function renderInlineLine(line, key, prefix = "") {
   if (prefix) children.push(mixedText(prefix, { key: `${key}-prefix` }));
   parts.forEach((part, i) => {
     if (part.type === "math") {
-      children.push(h(PdfMath, {
+      children.push(h(NaturalMath, {
         key: `${key}-m-${i}`,
         inline: true,
         height: 10.5,
@@ -238,7 +248,7 @@ function renderQuestionBody(content, qIndex) {
       nodes.push(h(View, {
         key: `q${qIndex}-display-${serial++}`,
         style: { marginBottom: 1.8 * MM, alignItems: "center" }
-      }, h(PdfMath, { height: 20, color: "#111111" }, block.value.trim())));
+      }, h(NaturalMath, { height: 20, color: "#111111" }, block.value.trim())));
       return;
     }
     block.value.split(/\n+/).forEach(line => {
