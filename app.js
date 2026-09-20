@@ -839,10 +839,22 @@ function renderQuickChannel(item,sourceIndex,keyword,label){
   '</span>';
 }
 
+
+function resourceErrataGroups(resource){
+  return (resource.versions||[]).map(version=>({name:version.name,items:version.errata||[]})).filter(group=>group.items.length);
+}
+function openResourceErrata(resourceIndex){
+  const resource=resources[resourceIndex];
+  if(!resource)return;
+  const groups=resourceErrataGroups(resource);
+  const body=groups.length?groups.map(group=>'<section class="resource-errata-group"><h3>'+esc(group.name)+'</h3><div class="modal-stack">'+group.items.map(item=>'<article class="modal-errata-item"><div><span class="pill">'+esc(item.status||'已记录')+'</span><strong>'+esc(item.title||'勘误')+'</strong></div><p>'+esc(item.body||'')+'</p></article>').join('')+'</div></section>').join(''):'<div class="modal-empty"><strong>暂无公开勘误</strong><p>已核对的修正记录会按版本显示在这里。</p></div>';
+  openUnifiedModal({kicker:'ERRATA',title:resource.title+' · 勘误',body,actions:[{label:'申请提交',primary:true,onClick:()=>openErrataSubmit(resourceIndex)}]});
+}
+
 function handleResourceAction(event){
   const button=event.target.closest('[data-resource-action]');
   if(!button||!list.contains(button)||button.disabled)return;
-  const handlers={openChannel,copyChannel,openErrata,openErrataSubmit};
+  const handlers={openChannel,copyChannel,openErrata,openErrataSubmit,openResourceErrata};
   const action=handlers[button.dataset.resourceAction];
   if(!action)return;
   event.preventDefault();
@@ -873,6 +885,7 @@ function renderResources() {
           <div class="compact-resource-actions">
             ${renderQuickChannel(item,sourceIndex,"百度","百度网盘")}
             ${renderQuickChannel(item,sourceIndex,"夸克","夸克网盘")}
+            <button class="resource-errata-trigger" type="button" data-resource-action="openResourceErrata" data-resource-index="${sourceIndex}" aria-label="查看${esc(item.title)}的勘误">${icon("errata")}<span>勘误</span><b>${resourceErrataGroups(item).reduce((n,g)=>n+g.items.length,0)}</b></button>
             <button class="resource-detail-toggle" type="button" data-resource-detail="${sourceIndex}">详情 <span>›</span></button>
           </div>
         </div>
