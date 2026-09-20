@@ -137,12 +137,22 @@ async function handleAdmin(request, env, url, identity) {
 }
 
 async function getAdminBootstrap(env, identity) {
-  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','files','site_settings','admin_profiles','audit_logs'];
+  const tables=['subjects','resources','resource_versions','resource_links','errata','experiences','announcements','files','site_settings'];
   const data={ok:true,identity};
   for(const table of tables){
-    const order=table==='audit_logs'?'created_at DESC':(table==='site_settings'?'key':(table==='files'?'updated_at DESC, created_at DESC':'updated_at DESC'));
+    const order=table==='site_settings'?'key':(table==='files'?'updated_at DESC, created_at DESC':'updated_at DESC');
     data[table]=(await env.DB.prepare('SELECT * FROM '+table+' ORDER BY '+order+' LIMIT 1000').all()).results;
   }
+
+  if(identity.role==='owner'){
+    data.admin_profiles=(await env.DB.prepare("SELECT email,display_name,role,status,created_at,updated_at FROM admin_profiles ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END, created_at").all()).results;
+    data.audit_logs=(await env.DB.prepare("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 1000").all()).results;
+  }else{
+    const ownProfile=await env.DB.prepare("SELECT email,display_name,role,status,created_at,updated_at FROM admin_profiles WHERE email=?").bind(identity.email).first();
+    data.admin_profiles=ownProfile?[ownProfile]:[];
+    data.audit_logs=(await env.DB.prepare("SELECT * FROM audit_logs WHERE actor_email=? ORDER BY created_at DESC LIMIT 1000").bind(identity.email).all()).results;
+  }
+
   data.studio_revision=await getStudioRevision(env);
   return data;
 }
@@ -433,17 +443,19 @@ async function createSession(env,email,request){
 }
 
 async function handleAdminAccounts(request,env,url,identity){
-  const denied=requireRole(identity,'admin',request,env); if(denied)return denied;
+  const denied=requireRole(identity,'owner',request,env); if(denied)return denied;
   const parts=url.pathname.split('/').filter(Boolean);
   const target=parts[2]?normalizeEmail(decodeURIComponent(parts[2])):'';
+
   if(request.method==='GET'&&parts.length===2){
     const rows=await env.DB.prepare("SELECT email,display_name,role,status,created_at,updated_at FROM admin_profiles ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END, created_at").all();
     return json({ok:true,items:rows.results},200,request,env);
   }
+
   if(request.method==='POST'&&parts.length===2){
     const body=await readJson(request),email=normalizeEmail(body.email),role=normalizeRole(body.role);
     if(!validEmail(email)||!validPassword(body.password))return json({ok:false,error:'invalid_account_data',min_password_length:12},400,request,env);
-    if(role==='owner'&&identity.role!=='owner')return json({ok:false,error:'forbidden'},403,request,env);
+    if(role==='owner')return json({ok:false,error:'owner_role_reserved'},409,request,env);
     const rec=await makePasswordRecord(body.password);
     try{
       await env.DB.batch([
@@ -454,23 +466,34 @@ async function handleAdminAccounts(request,env,url,identity){
     await audit(env,identity.email,'create','admin',email,{role});
     return json({ok:true,item:{email,display_name:String(body.display_name||email).trim().slice(0,80),role,status:body.status==='disabled'?'disabled':'active'}},201,request,env);
   }
+
   if(!target)return json({ok:false,error:'missing_email'},400,request,env);
   const existing=await env.DB.prepare("SELECT email,role,status FROM admin_profiles WHERE email=?").bind(target).first();
   if(!existing)return json({ok:false,error:'not_found'},404,request,env);
-  if(existing.role==='owner'&&identity.role!=='owner')return json({ok:false,error:'forbidden'},403,request,env);
+
+  if(existing.role==='owner'){
+    if(target!==identity.email)return json({ok:false,error:'owner_account_protected'},409,request,env);
+    if(request.method==='DELETE')return json({ok:false,error:'cannot_delete_owner'},409,request,env);
+  }
+
   if(request.method==='PUT'){
-    const body=await readJson(request),role=body.role?normalizeRole(body.role):existing.role;
-    if(role==='owner'&&identity.role!=='owner')return json({ok:false,error:'forbidden'},403,request,env);
-    await env.DB.prepare("UPDATE admin_profiles SET display_name=?,role=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE email=?").bind(String(body.display_name||target).trim().slice(0,80),role,body.status==='disabled'?'disabled':'active',target).run();
+    const body=await readJson(request);
+    const role=existing.role==='owner'?'owner':(body.role?normalizeRole(body.role):existing.role);
+    if(existing.role!=='owner'&&role==='owner')return json({ok:false,error:'owner_role_reserved'},409,request,env);
+    const status=existing.role==='owner'?'active':(body.status==='disabled'?'disabled':'active');
+    await env.DB.prepare("UPDATE admin_profiles SET display_name=?,role=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE email=?")
+      .bind(String(body.display_name||target).trim().slice(0,80),role,status,target).run();
     if(body.password){
       if(!validPassword(body.password))return json({ok:false,error:'weak_password',min_length:12},400,request,env);
       const rec=await makePasswordRecord(body.password);
-      await env.DB.prepare("UPDATE admin_credentials SET password_hash=?,password_salt=?,password_iterations=?,updated_at=CURRENT_TIMESTAMP WHERE email=?").bind(rec.hash,rec.salt,rec.iterations,target).run();
+      await env.DB.prepare("UPDATE admin_credentials SET password_hash=?,password_salt=?,password_iterations=?,updated_at=CURRENT_TIMESTAMP WHERE email=?")
+        .bind(rec.hash,rec.salt,rec.iterations,target).run();
       await env.DB.prepare("DELETE FROM admin_sessions WHERE email=?").bind(target).run();
     }
-    await audit(env,identity.email,'update','admin',target,{role,status:body.status||existing.status,password_reset:Boolean(body.password)});
+    await audit(env,identity.email,'update','admin',target,{role,status,password_reset:Boolean(body.password)});
     return json({ok:true,item:await env.DB.prepare("SELECT email,display_name,role,status,created_at,updated_at FROM admin_profiles WHERE email=?").bind(target).first()},200,request,env);
   }
+
   if(request.method==='DELETE'){
     if(target===identity.email)return json({ok:false,error:'cannot_delete_self'},409,request,env);
     if(existing.role==='owner')return json({ok:false,error:'cannot_delete_owner'},409,request,env);
@@ -478,6 +501,7 @@ async function handleAdminAccounts(request,env,url,identity){
     await audit(env,identity.email,'delete','admin',target,{});
     return json({ok:true},200,request,env);
   }
+
   return json({ok:false,error:'method_not_allowed'},405,request,env);
 }
 
