@@ -3336,3 +3336,162 @@ a,
   display:none !important;
 }
 
+
+
+/* 2026-09-20 About page polish v2 */
+#aboutView .about-local-head{
+  padding:2px 2px 4px;
+}
+
+#aboutView .about-local-head span{
+  display:block;
+  margin-bottom:7px;
+  color:#8b99a5;
+  font-size:10px;
+  font-weight:750;
+  line-height:1;
+  letter-spacing:.18em;
+}
+
+#aboutView .about-local-head h1{
+  margin:0;
+  color:#262521;
+  font-size:clamp(28px,4vw,38px);
+  font-weight:720;
+  line-height:1.12;
+  letter-spacing:-.035em;
+}
+
+#aboutView .about-lead{
+  background:
+    radial-gradient(circle at 92% 0%,rgba(64,120,168,.055),transparent 30%),
+    #fffdf8;
+}
+
+#aboutView .about-section{
+  transition:border-color .16s ease,background .16s ease;
+}
+
+#aboutView .about-section::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+}
+
+#aboutView .about-section-label{
+  position:relative;
+  padding-left:12px;
+}
+
+#aboutView .about-section-label::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:8px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#8aa2b5;
+}
+
+#aboutView .about-contribution-row,
+#aboutView .about-principles p{
+  transition:background .15s ease,border-color .15s ease,transform .15s ease;
+}
+
+#aboutView .about-contribution-row:hover,
+#aboutView .about-principles p:hover{
+  border-color:rgba(64,120,168,.11);
+  background:rgba(64,120,168,.045);
+}
+
+#aboutView .about-contribution-row strong,
+#aboutView .about-principles strong{
+  letter-spacing:-.005em;
+}
+
+#aboutView .about-join{
+  background:
+    radial-gradient(circle at 92% 10%,rgba(64,120,168,.055),transparent 34%),
+    #fffdf8;
+}
+
+#aboutView .about-action{
+  box-shadow:0 1px 0 rgba(255,255,255,.32) inset;
+}
+
+#aboutView .about-action.primary{
+  box-shadow:0 1px 0 rgba(255,255,255,.16) inset;
+}
+
+:root[data-theme="white"] #aboutView .about-lead,
+:root[data-theme="white"] #aboutView .about-join{
+  background:
+    radial-gradient(circle at 92% 0%,rgba(63,115,162,.045),transparent 30%),
+    #fff;
+}
+
+:root[data-theme="dark"] #aboutView .about-local-head span{
+  color:#7fa8c5;
+}
+
+:root[data-theme="dark"] #aboutView .about-local-head h1{
+  color:#f1f2ec;
+}
+
+:root[data-theme="dark"] #aboutView .about-lead{
+  background:
+    radial-gradient(circle at 92% 0%,rgba(130,178,215,.085),transparent 32%),
+    #1e211d !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-section{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.012),rgba(255,255,255,0)),
+    #1e211d !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-join{
+  background:
+    radial-gradient(circle at 92% 8%,rgba(130,178,215,.09),transparent 34%),
+    #1e211d !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-section::after{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+:root[data-theme="dark"] #aboutView .about-section-label::before{
+  background:#82b2d7;
+}
+
+:root[data-theme="dark"] #aboutView .about-contribution-row:hover,
+:root[data-theme="dark"] #aboutView .about-principles p:hover{
+  border-color:rgba(130,178,215,.12) !important;
+  background:#262a24 !important;
+}
+
+@media(max-width:760px){
+  #aboutView .about-local-head{
+    padding:1px 2px 3px;
+  }
+  #aboutView .about-local-head h1{
+    font-size:28px;
+  }
+}
+
+@media(max-width:560px){
+  #aboutView .about-local-head h1{
+    font-size:25px;
+  }
+  #aboutView .about-section-label{
+    padding-left:11px;
+  }
+  #aboutView .about-section-label::before{
+    top:7px;
+  }
+}
+
