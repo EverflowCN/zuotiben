@@ -183,8 +183,8 @@ svg{display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:
 }
 body.dark .paper-stage{background:#090a0c}
 .paper-sheet{
-  position:relative;width:210mm;min-height:297mm;margin:0 auto;padding:18mm 17mm 16mm;background:#fff;color:#111;
-  box-shadow:var(--page-shadow);font-family:"Times New Roman","Noto Serif CJK SC","Songti SC","STSong",serif;
+  position:relative;width:210mm;min-height:297mm;margin:0 auto;padding:16mm 20mm 12mm;background:#fff;color:#111;
+  box-shadow:var(--page-shadow);font-family:"TeX Gyre Termes","Times New Roman","Noto Serif CJK SC","Songti SC","STSong",serif;
 }
 .paper-header{padding-bottom:7mm;border-bottom:.35mm solid #1a1a1a;text-align:center}
 .paper-brand{font-family:Arial,"PingFang SC",sans-serif;font-size:8pt;letter-spacing:.14em}
@@ -192,16 +192,19 @@ body.dark .paper-stage{background:#090a0c}
 .paper-header p{margin:0;font-size:9pt;color:#555}
 .paper-questions{padding:7mm 0 14mm}
 .question{
-  position:relative;margin:0 0 6.3mm;font-size:10.5pt;line-height:1.76;break-inside:avoid-page;page-break-inside:avoid;
+  position:relative;margin:0 0 2.95mm;font-size:10.5pt;line-height:1.76;break-inside:avoid-page;page-break-inside:avoid;
 }
-.question-line{display:grid;grid-template-columns:7mm 1fr;gap:1.5mm;align-items:start}
+.question-line{display:grid;grid-template-columns:2.25em 1fr;gap:.55em;align-items:start}
 .question-number{font-weight:700}
 .question-body{min-width:0;white-space:pre-wrap;word-break:break-word}
 .question-body p{margin:0 0 1.8mm}
-.options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2mm 8mm;margin:2mm 0 0 8.5mm}
+.options{display:grid;gap:.22em 1.2em;margin:2.95mm 0 0 calc(2.25em + .55em)}
+.options.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.options.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.options.cols-1{grid-template-columns:1fr}
 .option{min-width:0;word-break:break-word}
 .paper-footer{
-  position:absolute;left:17mm;right:17mm;bottom:7mm;display:flex;justify-content:space-between;gap:10mm;
+  position:absolute;left:20mm;right:20mm;bottom:5.3mm;display:flex;justify-content:space-between;gap:10mm;
   border-top:.2mm solid #bbb;padding-top:2.5mm;color:#777;font-family:Arial,"PingFang SC",sans-serif;font-size:7.5pt;
 }
 .katex{font-size:1em}
@@ -306,9 +309,9 @@ body.dark .paper-stage{background:#090a0c}
   .page-shell,.wrap,.workspace,.workspace-grid,.preview-panel,.paper-stage{display:block!important;width:auto!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;background:#fff!important}
   .preview-panel{overflow:visible!important}
   .paper-sheet{
-    width:210mm!important;min-height:297mm!important;margin:0!important;padding:18mm 17mm 16mm!important;
+    width:210mm!important;min-height:297mm!important;margin:0!important;padding:16mm 20mm 12mm!important;
     box-shadow:none!important;transform:none!important;background:#fff!important;color:#111!important;
   }
-  .paper-footer{bottom:7mm}
+  .paper-footer{bottom:5.3mm}
   .question{break-inside:avoid-page;page-break-inside:avoid}
 }
