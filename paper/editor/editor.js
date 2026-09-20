@@ -111,8 +111,16 @@ function save(markDirty){
     toast("本机存储已满，请先保存项目文件");
   }
 }
+function normalizeTemplateMacros(text){
+  return String(text||"")
+    .replace(/\\par\b/g,"\n")
+    .replace(/\\blankbox\b/g,"（\u2002\u2002\u2002）")
+    .replace(/（\s*\\hspace\{1\.5em\}\s*）/g,"（\u2002\u2002\u2002）")
+    .replace(/\\blankline\b/g,"＿＿＿")
+    .replace(/\\quad\b/g,"\u2003");
+}
 function semanticLines(text){
-  var src=String(text||"").replace(/\r\n?/g,"\n");
+  var src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
   src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
   src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");
   src=src.replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n");
@@ -176,6 +184,16 @@ function renderTemplateState(){
   document.body.dataset.layout=state.layout;
   els.paperSheet.style.setProperty("--paper-w",info.widthMm+"mm");
   els.paperSheet.style.setProperty("--paper-h",info.heightMm+"mm");
+  els.paperSheet.style.setProperty("--master-top",info.topMm+"mm");
+  els.paperSheet.style.setProperty("--master-bottom",info.bottomMm+"mm");
+  els.paperSheet.style.setProperty("--master-left",info.leftMm+"mm");
+  els.paperSheet.style.setProperty("--master-right",info.rightMm+"mm");
+  els.paperSheet.style.setProperty("--master-font",info.fontPt+"pt");
+  els.paperSheet.style.setProperty("--master-leading",String(info.lineHeight));
+  els.paperSheet.style.setProperty("--master-question-gap",MODES.questionGapMm(state.template,state.layout)+"mm");
+  els.paperSheet.style.setProperty("--master-choice-before",MODES.choiceBeforeSkipMm(state.template,state.layout)+"mm");
+  els.paperSheet.style.setProperty("--master-column-gap",(info.columnGapMm||0)+"mm");
+  els.paperSheet.style.setProperty("--master-footer-skip",info.footSkipMm+"mm");
   renderTemplateMenu();
 }
 function renderOrder(){
