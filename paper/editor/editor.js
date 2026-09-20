@@ -208,7 +208,7 @@ function renderPaper(){
   els.paperQuestions.replaceChildren();
   els.previewTitle.textContent=state.title;
   els.coverPreviewTitle.textContent=state.coverTitle||state.title;
-  els.coverPreviewDate.textContent=">>> 更新时间："+localDate();
+  els.coverPreviewDate.textContent="> > > 更新时间："+localDate();
   els.previewMeta.textContent=modeLabel()+" · "+state.questions.length+" 题";
   var head=document.querySelector(".paper-running-head");
   head.hidden=state.template!=="book";head.classList.toggle("book-head",state.template==="book");head.replaceChildren();
@@ -309,7 +309,7 @@ async function createLatestPdf(){
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
     els.pdfStatus.textContent="正在本机生成最新 PDF…";
-    var exporter=await import("./pdf-export.js?v=20260921-cover1");
+    var exporter=await import("./pdf-export.js?v=20260921-masterparity1");
     var blob=await exporter.createPdf(snapshotState,{onStatus:function(s){els.pdfStatus.textContent=s}});
     if(current!==revision){els.pdfStatus.textContent="内容刚刚发生变化，正在使用最新内容重新生成…";pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");return createLatestPdf()}
     if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfBlob=blob;pdfRevision=current;pdfUrl=URL.createObjectURL(blob);
