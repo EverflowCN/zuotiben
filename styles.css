@@ -3015,3 +3015,324 @@ a,
 .content-head[hidden]{
   display:none !important;
 }
+
+
+/* 2026-09-20 About page complete redesign */
+#aboutView{
+  width:100%;
+  max-width:920px;
+  margin-inline:auto;
+  display:grid;
+  gap:14px;
+}
+
+#aboutView .about-lead{
+  max-width:none;
+  margin:0 0 2px;
+  padding:28px 30px;
+  border:1px solid rgba(74,68,58,.085);
+  border-radius:18px;
+  background:#fffdf8;
+  box-shadow:none;
+}
+
+#aboutView .about-lead p{
+  max-width:72ch;
+  margin:0;
+  color:#403d38;
+  font-size:15px;
+  line-height:1.9;
+  letter-spacing:.002em;
+}
+
+#aboutView .about-lead p+p{
+  margin-top:12px;
+  color:#6d685f;
+}
+
+#aboutView .about-section{
+  position:relative;
+  display:grid;
+  grid-template-columns:96px minmax(0,1fr);
+  gap:24px;
+  min-width:0;
+  margin:0;
+  padding:26px 28px;
+  overflow:hidden;
+  border:1px solid rgba(74,68,58,.085);
+  border-radius:18px;
+  background:#fffdf8;
+}
+
+#aboutView .about-section>*{
+  min-width:0;
+}
+
+#aboutView .about-section-label{
+  padding-top:3px;
+  color:#8a857c;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.4;
+  letter-spacing:.12em;
+}
+
+#aboutView .about-section-body h2{
+  margin:0 0 10px;
+  color:#282622;
+  font-size:20px;
+  font-weight:680;
+  line-height:1.45;
+  letter-spacing:-.015em;
+}
+
+#aboutView .about-section-body p,
+#aboutView .about-principles p,
+#aboutView .about-contribution-row p{
+  margin:0;
+  color:#676158;
+  font-size:13.5px;
+  line-height:1.85;
+}
+
+#aboutView .about-section-body p+p{
+  margin-top:10px;
+}
+
+#aboutView strong{
+  color:#39352f;
+}
+
+#aboutView .about-contributions{
+  display:grid;
+  gap:8px;
+  border:0;
+}
+
+#aboutView .about-contribution-row{
+  min-height:0;
+  padding:14px 15px;
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  gap:18px;
+  align-items:start;
+  border:1px solid rgba(74,68,58,.07);
+  border-radius:12px;
+  background:rgba(91,84,73,.035);
+}
+
+#aboutView .about-contribution-row strong{
+  padding-top:1px;
+  color:#403c36;
+  font-size:12.5px;
+  font-weight:680;
+}
+
+#aboutView .about-principles{
+  display:grid;
+  gap:8px;
+}
+
+#aboutView .about-principles p{
+  padding:14px 15px;
+  border:1px solid rgba(74,68,58,.07);
+  border-radius:12px;
+  background:rgba(91,84,73,.035);
+}
+
+#aboutView .about-principles strong{
+  color:#403c36;
+  font-weight:680;
+}
+
+#aboutView .about-join{
+  margin-bottom:6px;
+}
+
+#aboutView .about-actions{
+  margin-top:18px;
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+}
+
+#aboutView .about-action{
+  min-height:40px;
+  padding:0 15px;
+  border:1px solid rgba(74,68,58,.10);
+  border-radius:10px;
+  background:#f7f3eb;
+  color:#4d4942;
+  font-size:12px;
+  font-weight:650;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,transform .15s ease;
+}
+
+#aboutView .about-action:hover{
+  background:#f1ece2;
+}
+
+#aboutView .about-action:active{
+  transform:translateY(1px);
+}
+
+#aboutView .about-action.primary{
+  border-color:transparent;
+  background:#4e789a;
+  color:#fff;
+}
+
+#aboutView .about-action.primary:hover{
+  background:#5a86a8;
+}
+
+#aboutView .about-action:focus-visible{
+  outline:2px solid var(--blue);
+  outline-offset:3px;
+}
+
+/* White theme */
+:root[data-theme="white"] #aboutView .about-lead,
+:root[data-theme="white"] #aboutView .about-section{
+  border-color:rgba(42,42,40,.085);
+  background:#fff;
+}
+
+:root[data-theme="white"] #aboutView .about-contribution-row,
+:root[data-theme="white"] #aboutView .about-principles p{
+  border-color:rgba(42,42,40,.065);
+  background:#f8f8f6;
+}
+
+/* Dark theme: explicitly own the About surfaces instead of inheriting light cards. */
+:root[data-theme="dark"] #aboutView .about-lead,
+:root[data-theme="dark"] #aboutView .about-section{
+  border-color:rgba(235,236,226,.085) !important;
+  background:#1e211d !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-lead p{
+  color:#e3e5df !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-lead p+p{
+  color:#a9ada4 !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-section-label{
+  color:#7fa8c5 !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-section-body h2{
+  color:#f0f1eb !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-section-body p,
+:root[data-theme="dark"] #aboutView .about-principles p,
+:root[data-theme="dark"] #aboutView .about-contribution-row p{
+  color:#afb2aa !important;
+}
+
+:root[data-theme="dark"] #aboutView strong,
+:root[data-theme="dark"] #aboutView .about-contribution-row strong,
+:root[data-theme="dark"] #aboutView .about-principles strong{
+  color:#e2e4dd !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-contribution-row,
+:root[data-theme="dark"] #aboutView .about-principles p{
+  border-color:rgba(235,236,226,.075) !important;
+  background:#222520 !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-action{
+  border-color:rgba(235,236,226,.085) !important;
+  background:#242720 !important;
+  color:#d5d7cf !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-action:hover{
+  background:#2a2e27 !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-action.primary{
+  border-color:transparent !important;
+  background:#537f9f !important;
+  color:#fff !important;
+}
+
+:root[data-theme="dark"] #aboutView .about-action.primary:hover{
+  background:#638daa !important;
+}
+
+/* The bitstream remains a page background, never a layer inside About cards. */
+#aboutView .about-lead,
+#aboutView .about-section{
+  position:relative;
+  z-index:1;
+}
+
+@media(max-width:760px){
+  #aboutView{
+    gap:11px;
+  }
+  #aboutView .about-lead{
+    padding:22px;
+    border-radius:15px;
+  }
+  #aboutView .about-section{
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+    padding:22px;
+    border-radius:15px;
+  }
+  #aboutView .about-section-label{
+    padding-top:0;
+  }
+  #aboutView .about-contribution-row{
+    grid-template-columns:minmax(0,1fr);
+    gap:5px;
+  }
+}
+
+@media(max-width:560px){
+  #aboutView{
+    gap:9px;
+  }
+  #aboutView .about-lead,
+  #aboutView .about-section{
+    padding:18px;
+    border-radius:14px;
+  }
+  #aboutView .about-lead p{
+    font-size:13px;
+    line-height:1.82;
+  }
+  #aboutView .about-section-body h2{
+    font-size:17px;
+  }
+  #aboutView .about-section-body p,
+  #aboutView .about-principles p,
+  #aboutView .about-contribution-row p{
+    font-size:12px;
+    line-height:1.8;
+  }
+  #aboutView .about-contribution-row,
+  #aboutView .about-principles p{
+    padding:12px 13px;
+  }
+  #aboutView .about-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  #aboutView .about-action{
+    width:100%;
+  }
+}
+
+#siteNoteSection[hidden]{
+  display:none !important;
+}
+
