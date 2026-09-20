@@ -2619,3 +2619,96 @@ a,
   }
 }
 
+
+
+/* Bitstream stays beneath framed UI surfaces */
+.bitstream-background{
+  z-index:0;
+}
+
+.compact-resource,
+.notice-card,
+.notice-secondary,
+.overview-notice,
+.metric-card,
+.overview-card,
+.community-card,
+.experience-card,
+.announcement-card,
+.section-summary,
+.empty-state,
+.search,
+.theme-switcher,
+.filter-trigger,
+.subject-popover,
+.type-popover,
+.command-popover,
+.unified-modal,
+.resource-detail-panel,
+.published-version-item,
+.channel-list,
+.quick-channel{
+  position:relative;
+  z-index:1;
+}
+
+/* Framed surfaces must mask the animated canvas instead of letting digits bleed through. */
+:root[data-theme="warm"] .compact-resource,
+:root[data-theme="warm"] .notice-card,
+:root[data-theme="warm"] .notice-secondary,
+:root[data-theme="warm"] .overview-notice,
+:root[data-theme="warm"] .metric-card,
+:root[data-theme="warm"] .overview-card,
+:root[data-theme="warm"] .community-card,
+:root[data-theme="warm"] .experience-card,
+:root[data-theme="warm"] .announcement-card,
+:root[data-theme="warm"] .section-summary,
+:root[data-theme="warm"] .empty-state{
+  background:#fffdf8;
+}
+
+:root[data-theme="white"] .compact-resource,
+:root[data-theme="white"] .notice-card,
+:root[data-theme="white"] .notice-secondary,
+:root[data-theme="white"] .overview-notice,
+:root[data-theme="white"] .metric-card,
+:root[data-theme="white"] .overview-card,
+:root[data-theme="white"] .community-card,
+:root[data-theme="white"] .experience-card,
+:root[data-theme="white"] .announcement-card,
+:root[data-theme="white"] .section-summary,
+:root[data-theme="white"] .empty-state{
+  background:#fff;
+}
+
+:root[data-theme="dark"] .compact-resource,
+:root[data-theme="dark"] .notice-card,
+:root[data-theme="dark"] .notice-secondary,
+:root[data-theme="dark"] .overview-notice,
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .overview-card,
+:root[data-theme="dark"] .community-card,
+:root[data-theme="dark"] .experience-card,
+:root[data-theme="dark"] .announcement-card,
+:root[data-theme="dark"] .section-summary,
+:root[data-theme="dark"] .empty-state{
+  background:var(--dark-panel);
+}
+
+/* Inputs/filters are also page frames: keep the rain behind them. */
+:root[data-theme="warm"] .search,
+:root[data-theme="warm"] .theme-switcher,
+:root[data-theme="warm"] .filter-trigger{
+  background:#f8f3e9;
+}
+:root[data-theme="white"] .search,
+:root[data-theme="white"] .theme-switcher,
+:root[data-theme="white"] .filter-trigger{
+  background:#f7f7f5;
+}
+:root[data-theme="dark"] .search,
+:root[data-theme="dark"] .theme-switcher,
+:root[data-theme="dark"] .filter-trigger{
+  background:var(--dark-panel-2);
+}
+
