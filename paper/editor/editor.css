@@ -311,3 +311,33 @@ body[data-template="book"][data-layout="padp"] .editor-main #paperSheet .paper-r
 }
 body[data-template="exam"] .cover-date{color:#f00!important}
 body[data-template="book"] .cover-date{color:#24272b!important}
+
+
+/* Current fixed master parity correction - source recompiled 2026-09-21 */
+body[data-template="exam"] .editor-main #paperSheet{
+  font-size:9pt!important;
+  line-height:1.56!important;
+}
+body[data-template="book"] .editor-main #paperSheet{
+  font-size:10.5pt!important;
+  line-height:1.56!important;
+}
+body[data-template="book"][data-layout="compact"] .editor-main #paperSheet .question{
+  margin-bottom:2.0225mm!important;
+}
+body[data-template="exam"] .paper-section-heading{
+  font-size:9pt!important;line-height:1.56!important;font-weight:700!important;
+}
+body[data-template="book"] .paper-section-heading{
+  font-size:12pt!important;
+}
+.paper-running-head.book-head{
+  display:grid!important;grid-template-columns:1fr 1fr 1fr!important;align-items:start!important;
+}
+.paper-running-head.book-head span{max-width:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.paper-running-head.book-head span:nth-child(1){text-align:left}
+.paper-running-head.book-head span:nth-child(2){text-align:center}
+.paper-running-head.book-head span:nth-child(3){text-align:right}
+body[data-template="exam"] .cover-main-title{font-size:24.7871pt!important;line-height:30pt!important}
+body[data-template="book"] .cover-main-title{font-size:21.9178pt!important;line-height:30pt!important}
+.cover-signature{font-size:18.3313pt!important;line-height:18pt!important;top:147.0mm!important}
