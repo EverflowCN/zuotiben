@@ -2811,17 +2811,6 @@ a,
   font-weight:650;
 }
 
-.nav-main.active::before{
-  content:"";
-  position:absolute;
-  left:-1px;
-  top:10px;
-  bottom:10px;
-  width:2px;
-  border-radius:999px;
-  background:#748ca0;
-}
-
 .nav-icon{
   width:18px;
   height:18px;
@@ -2953,9 +2942,6 @@ a,
   background:rgba(130,178,215,.085);
   border-color:rgba(130,178,215,.10);
   color:#eceee8;
-}
-:root[data-theme="dark"] .nav-main.active::before{
-  background:#82b2d7;
 }
 :root[data-theme="dark"] .nav-icon{
   color:#8f928a;
