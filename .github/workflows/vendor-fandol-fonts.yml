@@ -1,0 +1,127 @@
+name: Vendor Fandol webfonts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/vendor-fandol-fonts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-fonts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download and convert pinned Fandol fonts
+        shell: bash
+        run: |
+          set -euo pipefail
+          FONT_REF="b93300821373d3092e378e57ae22ecb8e9082c62"
+          BASE="https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/${FONT_REF}"
+          OUT="paper/assets/fonts/fandol"
+          TMP="$(mktemp -d)"
+          mkdir -p "${OUT}"
+
+          curl --fail --location --retry 3 "${BASE}/FandolSong-Regular/FandolSong-Regular.otf" -o "${TMP}/FandolSong-Regular.otf"
+          curl --fail --location --retry 3 "${BASE}/FandolSong-Bold/FandolSong-Bold.otf" -o "${TMP}/FandolSong-Bold.otf"
+          curl --fail --location --retry 3 "${BASE}/FandolHei-Regular/FandolHei-Regular.otf" -o "${TMP}/FandolHei-Regular.otf"
+          curl --fail --location --retry 3 "${BASE}/FandolHei-Bold/FandolHei-Bold.otf" -o "${TMP}/FandolHei-Bold.otf"
+          curl --fail --location --retry 3 "${BASE}/COPYING" -o "${OUT}/COPYING"
+
+          python -m pip install --quiet "fonttools[woff]" brotli
+
+          python - "${TMP}" "${OUT}" <<'PY'
+          import sys
+          from pathlib import Path
+          from fontTools.ttLib import TTFont
+
+          src_dir = Path(sys.argv[1])
+          out_dir = Path(sys.argv[2])
+
+          names = [
+              "FandolSong-Regular",
+              "FandolSong-Bold",
+              "FandolHei-Regular",
+              "FandolHei-Bold",
+          ]
+
+          for name in names:
+              src = src_dir / f"{name}.otf"
+              dst = out_dir / f"{name}.woff2"
+              font = TTFont(src)
+              font.flavor = "woff2"
+              font.save(dst)
+              check = TTFont(dst)
+              if len(check.getGlyphOrder()) < 1000:
+                  raise RuntimeError(f"Unexpectedly small font: {dst}")
+              print(f"{dst}: {dst.stat().st_size} bytes, {len(check.getGlyphOrder())} glyphs")
+          PY
+
+          cat > "${OUT}/fonts.css" <<'EOF'
+          @font-face {
+            font-family: "Everflow Song";
+            src: url("./FandolSong-Regular.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+          }
+
+          @font-face {
+            font-family: "Everflow Song";
+            src: url("./FandolSong-Bold.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+          }
+
+          @font-face {
+            font-family: "Everflow Hei";
+            src: url("./FandolHei-Regular.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+          }
+
+          @font-face {
+            font-family: "Everflow Hei";
+            src: url("./FandolHei-Bold.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+          }
+          EOF
+
+          cat > "${OUT}/README.md" <<'EOF'
+          # Vendored Fandol webfonts
+
+          These webfont files are local WOFF2 conversions of the exact Fandol OTF files previously loaded by the editor from jsDelivr.
+
+          Upstream: Yixf-Self/fandol-fonts
+          Pinned source commit: b93300821373d3092e378e57ae22ecb8e9082c62
+          Included families: FandolSong Regular/Bold and FandolHei Regular/Bold
+          License: GNU GPL v3 with the font embedding exception included at the end of COPYING.
+          Purpose: deterministic local rendering for the paper/editor preview with no runtime font CDN dependency.
+          EOF
+
+          rm -f             paper/assets/fonts/noto-serif-sc-chinese-simplified-400-normal.woff2             paper/assets/fonts/noto-serif-sc-chinese-simplified-700-normal.woff2             paper/assets/fonts/OFL.txt             paper/assets/fonts/README.md
+
+      - name: Commit vendored Fandol assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A paper/assets/fonts
+          git rm --ignore-unmatch .github/workflows/vendor-fandol-fonts.yml
+          if git diff --cached --quiet; then
+            echo "No font changes to commit."
+            exit 0
+          fi
+          git commit -m "assets: vendor local Fandol webfonts"
+          git push origin HEAD:main
