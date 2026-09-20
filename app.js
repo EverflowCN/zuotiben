@@ -961,7 +961,9 @@ function renderExperience(){
 
 function updatePageMode() {
   const contentHead = document.querySelector(".content-head");
+  const siteNoteSection = document.getElementById("siteNoteSection");
   if (contentHead) contentHead.hidden = state.section === "overview";
+  if (siteNoteSection) siteNoteSection.hidden = state.section === "about";
   overviewView.hidden = state.section !== "overview";
   resourceView.hidden = state.section !== "resources";
   experienceView.hidden = state.section !== "experience";
