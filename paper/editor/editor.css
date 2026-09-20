@@ -109,3 +109,5 @@ body.preview-mode .editor-sidebar{display:none}body.preview-mode .editor-shell{g
 @font-face{font-family:"Everflow Hei";src:url("https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf") format("opentype");font-weight:700;font-display:swap}
 
 .paper-sheet,.paper-running-head,.paper-footer{font-family:"Times New Roman","Everflow Song",serif}.paper-header h1{font-family:"Everflow Hei",sans-serif}
+
+@media(max-width:760px){#templateButton{display:inline-flex}.editor-main .paper-sheet{width:210mm;min-width:210mm;max-width:none;transform:none;zoom:var(--preview-scale,0.45)}.editor-main .paper-stage{min-height:0}}

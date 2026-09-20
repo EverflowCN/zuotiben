@@ -124,7 +124,9 @@ function render(){
 }
 function updatePages(){
   requestAnimationFrame(function(){
-    var pages=Math.max(1,Math.ceil(els.paperSheet.scrollHeight/1122.52));
+    var width=document.querySelector(".paper-stage").clientWidth;
+    els.paperSheet.style.setProperty("--preview-scale",String(Math.min(1,Math.max(0.25,(width-16)/793.7))));
+    var pages=Math.max(1,Math.ceil((els.paperSheet.scrollHeight-2)/1122.52));
     els.previewPageCurrent.textContent="1";els.previewPageTotal.textContent=String(pages);
   });
 }
