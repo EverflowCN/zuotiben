@@ -12,7 +12,8 @@ const FONT_URLS = {
   songRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Regular/FandolSong-Regular.otf",
   songBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolSong-Bold/FandolSong-Bold.otf",
   heiRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Regular/FandolHei-Regular.otf",
-  heiBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf"
+  heiBold: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolHei-Bold/FandolHei-Bold.otf",
+  kaiRegular: "https://cdn.jsdelivr.net/gh/Yixf-Self/fandol-fonts@b93300821373d3092e378e57ae22ecb8e9082c62/FandolKai-Regular/FandolKai-Regular.otf"
 };
 
 function registerFonts() {
@@ -31,6 +32,7 @@ function registerFonts() {
       { src: FONT_URLS.heiBold, fontWeight: 700 }
     ]
   });
+  Font.register({ family: "EverflowKai", fonts: [{ src: FONT_URLS.kaiRegular, fontWeight: 400 }] });
   Font.registerHyphenationCallback(word => [word]);
   fontsRegistered = true;
 }
@@ -252,6 +254,13 @@ function choiceColumns(options,spec) {
   return medium&&n>1?2:1;
 }
 
+function renderOptionCell(content,label,key,spec) {
+  return h(View,{key,style:{flexDirection:"row",alignItems:"flex-start",minWidth:0}},
+    mixedText(label,{key:key+"-label",size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:2.25*spec.fontSize}}),
+    h(View,{style:{flexGrow:1,flexShrink:1,minWidth:0}},renderInlineLine(String(content||""),key+"-body",spec))
+  );
+}
+
 function renderOptions(options,qIndex,spec) {
   if(!options||!options.length)return null;
   const cols=choiceColumns(options,spec),rows=[];
@@ -264,11 +273,11 @@ function renderOptions(options,qIndex,spec) {
       const idx=i+j;
       const width=(100/cols)+"%";
       if(idx>=options.length){cells.push(h(View,{key:"blank-"+i+"-"+j,style:{width}}));continue}
-      const prefix="("+String.fromCharCode(65+idx)+") ";
+      const label="("+String.fromCharCode(65+idx)+")";
       cells.push(h(View,{
         key:"q"+qIndex+"-opt-"+idx,
         style:{width,paddingRight:j===cols-1?0:columnGapEm*spec.fontSize}
-      },renderInlineLine(String(options[idx]||""),"q"+qIndex+"-optline-"+idx,spec,prefix)));
+      },renderOptionCell(options[idx],label,"q"+qIndex+"-optline-"+idx,spec)));
     }
     rows.push(h(View,{key:"q"+qIndex+"-row-"+i,style:[styles.optionRow,{marginBottom:i+cols<options.length?rowGap:0}]},...cells));
   }
@@ -314,7 +323,7 @@ function renderQuestion(q,index,spec) {
     style:{marginBottom:questionGapPt(q,spec)}
   },
     h(View,{style:styles.questionRow},
-      mixedText(String(index+1)+".",{key:"num-"+index,size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:2.25*spec.fontSize,textAlign:"right",paddingRight:.55*spec.fontSize}}),
+      mixedText(String(index+1)+".",{key:"num-"+index,size:spec.fontSize,lineHeight:spec.lineHeight,style:{width:2.25*spec.fontSize,textAlign:"right",marginRight:.55*spec.fontSize}}),
       h(View,{style:styles.questionBody},...renderQuestionBody(q.content,index,spec))
     ),
     hasOptions?renderOptions(q.options,index,spec):null
@@ -385,8 +394,8 @@ function autoFooter(spec,state) {
     position:"absolute",left:spec.leftMm*MM,right:spec.rightMm*MM,bottom:spec.footSkipMm*MM,
     height:4.5*MM,alignItems:"center",justifyContent:"center"
   }},
-    h(Text,{style:{fontFamily:"EverflowSong",fontSize:9,lineHeight:11/9},
-      render:({pageNumber,totalPages})=>"第 "+Math.max(1,pageNumber-1)+" 页（共 "+Math.max(1,totalPages-1)+" 页）"
+    h(Text,{style:{fontFamily:"EverflowKai",fontSize:9,lineHeight:11/9},
+      render:({pageNumber,totalPages})=>(state.title||"试卷")+"  第 "+Math.max(1,pageNumber-1)+" 页（共 "+Math.max(1,totalPages-1)+" 页）"
     })
   );
 }
@@ -398,15 +407,15 @@ function staticBookFooter(pageNo,total,spec) {
   }},mixedText("· 第 "+pageNo+" 页 / 共 "+total+" 页 ·",{key:"bf-"+pageNo,size:9,lineHeight:11/9,color:"#24272b"}));
 }
 
-function examA3Footer(pageIndex,totalLogical,spec,leftUsed,rightUsed) {
+function examA3Footer(pageIndex,totalLogical,spec,leftUsed,rightUsed,state) {
   const nodes=[];
   const colWidth=spec.columnWidthPt;
   if(leftUsed)nodes.push(h(View,{key:"lf",style:{
     position:"absolute",left:spec.leftMm*MM,bottom:spec.footSkipMm*MM,width:colWidth,height:4.5*MM,alignItems:"center"
-  }},mixedText("第 "+(pageIndex*2+1)+" 页（共 "+totalLogical+" 页）",{key:"lft",size:9,lineHeight:11/9})));
+  }},h(Text,{key:"lft",style:{fontFamily:"EverflowKai",fontSize:9,lineHeight:11/9}},(state.title||"试卷")+"  第 "+(pageIndex*2+1)+" 页（共 "+totalLogical+" 页）")));
   if(rightUsed)nodes.push(h(View,{key:"rf",style:{
     position:"absolute",right:spec.rightMm*MM,bottom:spec.footSkipMm*MM,width:colWidth,height:4.5*MM,alignItems:"center"
-  }},mixedText("第 "+(pageIndex*2+2)+" 页（共 "+totalLogical+" 页）",{key:"rft",size:9,lineHeight:11/9})));
+  }},h(Text,{key:"rft",style:{fontFamily:"EverflowKai",fontSize:9,lineHeight:11/9}},(state.title||"试卷")+"  第 "+(pageIndex*2+2)+" 页（共 "+totalLogical+" 页）")));
   return nodes;
 }
 
@@ -487,7 +496,7 @@ function buildExamA3(state,assets,spec) {
   const totalLogical=pages.reduce((n,p)=>n+(p.left.length?1:0)+(p.right.length?1:0),0);
   return pages.map((p,pi)=>{
     const children=[...fixedAssets(assets)];
-    children.push(...examA3Footer(pi,totalLogical,spec,p.left.length>0,p.right.length>0));
+    children.push(...examA3Footer(pi,totalLogical,spec,p.left.length>0,p.right.length>0,state));
     children.push(h(View,{key:"cols",style:{flexDirection:"row",width:"100%",height:spec.contentHeightPt-10*MM}},
       h(View,{style:{width:spec.columnWidthPt,marginRight:spec.columnGapMm*MM}},...renderA3Column(p.left,spec)),
       h(View,{style:{width:spec.columnWidthPt}},...renderA3Column(p.right,spec))
