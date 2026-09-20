@@ -3495,3 +3495,13 @@ a,
   }
 }
 
+
+/* Direct errata entry, preceding resource details. */
+.compact-resource-actions .resource-errata-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 10px;flex:0 0 auto;border:1px solid var(--border);border-radius:9px;background:var(--surface-solid);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap}
+.resource-errata-trigger svg{width:15px;height:15px}
+.resource-errata-trigger b{font-size:10px;font-weight:600;min-width:16px;text-align:center;font-variant-numeric:tabular-nums;color:var(--blue)}
+.compact-resource-actions .resource-errata-trigger:hover{background:var(--blue-soft);color:var(--text)}
+.resource-errata-trigger:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.resource-errata-group+.resource-errata-group{margin-top:22px}
+.resource-errata-group h3{font-size:14px;color:var(--text);margin:0 0 10px}
+@media(max-width:560px){.compact-resource-actions{display:flex;flex-wrap:wrap}.compact-resource-actions .resource-errata-trigger,.compact-resource-actions .resource-detail-toggle{min-height:40px}}
