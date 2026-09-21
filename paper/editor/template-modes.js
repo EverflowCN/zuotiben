@@ -46,20 +46,35 @@ var COMMON={
   subquestionLeftMarginEm:2.50,
   subquestionLabelSepEm:0.60,
   subquestionItemSepEm:0.20,
-  subquestionTopSepEm:0.35
+  subquestionTopSepEm:0.35,
+  subquestionLevelOneLabel:"(1)",
+  subquestionLevelTwoLabel:"(i)",
+  tableArrayStretch:1.25,
+  tableColumnSepPt:8,
+  imageBeforeSkipBaseline:0.45,
+  imageAfterSkipBaseline:0.55,
+  imageDefaultWidthRatio:0.55,
+  imageMaxHeightRatio:0.80
 };
 
 var EXAM={
-  fontPt:9,
-  baselinePt:14.04,
-  lineHeight:14.04/9,
+  // Source files start with \\small. Values below are the actual ctex sizes,
+  // with the template-wide \\baselinestretch=1.3 applied.
+  fontPt:9.03374,
+  baselinePt:14.09265,
+  lineHeight:14.09265/9.03374,
+  cjkBodyFont:"FandolSong-Regular",
+  latinBodyFont:"TeXGyreTermesX-Regular",
+  latinBoldFont:"TeXGyreTermesX-Bold",
+  mathFont:"XITS Math",
   questionGapBaseline:0.45,
 
   // FINAL Exam title stack from original ZIP after all overrides.
   questionGroupFontFamily:"hei",
   questionGroupFontWeight:700,
   questionGroupFontPt:16,
-  questionGroupLeadingPt:21,
+  questionGroupNominalLeadingPt:21,
+  questionGroupLeadingPt:27.30006,
   questionGroupAlign:"center",
   questionGroupPosition:"leftpage",
   questionGroupBeforeSkipPt:1,
@@ -68,15 +83,17 @@ var EXAM={
   sectionForceNewPage:false,
   sectionFontFamily:"hei",
   sectionFontWeight:700,
-  sectionFontPt:9,
-  sectionLineHeight:14.04/9,
+  sectionFontPt:9.03374,
+  sectionLeadingPt:14.09265,
+  sectionLineHeight:14.09265/9.03374,
   sectionAlign:"left",
   sectionNumberStyle:"chinese-comma",
   sectionBeforeSkipEx:2,
   sectionAfterSkipEx:1,
 
   sectionNoteFontFamily:"hei",
-  sectionNoteFontPt:12,
+  sectionNoteFontPt:12.045,
+  sectionNoteLeadingPt:18.79022,
   sectionNoteAlign:"left",
   sectionNoteAfterSkipEm:0.35,
 
@@ -89,25 +106,34 @@ var EXAM={
 };
 
 var BOOK={
-  fontPt:10.5,
-  baselinePt:16.38,
-  lineHeight:16.38/10.5,
+  // Source files start with \\small. ExBook uses ctex zihao=-4 plus
+  // \\baselinestretch=1.3, so these are the actual rendered values.
+  fontPt:10.53937,
+  baselinePt:16.44145,
+  lineHeight:16.44145/10.53937,
+  cjkBodyFont:"FandolSong-Regular",
+  latinBodyFont:"TeXGyreTermesX-Regular",
+  latinBoldFont:"TeXGyreTermesX-Bold",
+  mathFont:"newtxmath",
 
   // FINAL Book part/section styles from original ZIP after AtBeginDocument overrides.
   partNumberFontFamily:"hei",
   partNumberFontWeight:400,
-  partNumberFontPt:22,
+  partNumberFontPt:22.08249,
+  partNumberLeadingPt:28.70324,
   partTitleFontFamily:"hei",
   partTitleFontWeight:700,
-  partTitleFontPt:18,
+  partTitleFontPt:18.06749,
+  partTitleLeadingPt:23.49297,
   partNumberAfterSkipEm:1,
   partVerticalCenter:true,
 
   sectionForceNewPage:true,
   sectionFontFamily:"hei",
   sectionFontWeight:400,
-  sectionFontPt:12,
-  sectionLineHeight:1,
+  sectionFontPt:12.045,
+  sectionLeadingPt:18.79022,
+  sectionLineHeight:18.79022/12.045,
   sectionAlign:"center",
   sectionNumberStyle:"arabic-dot",
   sectionNumberSepEm:1,
@@ -115,7 +141,8 @@ var BOOK={
   sectionAfterSkipPt:4,
 
   sectionNoteFontFamily:"hei",
-  sectionNoteFontPt:12,
+  sectionNoteFontPt:12.045,
+  sectionNoteLeadingPt:18.79022,
   sectionNoteAlign:"left",
   sectionNoteAfterSkipEm:0.35,
 
