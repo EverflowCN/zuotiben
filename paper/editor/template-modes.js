@@ -17,8 +17,44 @@ var COMMON={
   choiceRowGapEm:0.22,
   keepQuestionWithChoices:true,
   oversizeQuestionPolicy:"warn-break",
+
+  // Current XeLaTeX heading policy (00-user-config/04-question-layout.tex)
   headingKeepWithNext:true,
-  headingMinimumFollowLines:3
+  headingConsecutiveGroupControl:true,
+  headingMinimumFollowLines:3,
+  headingFollowMode:"question",
+  questionGroupNeedSpaceBaseline:10,
+  partNeedSpaceBaseline:10,
+  chapterNeedSpaceBaseline:8,
+  sectionNeedSpaceBaseline:9,
+  subsectionNeedSpaceBaseline:6,
+  subsubsectionNeedSpaceBaseline:5,
+  publicationUnitTitleNeedSpaceBaseline:9,
+  sectionNoteNeedSpaceBaseline:4,
+
+  // exam-zh section style: inherits body size, black-face + bold.
+  sectionFontFamily:"hei",
+  sectionFontWeight:700,
+  sectionFontScale:1,
+  sectionBeforeSkipEx:2,
+  sectionAfterSkipEx:1,
+  sectionNumberSeparator:"、",
+
+  // Unified question-core list geometry.
+  statementsLabelWidthEm:2.2,
+  statementsLabelSepEm:0.38,
+  statementsLeftMarginEm:2.58,
+  statementsItemSepEm:0.15,
+  statementsTopSepEm:0.30,
+  romanLabelWidthEm:2.15,
+  romanLabelSepEm:0.35,
+  romanLeftMarginEm:2.50,
+  romanItemSepEm:0.15,
+  romanTopSepEm:0.30,
+  subquestionLeftMarginEm:2.50,
+  subquestionLabelSepEm:0.60,
+  subquestionItemSepEm:0.20,
+  subquestionTopSepEm:0.35
 };
 
 var EXAM={
