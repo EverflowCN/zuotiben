@@ -2041,8 +2041,10 @@ typeof window < "u" && (window.TypstRenderModule = {
   withAccessModel: Je,
   withPackageRegistry: xe
 });
-window.$typst = Ie;
-window.TypstSnippet = U;
+if (typeof window < "u") {
+  window.$typst = Ie;
+  window.TypstSnippet = U;
+}
 let c;
 function S(n) {
   Se === J.length && J.push(J.length + 1);
