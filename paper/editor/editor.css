@@ -1852,3 +1852,51 @@ body.is-resizing-panes *{
   .editor-command-actions .text-btn{padding-inline:5px!important}
   .preview-toolbar-left strong{max-width:31vw!important}
 }
+
+
+/* Mobile topbar final correction: prevent generic primary button flex growth. */
+@media(max-width:767px){
+  .texpage-topbar{
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr)!important;
+    align-items:center!important;
+  }
+  .texpage-topbar .editor-brand-wrap{
+    width:34px!important;min-width:34px!important;overflow:hidden!important;
+  }
+  .texpage-topbar .brand{
+    width:34px!important;min-width:34px!important;padding:0!important;gap:0!important;
+  }
+  .texpage-topbar .brand-mark{margin:0!important;flex:0 0 28px!important}
+  .texpage-topbar .editor-top-actions{
+    display:grid!important;
+    grid-template-columns:34px minmax(98px,132px) 42px minmax(92px,auto)!important;
+    align-items:center!important;
+    justify-content:end!important;
+    overflow:visible!important;
+    gap:4px!important;
+  }
+  .texpage-topbar .navigator-toggle{grid-column:1!important;width:34px!important;min-width:34px!important}
+  .texpage-topbar .template-control{grid-column:2!important;width:100%!important;min-width:0!important;max-width:none!important}
+  .texpage-topbar #templateButton{width:100%!important;max-width:none!important}
+  .texpage-topbar .mobile-pdf-btn{
+    grid-column:3!important;
+    width:42px!important;min-width:42px!important;max-width:42px!important;
+    flex:none!important;padding:0!important;justify-content:center!important;
+    border-radius:8px!important;font-size:9px!important;
+  }
+  .texpage-topbar .mobile-mode-switch{
+    grid-column:4!important;
+    width:auto!important;min-width:92px!important;justify-self:end!important;
+  }
+  .texpage-topbar .mobile-mode-switch button{
+    min-width:44px!important;padding-inline:7px!important;
+  }
+}
+@media(max-width:430px){
+  .texpage-topbar .editor-top-actions{
+    grid-template-columns:32px minmax(82px,108px) 38px minmax(88px,auto)!important;
+  }
+  .texpage-topbar .mobile-pdf-btn{width:38px!important;min-width:38px!important;max-width:38px!important}
+  .texpage-topbar .mobile-mode-switch{min-width:88px!important}
+}
