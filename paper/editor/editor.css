@@ -951,3 +951,12 @@ body.preview-mode .paper-stage{display:none!important}
     max-width:none!important;
   }
 }
+
+.mobile-pdf-btn{display:none!important}
+@media(max-width:767px){
+  .mobile-pdf-btn{
+    display:inline-flex!important;flex:0 0 auto;
+    min-height:34px!important;padding:0 9px!important;
+    border-radius:9px!important;font-size:10px!important;
+  }
+}
