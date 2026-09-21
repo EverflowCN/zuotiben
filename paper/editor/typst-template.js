@@ -124,6 +124,9 @@ function configSource(state,spec){
   const columnGap=Number(spec.columnGapMm||0);
   const columns=Number(spec.columns||1);
   const usable=height-top-bottom;
+  const contentWidth=columns===2
+    ?(width-left-right-columnGap)/2
+    :(width-left-right);
 
   return "("+
     "kind:"+typstString(kind)+","+
@@ -143,6 +146,7 @@ function configSource(state,spec){
     "body-size:"+bodySize+"pt,"+
     "baseline:"+baseline+"pt,"+
     "usable-height:"+usable+"mm,"+
+    "content-width:"+contentWidth+"mm,"+
     "question-gap:"+questionGapMm(spec).toFixed(5)+"mm,"+
     "one-per-page:"+(spec.onePerPage?"true":"false")+
   ")";
