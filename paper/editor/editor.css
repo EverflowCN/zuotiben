@@ -1701,3 +1701,13 @@ body.is-resizing-panes *{
   min-height:0!important;
 }
 .texpage-preview-pane .typst-preview[hidden]{display:none!important}
+
+
+/* TeXPage desktop/tablet are simultaneous edit + preview; mode switch is phone-only. */
+@media(min-width:768px){
+  .mobile-mode-switch{display:none!important}
+  body.preview-mode .texpage-editor-pane,
+  body:not(.preview-mode) .texpage-editor-pane{display:flex!important}
+  body.preview-mode .texpage-preview-pane,
+  body:not(.preview-mode) .texpage-preview-pane{display:flex!important}
+}
