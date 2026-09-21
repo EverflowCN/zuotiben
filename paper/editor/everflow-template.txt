@@ -1,0 +1,309 @@
+// Everflow browser-local Typst mother template.
+// XeLaTeX reference:
+// Everflow·彼时流年若水_TeXPage专用版_mixed-A4填写区上移版.zip
+
+#import "/vendor/typst/mitex/lib.typ": mi, mimath
+
+#let western = "TeX Gyre TermesX"
+#let song = "FandolSong"
+#let hei = "FandolHei"
+#let kai = "FandolKai"
+#let math-font = "XITS Math"
+#let body-fonts = (western, song)
+
+#let chinese-number(n) = {
+  let d = ("零", "一", "二", "三", "四", "五", "六", "七", "八", "九")
+  if n <= 0 { str(n) }
+  else if n < 10 { d.at(n) }
+  else if n == 10 { "十" }
+  else if n < 20 { "十" + d.at(calc.rem(n, 10)) }
+  else if n < 100 {
+    d.at(calc.floor(n / 10)) + "十" +
+      if calc.rem(n, 10) == 0 { "" } else { d.at(calc.rem(n, 10)) }
+  } else { str(n) }
+}
+
+#let everflow-inline-math(source) = mi(source)
+#let everflow-display-math(source) = mimath(source, block: true)
+
+#let everflow-semantic-line(kind, label, body, group-start: false) = {
+  if kind == "plain" {
+    block(above: 0pt, below: 0pt)[#body]
+  } else {
+    let label-width = if kind == "circled" { 2.2em }
+      else if kind == "roman" { 2.15em }
+      else { 1.9em }
+    let label-sep = if kind == "circled" { .38em }
+      else if kind == "roman" { .35em }
+      else { .6em }
+    let top = if group-start {
+      if kind == "circled" or kind == "roman" { .3em } else { .35em }
+    } else { 0pt }
+    let below = if kind == "circled" or kind == "roman" { .15em } else { .2em }
+
+    block(above: top, below: below)[
+      #grid(
+        columns: (label-width, 1fr),
+        column-gutter: label-sep,
+        align: (right, top),
+        [#label],
+        body,
+      )
+    ]
+  }
+}
+
+#let everflow-option-cell(label, body) = grid(
+  columns: (2.25em, 1fr),
+  column-gutter: 0pt,
+  align: (left, top),
+  [#label],
+  body,
+)
+
+#let everflow-choices(items, cfg) = {
+  if items.len() == 0 { none } else {
+    layout(size => {
+      let widths = items.map(it => measure(everflow-option-cell(it.label, it.body)).width)
+      let max-width = widths.fold(0pt, (a, b) => calc.max(a, b))
+      let n = items.len()
+      let four-short = max-width < .22 * size.width
+      let two-short = max-width < .46 * size.width
+      let cols = if n == 3 { if four-short { 3 } else if two-short { 2 } else { 1 } }
+        else if n == 4 { if four-short { 4 } else if two-short { 2 } else { 1 } }
+        else if n == 5 { if two-short { 2 } else { 1 } }
+        else if n == 6 { if four-short { 3 } else if two-short { 2 } else { 1 } }
+        else if n > 1 and two-short { 2 }
+        else { 1 }
+      let gutter = if cols == 4 { .55em }
+        else if cols == 3 { .8em }
+        else if cols == 2 { 1.2em }
+        else { 0pt }
+
+      block(above: .45 * cfg.baseline, below: 0pt)[
+        #grid(
+          columns: (1fr,) * cols,
+          column-gutter: gutter,
+          row-gutter: .22em,
+          ..items.map(it => everflow-option-cell(it.label, it.body)),
+        )
+      ]
+    })
+  }
+}
+
+#let everflow-question(
+  number,
+  body,
+  options: (),
+  cfg: (:),
+  gap: 0mm,
+  break-before: false,
+) = context {
+  let question-body = [
+    #body
+    #if options.len() > 0 { everflow-choices(options, cfg) }
+  ]
+  let core = grid(
+    columns: (2.25em, 1fr),
+    column-gutter: .55em,
+    align: (right, top),
+    [#str(number)#text(".")],
+    question-body,
+  )
+  let height = measure(core, width: 100%).height
+  let oversized = height > cfg.usable-height - 2 * cfg.baseline
+
+  if break-before { pagebreak() }
+  block(
+    breakable: oversized,
+    above: 0pt,
+    below: if cfg.one-per-page { 0pt } else { gap },
+    width: 100%,
+  )[#core]
+}
+
+#let everflow-section(title, ordinal, cfg) = {
+  if cfg.kind == "book" {
+    block(above: 2pt, below: 4pt, breakable: false, width: 100%)[
+      #align(center)[
+        #text(font: hei, weight: "regular", size: 12.045pt)[
+          #str(ordinal)#text(". ")#title
+        ]
+      ]
+    ]
+  } else {
+    block(above: 2em, below: 1em, breakable: false, width: 100%)[
+      #align(left)[
+        #text(font: hei, weight: "bold", size: 9.03374pt)[
+          #chinese-number(ordinal)#text("、")#title
+        ]
+      ]
+    ]
+  }
+}
+
+#let everflow-section-note(body) = block(above: 0pt, below: .35em, breakable: false)[
+  #text(font: hei, size: 12.045pt)[#body]
+]
+
+#let everflow-exam-questiongroup(body) = block(
+  above: 1pt,
+  below: 2em,
+  breakable: false,
+  width: 100%,
+)[
+  #align(center)[#text(font: hei, weight: "bold", size: 16pt)[#body]]
+]
+
+#let everflow-book-part(number, title) = page(
+  width: 210mm,
+  height: 297mm,
+  margin: 0mm,
+  header: none,
+  footer: none,
+  foreground: none,
+)[
+  #align(center + horizon)[
+    #text(font: hei, size: 22.08249pt)[第#chinese-number(number)部分]
+    #v(1em)
+    #text(font: hei, weight: "bold", size: 18.06749pt)[#title]
+  ]
+]
+
+#let everflow-cover(cfg) = page(
+  width: 210mm,
+  height: 297mm,
+  margin: 0mm,
+  header: none,
+  footer: none,
+  foreground: none,
+  fill: white,
+)[
+  #place(top + center, dy: 120.9mm)[
+    #box(width: 174mm)[
+      #align(center)[
+        #text(
+          font: song,
+          weight: "bold",
+          size: if cfg.kind == "book" { 22pt } else { 24.88pt },
+        )[#cfg.cover-title]
+      ]
+    ]
+  ]
+  #place(top + center, dy: 147mm)[
+    #text(font: song, weight: "bold", size: 18.4pt)[·彼时流年若水·]
+  ]
+  #place(top + left, dx: 18mm, dy: 266mm)[
+    #line(length: 50mm, stroke: .4pt + black)
+  ]
+  #place(top + left, dx: 18mm, dy: 270.6mm)[
+    #text(font: song, weight: "bold", size: 9.5pt)[Everflow·彼时流年若水]
+  ]
+  #place(top + left, dx: 18mm, dy: 277.2mm)[
+    #text(font: song, weight: "bold", size: 9pt, fill: red)[
+      > > > 更新时间：#cfg.export-date
+    ]
+  ]
+]
+
+#let everflow-body-foreground(cfg) = context {
+  let current = counter(page).get().first()
+  let total = counter(page).final().first()
+  let content-width = cfg.page-width - cfg.left - cfg.right
+
+  place(bottom + right, dx: -13mm, dy: -30mm)[
+    #image("/watermark/water-9.svg", height: 34mm, fit: "contain")
+  ]
+
+  place(bottom + left, dx: 3mm, dy: -5.8mm)[
+    #stack(
+      dir: ttb,
+      spacing: .7mm,
+      image("/zuotiben-qr.svg", width: 13mm, height: 13mm, fit: "contain"),
+      align(center)[#text(font: western, size: 5.8pt)[zuotiben.top]],
+    )
+  ]
+
+  if cfg.kind == "book" {
+    place(top + left, dx: cfg.left, dy: 5.7mm)[
+      #box(width: content-width)[
+        #grid(
+          columns: (1fr, 1fr, 1fr),
+          align: (left, center, right),
+          text(font: song, weight: "bold", size: 10pt)[彼时流年若水],
+          text(font: song, weight: "bold", size: 10pt)[#cfg.header-center],
+          text(font: western, weight: "bold", size: 10pt)[https://zuotiben.top],
+        )
+        #v(1.2mm)
+        #line(length: 100%, stroke: .4pt + rgb("24272b"))
+      ]
+    ]
+
+    place(bottom + center, dy: -4mm)[
+      #text(font: song, size: 9pt, fill: rgb("24272b"))[
+        · 第 #current 页 / 共 #total 页 ·
+      ]
+    ]
+  } else if cfg.columns == 2 {
+    let column-width = (content-width - cfg.column-gap) / 2
+    let logical-total = total * 2
+    place(bottom + left, dx: cfg.left, dy: -cfg.foot-skip)[
+      #box(width: content-width)[
+        #grid(
+          columns: (column-width, cfg.column-gap, column-width),
+          align: (center, center, center),
+          text(font: kai, size: 9pt)[
+            #cfg.title  第 #(2 * current - 1) 页（共 #logical-total 页）
+          ],
+          [],
+          text(font: kai, size: 9pt)[
+            #cfg.title  第 #(2 * current) 页（共 #logical-total 页）
+          ],
+        )
+      ]
+    ]
+  } else {
+    place(bottom + center, dy: -cfg.foot-skip)[
+      #text(font: kai, size: 9pt)[
+        #cfg.title  第 #current 页（共 #total 页）
+      ]
+    ]
+  }
+}
+
+#let everflow-document(cfg, body) = {
+  everflow-cover(cfg)
+
+  counter(page).update(0)
+  set columns(gutter: cfg.column-gap)
+  set page(
+    width: cfg.page-width,
+    height: cfg.page-height,
+    margin: (
+      top: cfg.top,
+      bottom: cfg.bottom,
+      left: cfg.left,
+      right: cfg.right,
+    ),
+    columns: cfg.columns,
+    header: none,
+    footer: none,
+    foreground: everflow-body-foreground(cfg),
+    fill: white,
+  )
+  set text(
+    font: body-fonts,
+    size: cfg.body-size,
+    cjk-latin-spacing: auto,
+  )
+  set par(
+    leading: cfg.baseline - cfg.body-size,
+    spacing: 0pt,
+    first-line-indent: 0pt,
+  )
+  set block(spacing: 0pt)
+  show math.equation: set text(font: math-font)
+
+  body
+}
