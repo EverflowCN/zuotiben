@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../assets/fonts/fandol/fonts.css?v=20260921-fandol1">
   <link rel="stylesheet" href="../assets/vendor/temml/Temml-Local.css?v=20260921-local1">
   <link rel="stylesheet" href="../styles.css?v=20260921-fandol1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-editorfeatures3">
+  <link rel="stylesheet" href="./editor.css?v=20260921-typst1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar">
@@ -103,7 +103,7 @@
     </div>
 
     <div class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></div>
-    <iframe id="pdfPreview" title="生成后的 PDF" hidden></iframe>
+    <div id="typstPreview" class="typst-preview" hidden aria-label="Typst 精确分页预览"></div>
 
     <div class="paper-stage" id="paperStage">
       <article class="paper-sheet cover-sheet" id="coverSheet" aria-label="封面预览">
@@ -137,8 +137,8 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script defer src="../assets/vendor/temml/temml.min.js?v=20260921-local1"></script>
-<script src="./template-modes.js?v=20260921-cnmode1"></script>
+<script src="./template-modes.js?v=20260921-mother4"></script>
 <script src="./save-manager.js?v=20260921-cnmode1"></script>
-<script src="./editor.js?v=20260921-samepdf1"></script>
+<script src="./editor.js?v=20260921-typst1"></script>
 </body>
 </html>
