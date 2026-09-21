@@ -84,7 +84,7 @@ async function renderSvg(source) {
   return await $typst.svg({ vectorData: vector });
 }
 
-self.onmessage = async event => {
+async function handleMessage(event) {
   const msg = event.data || {};
   const id = msg.id;
   try {
@@ -128,4 +128,12 @@ self.onmessage = async event => {
       stack: error && error.stack ? error.stack : "",
     });
   }
+}
+
+let compileQueue = Promise.resolve();
+self.onmessage = event => {
+  compileQueue = compileQueue.then(
+    () => handleMessage(event),
+    () => handleMessage(event),
+  );
 };
