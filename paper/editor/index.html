@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../assets/fonts/fandol/fonts.css?v=20260921-fandol1">
   <link rel="stylesheet" href="../assets/vendor/temml/Temml-Local.css?v=20260921-local1">
   <link rel="stylesheet" href="../styles.css?v=20260921-fandol1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-tri3">
+  <link rel="stylesheet" href="./editor.css?v=20260921-texpage1">
 </head>
 <body class="editor-page">
-<header class="editor-topbar">
+<header class="editor-topbar texpage-topbar">
   <div class="editor-brand-wrap">
     <a class="brand" href="../" aria-label="返回本地组卷入口">
       <span class="brand-mark">E</span>
@@ -20,101 +20,169 @@
     </a>
     <span class="local-pill"><i></i> 全程本地</span>
   </div>
+
   <div class="editor-top-actions">
+    <button class="icon-text-btn navigator-toggle" id="navigatorToggleButton" type="button" title="显示/隐藏结构栏" aria-label="显示或隐藏结构栏">☰</button>
     <div class="history-actions" role="group" aria-label="撤销与重做">
       <button class="icon-text-btn" id="undoButton" type="button" title="撤销 Ctrl/⌘+Z">↶</button>
       <button class="icon-text-btn" id="redoButton" type="button" title="重做 Ctrl/⌘+Shift+Z">↷</button>
     </div>
     <span class="save-state" id="saveState"><i></i> 已保存到本机</span>
+
     <div class="template-control">
       <button class="ghost-btn template-trigger" id="templateButton" type="button" aria-haspopup="true" aria-expanded="false">
         <span id="templateButtonLabel">试卷 · A4 试卷</span><b>⌄</b>
       </button>
       <div class="template-popover" id="templatePopover" hidden>
-        <div class="template-popover-head"><strong>选择版式</strong><small>只切换固定模板，不开放字体和页边距</small></div>
+        <div class="template-popover-head">
+          <strong>选择版式</strong>
+          <small>版式、字体与页面参数均来自固定母版</small>
+        </div>
         <div id="templateMenu"></div>
       </div>
     </div>
+
     <button class="ghost-btn" id="saveProjectButton" type="button">保存项目</button>
     <button class="primary-btn mobile-pdf-btn" id="mobileDownloadButton" type="button" aria-label="下载 PDF">PDF</button>
-    <div class="mode-switch" role="group" aria-label="编辑器模式">
+
+    <div class="mode-switch mobile-mode-switch" role="group" aria-label="手机编辑器模式">
       <button id="editModeButton" type="button" aria-pressed="true">编辑</button>
       <button id="previewModeButton" type="button" aria-pressed="false">预览</button>
     </div>
   </div>
 </header>
 
-<main class="editor-shell">
-  <aside class="editor-sidebar">
-    <div class="sidebar-head">
-      <div><span>CONTENT</span><strong id="paperName">未命名试卷</strong></div>
+<main class="texpage-workbench" id="workbench">
+  <aside class="texpage-navigator" id="navigatorPanel">
+    <div class="navigator-head">
+      <div class="navigator-title">
+        <span>PROJECT</span>
+        <strong id="paperName">未命名试卷</strong>
+      </div>
       <b id="questionCount">0</b>
     </div>
-    <div class="sidebar-note">题目、公式、排序和设置仅保存在当前设备。修改后右侧立即更新预览。</div>
 
-    <div class="paper-settings">
-      <label>项目名称<input id="titleInput" autocomplete="off"></label>
-      <label>封面标题<input id="coverTitleInput" autocomplete="off"></label>
-      <label id="bookHeaderLabel" hidden>做题本中间页眉<input id="headerInput" autocomplete="off" placeholder="例如：第 1 部分 / CO+OS"></label>
-      <div class="locked-row"><span>封面更新时间</span><b id="exportDateDisplay">按导出日期自动生成</b><em>自动</em></div>
+    <div class="navigator-tabs" role="tablist" aria-label="项目面板">
+      <button id="outlineTabButton" type="button" role="tab" aria-selected="true">结构</button>
+      <button id="settingsTabButton" type="button" role="tab" aria-selected="false">设置</button>
     </div>
 
-    <div class="order-toolbar">
-      <strong>题目结构</strong>
-      <div class="order-toolbar-actions">
-        <button class="text-btn" id="addQuestionButton" type="button">＋ 题目</button>
-        <button class="text-btn" id="sectionManageButton" type="button">大题管理</button>
+    <section class="navigator-panel is-active" id="outlinePanel" role="tabpanel">
+      <div class="order-toolbar">
+        <strong>题目结构</strong>
+        <div class="order-toolbar-actions">
+          <button class="text-btn" id="addQuestionButton" type="button">＋ 题目</button>
+          <button class="text-btn" id="sectionManageButton" type="button">大题</button>
+        </div>
       </div>
-    </div>
-    <div class="section-panel" id="sectionPanel" hidden>
-      <div class="section-panel-head"><strong>大题管理</strong><button class="text-btn" id="addSectionButton" type="button">＋ 新建大题</button></div>
-      <div id="sectionList"></div>
-    </div>
-    <div class="batch-bar" id="batchBar" hidden>
-      <span>已选 <b id="batchCount">0</b> 题</span>
-      <label>留白 <input id="batchGapInput" type="number" min="0" max="100" step="1" placeholder="mm"></label>
-      <button class="text-btn" id="batchGapApplyButton" type="button">应用</button>
-      <button class="text-btn" id="batchGapResetButton" type="button">恢复默认</button>
-      <select id="batchSectionSelect" aria-label="批量移动到大题"></select>
-      <button class="text-btn" id="batchMoveSectionButton" type="button">移动</button>
-      <button class="text-btn" id="batchClearButton" type="button">取消选择</button>
-    </div>
-    <div class="order-list" id="orderList"></div>
-    <div id="questionEditor" class="question-editor"></div>
 
-    <footer class="sidebar-foot">
-      <a class="text-btn" href="../">重新导入</a>
-      <button class="text-btn" id="resetOrderButton" type="button">恢复顺序</button>
-      <button class="text-btn danger" id="clearButton" type="button">清空</button>
-    </footer>
+      <div class="section-panel" id="sectionPanel" hidden>
+        <div class="section-panel-head">
+          <strong>大题管理</strong>
+          <button class="text-btn" id="addSectionButton" type="button">＋ 新建</button>
+        </div>
+        <div id="sectionList"></div>
+      </div>
+
+      <div class="batch-bar" id="batchBar" hidden>
+        <span>已选 <b id="batchCount">0</b> 题</span>
+        <label>留白 <input id="batchGapInput" type="number" min="0" max="100" step="1" placeholder="mm"></label>
+        <button class="text-btn" id="batchGapApplyButton" type="button">应用</button>
+        <button class="text-btn" id="batchGapResetButton" type="button">默认</button>
+        <select id="batchSectionSelect" aria-label="批量移动到大题"></select>
+        <button class="text-btn" id="batchMoveSectionButton" type="button">移动</button>
+        <button class="text-btn" id="batchClearButton" type="button">取消</button>
+      </div>
+
+      <div class="order-list" id="orderList"></div>
+    </section>
+
+    <section class="navigator-panel" id="settingsPanel" role="tabpanel" hidden>
+      <div class="paper-settings">
+        <label>项目名称<input id="titleInput" autocomplete="off"></label>
+        <label>封面标题<input id="coverTitleInput" autocomplete="off"></label>
+        <label id="bookHeaderLabel" hidden>做题本中间页眉
+          <input id="headerInput" autocomplete="off" placeholder="例如：第 1 部分 / CO+OS">
+        </label>
+        <div class="locked-row">
+          <span>封面更新时间</span>
+          <b id="exportDateDisplay">按导出日期自动生成</b>
+          <em>自动</em>
+        </div>
+      </div>
+
+      <div class="navigator-actions">
+        <button class="text-btn" id="resetOrderButton" type="button">恢复顺序</button>
+        <button class="text-btn danger" id="clearButton" type="button">清空项目</button>
+        <a class="text-btn" href="../">重新导入</a>
+      </div>
+    </section>
   </aside>
 
-  <section class="editor-main">
-    <div class="editor-toolbar">
-      <div>
-        <span>LIVE PREVIEW</span>
-        <strong id="templateSummary">试卷 · A4 试卷</strong>
-        <small id="sourceName">浏览器本地文件</small>
+  <div class="pane-resizer navigator-resizer" id="navigatorResizer" role="separator" aria-orientation="vertical" aria-label="调整结构栏宽度"></div>
+
+  <section class="texpage-editor-pane" id="editPane">
+    <div class="pane-tabbar editor-tabbar">
+      <div class="editor-tab is-active">
+        <span class="tab-dot"></span>
+        <strong id="activeQuestionLabel">题目编辑</strong>
       </div>
-      <div class="editor-toolbar-actions">
-        <span class="preview-chip" id="pageSizeChip">A4</span>
-        <span class="preview-chip"><i></i> 实时本地预览</span>
+      <div class="pane-tab-actions">
+        <span class="local-state"><i></i> 本地自动保存</span>
+      </div>
+    </div>
+
+    <div class="editor-commandbar">
+      <div>
+        <strong>题目编辑</strong>
+        <span id="sourceName">浏览器本地文件</span>
+      </div>
+      <div class="editor-command-actions">
+        <button class="text-btn" id="focusStemButton" type="button">题干</button>
+        <button class="text-btn" id="focusOptionsButton" type="button">选项</button>
+      </div>
+    </div>
+
+    <div id="questionEditor" class="question-editor texpage-question-editor"></div>
+  </section>
+
+  <div class="pane-resizer preview-resizer" id="previewResizer" role="separator" aria-orientation="vertical" aria-label="调整编辑与预览宽度"></div>
+
+  <section class="texpage-preview-pane editor-main" id="previewPane">
+    <div class="preview-toolbar">
+      <div class="preview-toolbar-left">
+        <span class="preview-status-dot"></span>
+        <strong id="templateSummary">试卷 · A4 试卷</strong>
+        <span class="preview-chip" id="pageSizeChip">210×297 mm</span>
+      </div>
+
+      <div class="preview-toolbar-center" role="group" aria-label="PDF 预览控制">
+        <button class="viewer-btn" id="previewPrevPageButton" type="button" title="上一页">‹</button>
+        <span class="page-indicator" id="previewPageIndicator">— / —</span>
+        <button class="viewer-btn" id="previewNextPageButton" type="button" title="下一页">›</button>
+        <span class="toolbar-divider"></span>
+        <button class="viewer-btn" id="previewZoomOutButton" type="button" title="缩小">−</button>
+        <button class="zoom-indicator" id="previewZoomLabel" type="button" title="恢复 100%">100%</button>
+        <button class="viewer-btn" id="previewZoomInButton" type="button" title="放大">＋</button>
+        <button class="viewer-btn fit-btn" id="previewFitButton" type="button" title="适合宽度">适宽</button>
+      </div>
+
+      <div class="preview-toolbar-right">
         <button class="primary-btn" id="printButton" type="button">下载 PDF</button>
       </div>
     </div>
 
     <div class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></div>
-    <div id="typstPreview" class="typst-preview" hidden aria-label="Typst 精确分页预览"></div>
+    <div id="typstPreview" class="typst-preview" aria-label="Typst 精确分页预览"></div>
 
-    <div class="paper-stage" id="paperStage">
-      <article class="paper-sheet cover-sheet" id="coverSheet" aria-label="封面预览">
+    <div class="paper-stage" id="paperStage" hidden aria-hidden="true">
+      <article class="paper-sheet cover-sheet" id="coverSheet">
         <div class="cover-main-title" id="coverPreviewTitle">未命名试卷</div>
         <div class="cover-signature">·彼时流年若水·</div>
         <div class="cover-bottom-line"></div>
         <div class="cover-brand">Everflow·彼时流年若水</div>
         <div class="cover-date" id="coverPreviewDate">&gt;&gt;&gt; 更新时间：按导出日期</div>
       </article>
-
       <article class="paper-sheet" id="paperSheet">
         <div class="paper-running-head" aria-hidden="true"></div>
         <div class="paper-watermark" aria-hidden="true"></div>
@@ -122,10 +190,7 @@
           <div class="paper-qr-code"><img src="../assets/zuotiben-qr.svg" alt="" aria-hidden="true"></div>
           <span>zuotiben.top</span>
         </aside>
-        <header class="paper-header">
-          <h1 id="previewTitle">试卷</h1>
-          <p id="previewMeta">本地排版</p>
-        </header>
+        <header class="paper-header"><h1 id="previewTitle">试卷</h1><p id="previewMeta">本地排版</p></header>
         <main class="paper-questions" id="paperQuestions"></main>
         <footer class="paper-footer">
           <span>Everflow·彼时流年若水</span>
@@ -136,10 +201,12 @@
   </section>
 </main>
 
+<div class="workbench-backdrop" id="workbenchBackdrop" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <script defer src="../assets/vendor/temml/temml.min.js?v=20260921-local1"></script>
 <script src="./template-modes.js?v=20260921-mother5"></script>
 <script src="./save-manager.js?v=20260921-cnmode1"></script>
-<script src="./editor.js?v=20260921-typst3"></script>
+<script src="./editor.js?v=20260921-texpage1"></script>
 </body>
 </html>
