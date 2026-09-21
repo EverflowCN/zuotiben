@@ -1,4 +1,6 @@
-const {chromium}=require('playwright');
+const playwright=require('playwright');
+const browserName=process.env.BROWSER||'chromium';
+const browserType=playwright[browserName];
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
@@ -15,7 +17,8 @@ async function waitForTypst(page, timeout=120000){
 }
 
 (async()=>{
-  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+  if(!browserType)throw new Error('Unsupported browser: '+browserName);
+  const browser=await browserType.launch(browserName==='chromium'?{headless:true,args:['--no-sandbox']}:{headless:true});
   try{
     const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});
     const errors=[];
@@ -144,7 +147,7 @@ async function waitForTypst(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
     assert.deepEqual(errors,[]);
-    console.log('PASS: TeXPage-style desktop/tablet/mobile editor, live Typst preview, local PDF download');
+    console.log('PASS ['+browserName+']: TeXPage-style desktop/tablet/mobile editor, live Typst preview, local PDF download');
   }finally{
     await browser.close();
   }
