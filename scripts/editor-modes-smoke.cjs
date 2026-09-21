@@ -8,20 +8,16 @@ async function waitForSettled(page,timeout=120000){
     return pages.length>=2 && /已更新|已是最新/.test(s) && !/正在/.test(s);
   },null,{timeout});
 }
-async function choose(page,label,layout,expected){
+async function choose(page,label,layout){
+  const before=await page.locator('#typstPreview').innerHTML();
   await page.locator('#templateButton').click();
   await page.locator('.template-option').filter({hasText:label}).click();
   await page.waitForFunction(expectedLayout=>document.body.dataset.layout===expectedLayout,layout,{timeout:30000});
-  await page.waitForFunction(expectedRatio=>{
-    const svg=document.querySelector('.typst-page:nth-child(2) svg');
-    if(!svg)return false;
-    const vb=(svg.getAttribute('viewBox')||'').trim().split(/[ ,]+/).map(Number);
-    const ratio=vb.length===4&&vb[2]>0&&vb[3]>0
-      ? vb[2]/vb[3]
-      : (()=>{const r=svg.getBoundingClientRect();return r.width/r.height})();
+  await page.waitForFunction(oldHtml=>{
     const status=document.querySelector('#pdfStatus')?.textContent||'';
-    return Math.abs(ratio-expectedRatio)<=.035 && /已更新|已是最新/.test(status) && !/正在/.test(status);
-  },expected,{timeout:120000});
+    const current=document.querySelector('#typstPreview')?.innerHTML||'';
+    return current!==oldHtml && /已更新|已是最新/.test(status) && !/正在/.test(status);
+  },before,{timeout:120000});
 }
 async function ratio(page,index=1){
   return page.locator('.typst-page').nth(index).evaluate(wrap=>{
@@ -67,10 +63,12 @@ function near(actual,expected,t=.035){
       ['平板竖版（200×250 mm）','padp',200/250],
     ];
     for(const [label,layout,expected] of cases){
-      await choose(page,label,layout,expected);
-      near(await ratio(page,1),expected);
+      await choose(page,label,layout);
+      const actual=await ratio(page,1);
       const size=await page.locator('#pageSizeChip').innerText();
-      console.log('PASS MODE',label,layout,'ratio',await ratio(page,1),'chip',size);
+      console.log('MODE GEOMETRY',label,layout,'ratio',actual,'expected',expected,'chip',size);
+      near(actual,expected);
+      console.log('PASS MODE',label);
     }
     assert.deepEqual(errors,[]);
     console.log('PASS: all physical paper modes');
