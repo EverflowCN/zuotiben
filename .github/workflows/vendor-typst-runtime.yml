@@ -62,14 +62,13 @@ jobs:
           test -s "$FONT_DIR/FandolKai-Regular.otf"
           test -s "$FONT_DIR/XITSMath-Regular.otf"
 
-          MITEX_REF="985d8e725922ceb70ae5459c50c4cb3d733a0ed1"
+          MITEX_VERSION="0.2.7"
           MITEX_DIR="$DIR/mitex"
-          rm -rf "$MITEX_DIR" /tmp/mitex-src
-          git clone --filter=blob:none --no-checkout https://github.com/mitex-rs/mitex.git /tmp/mitex-src
-          git -C /tmp/mitex-src checkout "$MITEX_REF"
-          mkdir -p "$MITEX_DIR"
-          cp -a /tmp/mitex-src/packages/mitex/. "$MITEX_DIR/"
-          rm -rf "$MITEX_DIR/examples"
+          rm -rf "$MITEX_DIR" /tmp/mitex-package
+          mkdir -p "$MITEX_DIR" /tmp/mitex-package
+          curl -fL --retry 3             "https://packages.typst.org/preview/mitex-$MITEX_VERSION.tar.gz"             -o /tmp/mitex.tar.gz
+          tar -xzf /tmp/mitex.tar.gz -C /tmp/mitex-package
+          cp -a /tmp/mitex-package/. "$MITEX_DIR/"
           test -s "$MITEX_DIR/lib.typ"
           test -s "$MITEX_DIR/mitex.typ"
           test -s "$MITEX_DIR/mitex.wasm"
