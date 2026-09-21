@@ -31,7 +31,7 @@ async function mapWatermark() {
 }
 
 async function addMotherTemplate() {
-  const response = await fetch(editorUrl("./everflow-template.typ"), { cache: "no-cache" });
+  const response = await fetch(editorUrl("./everflow-template.txt"), { cache: "no-cache" });
   if (!response.ok) throw new Error("无法加载 Everflow Typst 母版");
   await $typst.addSource("/everflow-template.typ", await response.text());
 }
