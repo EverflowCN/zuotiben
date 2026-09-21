@@ -35,12 +35,12 @@
     let label-sep = if kind == "circled" { .38em }
       else if kind == "roman" { .35em }
       else { .6em }
-    let top = if group-start {
+    let top-sep = if group-start {
       if kind == "circled" or kind == "roman" { .3em } else { .35em }
     } else { 0pt }
     let below = if kind == "circled" or kind == "roman" { .15em } else { .2em }
 
-    block(above: top, below: below)[
+    block(above: top-sep, below: below)[
       #grid(
         columns: (label-width, 1fr),
         column-gutter: label-sep,
