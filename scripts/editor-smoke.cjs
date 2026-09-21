@@ -46,6 +46,8 @@ const fs=require('node:fs');
     assert.match(await page.locator('#paperQuestions').innerText(),/修改后的题干/);
 
     await page.locator('#templateButton').click();
+    await page.locator('.template-option').filter({hasText:'标准版'}).click();
+    assert.equal(await page.locator('body').getAttribute('data-template'),'book');
     await page.locator('#headerInput').fill('数学练习');
 
     await page.locator('#previewModeButton').click();
