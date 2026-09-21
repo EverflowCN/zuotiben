@@ -75,9 +75,15 @@ async function waitForTypst(page, timeout=90000){
     await page.reload({waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('#headerInput').inputValue(),'数学练习');
 
-    const dl=page.waitForEvent('download',{timeout:120000});
+    const dl=page.waitForEvent('download',{timeout:90000}).then(download=>({kind:'download',download}));
+    const pdfFailure=page.waitForFunction(()=>{
+      const status=document.querySelector('#pdfStatus')?.textContent||'';
+      return /PDF.+失败|生成或保存失败|Typst.+失败|异常|Error/i.test(status);
+    },null,{timeout:90000}).then(async()=>({kind:'failure',status:await page.locator('#pdfStatus').innerText()}));
     await page.locator('#printButton').click();
-    const download=await dl;
+    const pdfResult=await Promise.race([dl,pdfFailure]);
+    if(pdfResult.kind==='failure')throw new Error('PDF export failed: '+pdfResult.status);
+    const download=pdfResult.download;
     await download.saveAs('test-results/editor.pdf');
     assert.equal(fs.readFileSync('test-results/editor.pdf').subarray(0,5).toString(),'%PDF-');
     assert.match(await page.locator('#pdfStatus').innerText(),/PDF 已在本机生成|PDF 已交给浏览器保存|未使用服务器编译/);
