@@ -37,9 +37,30 @@ jobs:
 
           printf '%s\n' "$VERSION" > "$DIR/VERSION"
 
+          FONT_DIR="$DIR/fonts"
+          mkdir -p "$FONT_DIR"
+
+          FANDOL_REF="b93300821373d3092e378e57ae22ecb8e9082c62"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolSong-Regular/FandolSong-Regular.otf" -o "$FONT_DIR/FandolSong-Regular.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolSong-Bold/FandolSong-Bold.otf" -o "$FONT_DIR/FandolSong-Bold.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolHei-Regular/FandolHei-Regular.otf" -o "$FONT_DIR/FandolHei-Regular.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolHei-Bold/FandolHei-Bold.otf" -o "$FONT_DIR/FandolHei-Bold.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolKai-Regular/FandolKai-Regular.otf" -o "$FONT_DIR/FandolKai-Regular.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/COPYING" -o "$FONT_DIR/FANDOL-COPYING"
+
+          XITS_REF="master"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITS-Regular.otf" -o "$FONT_DIR/XITS-Regular.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITS-Bold.otf" -o "$FONT_DIR/XITS-Bold.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITSMath-Regular.otf" -o "$FONT_DIR/XITSMath-Regular.otf"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/OFL.txt" -o "$FONT_DIR/XITS-OFL.txt"
+
           test -s "$DIR/typst-all-in-one-lite.js"
           test -s "$DIR/typst_ts_web_compiler_bg.wasm"
           test -s "$DIR/typst_ts_renderer_bg.wasm"
+          test -s "$FONT_DIR/FandolSong-Regular.otf"
+          test -s "$FONT_DIR/FandolHei-Regular.otf"
+          test -s "$FONT_DIR/FandolKai-Regular.otf"
+          test -s "$FONT_DIR/XITSMath-Regular.otf"
 
       - name: Commit vendored runtime
         shell: bash
