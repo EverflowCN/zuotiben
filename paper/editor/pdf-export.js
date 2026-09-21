@@ -349,7 +349,11 @@ function estimateQuestionHeight(q,index,spec,prevSection) {
     height+=spec.choiceBeforeSkipBaseline*spec.baselinePt + rows*spec.baselinePt + Math.max(0,rows-1)*spec.choiceRowGapEm*spec.fontSize;
   }
   height+=questionGapPt(q,spec);
-  if(q.section&&q.section!==prevSection)height+=(spec.sectionBeforeSkipEx+spec.sectionAfterSkipEx)*spec.fontSize+spec.baselinePt;
+  if(q.section&&q.section!==prevSection){
+    const before=typeof spec.sectionBeforeSkipPt==="number"?spec.sectionBeforeSkipPt:Number(spec.sectionBeforeSkipEx||0)*spec.fontSize;
+    const after=typeof spec.sectionAfterSkipPt==="number"?spec.sectionAfterSkipPt:Number(spec.sectionAfterSkipEx||0)*spec.fontSize;
+    height+=before+after+Number(spec.sectionFontPt||spec.baselinePt);
+  }
   return height;
 }
 
@@ -370,23 +374,46 @@ function renderQuestion(q,index,spec) {
   );
 }
 
-function sectionHeading(text,key,spec,breakBefore=false) {
-  const size=spec.fontSize*Number(spec.sectionFontScale||1);
+function chineseSectionNumber(n){
+  const digits=["零","一","二","三","四","五","六","七","八","九"];
+  if(n<=10)return n===10?"十":digits[n];
+  if(n<20)return "十"+digits[n%10];
+  if(n<100)return digits[Math.floor(n/10)]+"十"+(n%10?digits[n%10]:"");
+  return String(n);
+}
+function bareSectionTitle(text){
+  return String(text||"")
+    .replace(/^\s*[一二三四五六七八九十百]+[、.．]\s*/,"")
+    .replace(/^\s*\d+[.．、]\s*/,"")
+    .trim();
+}
+function sectionDisplayText(text,ordinal,spec){
+  const bare=bareSectionTitle(text);
+  if(spec.kind==="book")return ordinal+". "+bare;
+  return chineseSectionNumber(ordinal)+"、"+bare;
+}
+function sectionHeading(text,key,spec,breakBefore=false,ordinal=1) {
+  const size=Number(spec.sectionFontPt||spec.fontSize);
+  const before=typeof spec.sectionBeforeSkipPt==="number"
+    ? spec.sectionBeforeSkipPt
+    : Number(spec.sectionBeforeSkipEx||0)*spec.fontSize;
+  const after=typeof spec.sectionAfterSkipPt==="number"
+    ? spec.sectionAfterSkipPt
+    : Number(spec.sectionAfterSkipEx||0)*spec.fontSize;
+  const align=spec.sectionAlign==="center"?"center":spec.sectionAlign==="right"?"right":"left";
   return h(View,{
     key,
     break:breakBefore,
     minPresenceAhead:spec.baselinePt*Number(spec.headingMinimumFollowLines||3),
-    style:{
-      marginTop:spec.sectionBeforeSkipEx*spec.fontSize,
-      marginBottom:spec.sectionAfterSkipEx*spec.fontSize
-    }
+    style:{marginTop:before,marginBottom:after,width:"100%"}
   },
-    mixedText(text,{
+    mixedText(sectionDisplayText(text,ordinal,spec),{
       key:key+"-text",
       size,
-      lineHeight:spec.lineHeight,
-      bold:Number(spec.sectionFontWeight||700)>=700,
-      sans:spec.sectionFontFamily==="hei"
+      lineHeight:Number(spec.sectionLineHeight||spec.lineHeight),
+      bold:Number(spec.sectionFontWeight||400)>=700,
+      sans:spec.sectionFontFamily==="hei",
+      style:{width:"100%",textAlign:align}
     })
   );
 }
@@ -496,10 +523,11 @@ function pageStyle(spec) {
 
 function flowNodes(state,spec) {
   const q=Array.isArray(state.questions)?state.questions:[],nodes=[];
-  let previous="";
+  let previous="",sectionOrdinal=0;
   q.forEach((item,i)=>{
     if(item.section&&item.section!==previous){
-      nodes.push(sectionHeading(item.section,"sec-"+i,spec,spec.kind==="book"&&i>0));
+      sectionOrdinal++;
+      nodes.push(sectionHeading(item.section,"sec-"+i,spec,spec.kind==="book"&&i>0,sectionOrdinal));
       previous=item.section;
     }
     nodes.push(renderQuestion(item,i,spec));
@@ -511,7 +539,11 @@ function buildBookOnePerPage(state,assets,spec) {
   const questions=Array.isArray(state.questions)?state.questions:[];
   return questions.map((q,i)=>{
     const nodes=[...fixedAssets(assets),bookHeader(state,spec),staticBookFooter(i+1,questions.length,spec)].filter(Boolean);
-    if(q.section&&(i===0||questions[i-1].section!==q.section))nodes.push(sectionHeading(q.section,"sec-"+i,spec,false));
+    if(q.section&&(i===0||questions[i-1].section!==q.section)){
+      let ordinal=0,last="";
+      for(let k=0;k<=i;k++){if(questions[k].section&&questions[k].section!==last){ordinal++;last=questions[k].section}}
+      nodes.push(sectionHeading(q.section,"sec-"+i,spec,false,ordinal));
+    }
     nodes.push(renderQuestion({...q,gap:0,breakBefore:false},i,spec));
     return h(Page,{key:"bp-"+i,size:[spec.pageWidthPt,spec.pageHeightPt],style:pageStyle(spec),wrap:false},...nodes);
   });
@@ -519,7 +551,7 @@ function buildBookOnePerPage(state,assets,spec) {
 
 function paginateA3(state,spec) {
   const questions=Array.isArray(state.questions)?state.questions:[];
-  const pages=[];let page={left:[],right:[],leftH:0,rightH:0},side="left",previous="";
+  const pages=[];let page={left:[],right:[],leftH:0,rightH:0},side="left",previous="",sectionOrdinal=0;
   const maxH=spec.contentHeightPt-10*MM;
   questions.forEach((q,i)=>{
     const hq=estimateQuestionHeight(q,i,spec,previous);
@@ -528,7 +560,9 @@ function paginateA3(state,spec) {
       if(side==="left")side="right";
       else{pages.push(page);page={left:[],right:[],leftH:0,rightH:0};side="left"}
     }
-    const entry={q,index:i,section:q.section&&q.section!==previous?q.section:""};
+    let section="";
+    if(q.section&&q.section!==previous){section=q.section;sectionOrdinal++}
+    const entry={q,index:i,section,sectionOrdinal};
     if(side==="left"){page.left.push(entry);page.leftH+=hq}
     else{page.right.push(entry);page.rightH+=hq}
     previous=q.section||previous;
@@ -540,7 +574,7 @@ function paginateA3(state,spec) {
 function renderA3Column(entries,spec) {
   const nodes=[];
   entries.forEach(e=>{
-    if(e.section)nodes.push(sectionHeading(e.section,"a3s-"+e.index,spec,false));
+    if(e.section)nodes.push(sectionHeading(e.section,"a3s-"+e.index,spec,false,e.sectionOrdinal));
     nodes.push(renderQuestion({...e.q,breakBefore:false},e.index,spec));
   });
   return nodes;
