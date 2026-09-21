@@ -97,7 +97,7 @@ function save(markDirty){
   revision++;
   if(markDirty!==false)checkpoint();
   if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；PDF 将在下载时按最新内容重新生成。";
-  if(previewMode)scheduleTypstPreview();
+  if(wantsLiveTypst())scheduleTypstPreview();
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
@@ -412,9 +412,12 @@ function bindDrag(container){
   container.addEventListener("drop",function(e){var row=e.target.closest(".order-item");if(!row||from==null)return;e.preventDefault();move(from,Number(row.dataset.index));from=null});
   container.addEventListener("dragend",function(){from=null;container.querySelectorAll(".order-item").forEach(function(x){x.classList.remove("dragging","drop-before")})});
 }
+function wantsLiveTypst(){
+  return previewMode || window.matchMedia("(min-width:768px)").matches;
+}
 function scheduleTypstPreview(){
   clearTimeout(previewCompileTimer);
-  if(!previewMode||!els.typstPreview)return;
+  if(!wantsLiveTypst()||!els.typstPreview)return;
   els.pdfStatus.textContent="正在用本机 Typst WASM 更新精确预览…";
   previewCompileTimer=setTimeout(function(){refreshTypstPreview()},360);
 }
@@ -438,8 +441,12 @@ async function refreshTypstPreview(){
     var svg=await engine.compileTypstSvg(snapshotState,modeInfo(),"svg-r"+current);
     if(current!==revision){typstPreviewing=false;scheduleTypstPreview();return}
     setTypstSvg(svg);svgRevision=current;svgExportDate=snapshotState.exportDate;
-    els.typstPreview.hidden=false;els.paperStage.hidden=true;
-    els.pdfStatus.textContent="Typst 精确预览已更新；下载 PDF 使用同一母版与字体。";
+    if(wantsLiveTypst()){
+      els.typstPreview.hidden=false;els.paperStage.hidden=true;
+    }
+    els.pdfStatus.textContent=previewMode
+      ?"Typst 精确预览已更新；下载 PDF 使用同一母版与字体。"
+      :"实时 Typst 预览已更新；右侧与下载 PDF 使用同一母版。";
   }catch(e){
     console.error(e);
     els.pdfStatus.textContent="Typst 预览失败："+(e.message||"未知错误");
@@ -447,19 +454,32 @@ async function refreshTypstPreview(){
     typstPreviewing=false;
   }
 }
+function syncViewportMode(){
+  var desktopLike=window.matchMedia("(min-width:768px)").matches;
+  if(previewMode||desktopLike){
+    els.paperStage.hidden=true;
+    els.typstPreview.hidden=false;
+    if(svgRevision!==revision||svgExportDate!==localDate())scheduleTypstPreview();
+  }else{
+    els.typstPreview.hidden=true;
+    els.paperStage.hidden=true;
+    clearTimeout(previewCompileTimer);
+  }
+}
 async function setMode(preview){
   previewMode=!!preview;
   document.body.classList.toggle("preview-mode",previewMode);
   els.editModeButton.setAttribute("aria-pressed",String(!previewMode));
   els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
-  if(previewMode){
-    els.paperStage.hidden=true;els.typstPreview.hidden=false;
+  syncViewportMode();
+  if(wantsLiveTypst()){
     var today=localDate();
     if(svgRevision!==revision||svgExportDate!==today)await refreshTypstPreview();
-    else els.pdfStatus.textContent="Typst 精确预览已是最新。";
+    else els.pdfStatus.textContent=previewMode
+      ?"Typst 精确预览已是最新。"
+      :"实时 Typst 预览已是最新；编辑与下载使用同一排版结果。";
   }else{
-    els.typstPreview.hidden=true;els.paperStage.hidden=false;
-    els.pdfStatus.textContent="编辑模式：右侧为快速排版视图；切到“预览”查看 Typst 精确分页。";
+    els.pdfStatus.textContent="手机编辑模式：切到“预览”查看同一 Typst 精确分页。";
   }
 }
 function renderQuestionEditor(){
@@ -597,7 +617,7 @@ function init(){
   var resizeRaf=0;
   window.addEventListener("resize",function(){
     cancelAnimationFrame(resizeRaf);
-    resizeRaf=requestAnimationFrame(updatePages);
+    resizeRaf=requestAnimationFrame(function(){updatePages();syncViewportMode()});
   });
   if(window.visualViewport){
     window.visualViewport.addEventListener("resize",function(){
@@ -606,9 +626,10 @@ function init(){
     });
   }
   undoStack.push(snapshot());render();
-  els.paperStage.hidden=false;
-  els.typstPreview.hidden=true;
-  els.pdfStatus.textContent="编辑模式：切到“预览”即可用本机 Typst WASM 查看精确分页。";
+  syncViewportMode();
+  els.pdfStatus.textContent=window.matchMedia("(min-width:768px)").matches
+    ?"正在准备右侧实时 Typst 精确预览…"
+    :"手机编辑模式：切到“预览”查看同一 Typst 精确分页。";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
