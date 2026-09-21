@@ -1692,3 +1692,12 @@ body.is-resizing-panes *{
   body.navigator-collapsed .preview-resizer{grid-column:2}
   body.navigator-collapsed .texpage-preview-pane{grid-column:3}
 }
+
+
+/* Neutralize legacy single-pane rules inside the new preview workbench. */
+.texpage-preview-pane.editor-main{
+  padding:0!important;
+  min-width:0!important;
+  min-height:0!important;
+}
+.texpage-preview-pane .typst-preview[hidden]{display:none!important}
