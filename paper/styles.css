@@ -319,22 +319,22 @@ body.dark .paper-stage{background:#090a0c}
 /* ===== Everflow exam-A4 parity / compile mode ===== */
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-regular.woff2") format("woff2");
+  src:url("assets/vendor/typst/fonts/TeXGyreTermesX-Regular.otf") format("opentype");
   font-style:normal;font-weight:400;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-bold.woff2") format("woff2");
+  src:url("assets/vendor/typst/fonts/TeXGyreTermesX-Bold.otf") format("opentype");
   font-style:normal;font-weight:700;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes";
-  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-italic.woff2") format("woff2");
+  src:url("assets/vendor/typst/fonts/TeXGyreTermesX-Italic.otf") format("opentype");
   font-style:italic;font-weight:400;font-display:swap;
 }
 @font-face{
   font-family:"Everflow Termes Math";
-  src:url("https://mathfonts.github.io/TeXGyreTermes/texgyretermes-math.woff2") format("woff2");
+  src:url("assets/vendor/typst/fonts/XITSMath-Regular.otf") format("opentype");
   font-style:normal;font-weight:400;font-display:swap;
 }
 .paper-sheet{
