@@ -736,7 +736,7 @@ function init(){
   if(els.focusOptionsButton)els.focusOptionsButton.onclick=function(){var x=els.questionEditor.querySelector(".option-editor input");if(x){x.focus();x.scrollIntoView({block:"center"})}};
   if(els.previewPrevPageButton)els.previewPrevPageButton.onclick=function(){scrollPreviewPage(Math.max(1,currentPreviewPage-1))};
   if(els.previewNextPageButton)els.previewNextPageButton.onclick=function(){scrollPreviewPage(Math.min(previewPageCount,currentPreviewPage+1))};
-  if(els.previewZoomOutButton)els.previewZoomOutButton.onclick=function(){setPreviewZoom(previewFit?.9:previewZoom-.15)};
+  if(els.previewZoomOutButton)els.previewZoomOutButton.onclick=function(){setPreviewZoom(previewFit?0.9:previewZoom-.15)};
   if(els.previewZoomInButton)els.previewZoomInButton.onclick=function(){setPreviewZoom(previewFit?1.1:previewZoom+.15)};
   if(els.previewZoomLabel)els.previewZoomLabel.onclick=function(){setPreviewZoom(1)};
   if(els.previewFitButton)els.previewFitButton.onclick=function(){previewFit=true;applyPreviewZoom()};
