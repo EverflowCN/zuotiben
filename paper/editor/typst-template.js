@@ -18,22 +18,18 @@ export function buildTypstSource(st,spec){const s=Object.assign({},spec,{kind:st
 #let everflow-choice-before=${before.toFixed(4)}pt
 #let everflow-choices(measures,cells)=layout(size=>{let widths=measures.map(it=>measure(it).width);let mw=if widths.len()==0{0pt}else{calc.max(..widths)};let cols=if mw<=size.width*${Number(s.choiceFourColumnThreshold||0.22)}{4}else if mw<=size.width*${Number(s.choiceTwoColumnThreshold||0.46)}{2}else{1};let cols=if cells.len()==3 and cols==4{3}else if cells.len()==6 and cols==4{3}else{cols};grid(columns:(1fr,)*cols,column-gutter:${Number(s.choiceColumnGapEm||1.2)}em,row-gutter:${Number(s.choiceRowGapEm||0.22)}em,..cells)})
 #let everflow-overlay=context{if counter(page).get().first()>1{place(bottom+right,dx:-13mm,dy:-30mm,image("/watermark/water.png",height:34mm));place(bottom+left,dx:3mm,dy:-5.8mm,box(width:15mm)[#align(center)[#image("/zuotiben-qr.svg",width:13mm)]#align(center)[#text(font:"XITS",size:5.8pt,"zuotiben.top")]])}}
-#let everflow-book-header(center-text)=context{if counter(page).get().first()>1{grid(columns:(1fr,1fr,1fr),stroke:(bottom:0.4pt+rgb(36,39,43)),inset:(bottom:1.2mm),[#text(font:"FandolSong",weight:"bold",size:10pt,"å½¼æ—¶æµå¹´è‹¥æ°´")],[#align(center)[#text(font:"FandolSong",weight:"bold",size:10pt,center-text]],[#align(right)[#text(font:"XITS",weight:"bold",size:10pt,"https://zuotiben.top")]])}}
+#let everflow-book-header(center-text)=context{if counter(page).get().first()>1{grid(columns:(1fr,1fr,1fr),stroke:(bottom:0.4pt+rgb(36,39,43)),inset:(bottom:1.2mm),[#text(font:"FandolSong",weight:"bold",size:10pt,"å½¼æ—¶æµå¹´è‹¥æ°´")],[#align(center)[#text(font:"FandolSong",weight:"bold",size:10pt,center-text)]],[#align(right)[#text(font:"XITS",weight:"bold",size:10pt,"https://zuotiben.top")]])}}
 #let everflow-book-footer=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolSong",size:9pt,"Â· ç¬¬ "+str(current)+" é¡µ / å…± "+str(total)+" é¡µ Â·")]}
 #let everflow-exam-a4-footer(title)=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(current)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰")]}
-#let everflow-exam-a3-footer(title)=context{let physical=counter(page).get().first()-2;let l=physical*2+1;let r=l+1;let total=(counter(page).final().first()-1)*2;grid(columns:(1fr,1fr),column-gutter:${Number(s.columnGapMm||24)}mm,[#align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(l)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰(ŠWWKÈØ[YÛŠÙ[\ŠVÈÝ^
-›Ûˆ‘˜[™ÛØZH‹Ú^™NŽ\]JÈˆ9ë+ŠÜÝŠŠJÈˆ:hm{ï"9alHŠÜÝŠÝ[
-JÈˆ:hm{ï"HŠWWJ_BˆÜÙ]YÙJÚYŒŒL[KZYÚŒŽMÛ[KX\™Ú[ŽŒ[KXY\Ž››Û™K›ÛÝ\Ž››Û™JBˆÜXÙJÜ
-ØÙ[\‹NŒLŒŽ[[JVÈÝ^
-›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™N‰ØÛÝ™\Ÿ\	ÜJÝ˜ÛÝ™\•]_Ý]_¹§*¹doyd#z+åycmÈŠ_JWBˆÜXÙJÜ
-ØÙ[\‹NŒMŒ[[JVÈÝ^
-›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NŒNŒÌÌLÜ°­ùoo9¥í¹­`yîm9¥m:`ï¹­`ynm:"éy¬-ŠWBˆÜXÙJÜ
-ÛYŒN[KNŒ›[JVÈÛ[™J[™ÝL[KÝ›ÚÙNŒ
-WBˆÜXÙJÜ
-ÛYŒNKŒÛ[KNŒÌM[[JVÈÝ^
-›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NŽK\‘]™\™›Ýð­ùoo9¥í¹­`yîm9¥m:`ïŠWBˆÜXÙJÜ
-ÛYŒNKŒÛ[KNŒÍËŒM[[JVÈÝ^
-›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NŽŽMš[‰Ù]PÛÛÜŸK	ÜJˆˆˆ9¦í9¥¬9¥íºeí;ï&ˆŠÙ]J_JWBˆÜYÙXœ™XZÊ
-B‰ÜYÙTÙ]\
-ÝÊ_B‰Ù›ÝÊÝÊ_B˜B™^Ü[˜Ý[ÛˆXZÙPÛÛ\[T^[ØY
-ÝÜXÊ^Ü™]\›žÜÛÝ\˜ÙN˜Z[\ÝÛÝ\˜ÙJÝÜXÊK]NœÝ˜ÛÝ™\•]_Ý]_‘]™\™›ÝÈŸ_B
+#let everflow-exam-a3-footer(title)=context{let physical=counter(page).get().first()-2;let l=physical*2+1;let r=l+1;let total=(counter(page).final().first()-1)*2;grid(columns:(1fr,1fr),column-gutter:${Number(s.columnGapMm||24)}mm,[#align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(l)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰")]],[#align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(r)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰")]])}
+#set page(width:210mm,height:297mm,margin:0mm,header:none,footer:none)
+#place(top+center,dy:120.9mm)[#text(font:"FandolSong",weight:"bold",size:${cover}pt,${q(st.coverTitle||st.title||"æœªå‘½åè¯•å·")})]
+#place(top+center,dy:148.05mm)[#text(font:"FandolSong",weight:"bold",size:18.3313pt,"Â·å½¼æ—¶æµå¹´è‹¥æ°´Â·")]
+#place(top+left,dx:18mm,dy:266mm)[#line(length:50mm,stroke:0.4pt)]
+#place(top+left,dx:19.3mm,dy:270.55mm)[#text(font:"FandolSong",weight:"bold",size:9.4645pt,"EverflowÂ·å½¼æ—¶æµå¹´è‹¥æ°´")]
+#place(top+left,dx:19.3mm,dy:277.15mm)[#text(font:"FandolSong",weight:"bold",size:8.9664pt,fill:${dateColor},${q("> > > æ›´æ–°æ—¶é—´ï¼š"+date)})]
+#pagebreak()
+${pageSetup(st,s)}
+${flow(st,s)}
+`}
+export function makeCompilePayload(st,spec){return{source:buildTypstSource(st,spec),title:st.coverTitle||st.title||"Everflow"}}
