@@ -31,6 +31,16 @@ jobs:
           mkdir -p test-results
           python3 -m http.server 8765 &
           node scripts/editor-smoke.cjs
+          if [ "$BROWSER" = "chromium" ]; then
+            command -v pdftotext >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
+            pdftotext -layout test-results/editor.pdf test-results/editor.txt
+            if grep -q '第0页' test-results/editor.txt; then
+              echo "Body page numbering incorrectly starts at 0"
+              exit 1
+            fi
+            grep -q '第1页/共2页' test-results/editor.txt
+            grep -q '第2页/共2页' test-results/editor.txt
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
