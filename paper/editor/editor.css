@@ -997,3 +997,679 @@ body.preview-mode .paper-stage{display:none!important}
     box-shadow:0 8px 28px rgba(27,31,42,.13)!important;
   }
 }
+
+
+/* ==========================================================================
+   TeXPage-style workbench (PaperForge MIT interaction pattern, Everflow UI)
+   ========================================================================== */
+:root{
+  --tex-chrome:#1c2533;
+  --tex-chrome-2:#263244;
+  --tex-chrome-3:#303d50;
+  --tex-border:#d8dde5;
+  --tex-muted:#758092;
+  --navigator-w:238px;
+  --editor-w:470px;
+  --preview-page-width:820px;
+}
+body.editor-page{
+  height:100dvh;
+  overflow:hidden;
+  background:#eef0f3;
+}
+.texpage-topbar{
+  position:relative!important;
+  top:auto!important;
+  height:48px!important;
+  min-height:48px!important;
+  padding:0 10px!important;
+  background:var(--tex-chrome)!important;
+  border-bottom:1px solid #111927!important;
+  color:#f7f9fc;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.texpage-topbar .brand{color:#fff}
+.texpage-topbar .brand small{color:#aeb8c7}
+.texpage-topbar .brand-mark{
+  width:28px;height:28px;border-radius:7px;
+  box-shadow:none;
+}
+.texpage-topbar .local-pill,
+.texpage-topbar .save-state{color:#b7c1cf}
+.texpage-topbar .ghost-btn,
+.texpage-topbar .icon-text-btn{
+  border-color:#3b4759!important;
+  background:#222e3f!important;
+  color:#eef3f8!important;
+}
+.texpage-topbar .ghost-btn:hover,
+.texpage-topbar .icon-text-btn:hover{background:#303d50!important}
+.texpage-topbar .mode-switch{
+  background:#111927;
+  border-color:#384457;
+}
+.texpage-topbar .mode-switch button{color:#aeb8c7}
+.texpage-topbar .mode-switch button[aria-pressed="true"]{
+  background:#344258;color:#fff;box-shadow:none
+}
+.navigator-toggle{font-size:14px!important}
+
+/* Main workbench: project tree | editor | exact preview */
+.texpage-workbench{
+  height:calc(100dvh - 48px);
+  width:100%;
+  display:grid;
+  grid-template-columns:
+    var(--navigator-w) 5px
+    minmax(360px,var(--editor-w)) 5px
+    minmax(420px,1fr);
+  overflow:hidden;
+  background:#f4f5f7;
+}
+.texpage-navigator,
+.texpage-editor-pane,
+.texpage-preview-pane{
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  background:#fff;
+}
+.texpage-navigator{
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--tex-border);
+}
+.navigator-head{
+  height:54px;
+  padding:9px 10px 8px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  background:#f8f9fb;
+  border-bottom:1px solid var(--tex-border);
+}
+.navigator-title{min-width:0}
+.navigator-title span{
+  display:block;
+  color:#8b95a4;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.14em;
+}
+.navigator-title strong{
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  color:#1d2735;
+}
+.navigator-head>b{
+  min-width:26px;height:24px;padding:0 6px;
+  display:grid;place-items:center;
+  border-radius:6px;
+  background:#e9edf3;
+  color:#526074;
+  font-size:10px;
+}
+.navigator-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  padding:5px;
+  gap:4px;
+  background:#f8f9fb;
+  border-bottom:1px solid var(--tex-border);
+}
+.navigator-tabs button{
+  height:30px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#758092;
+  font:inherit;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.navigator-tabs button[aria-selected="true"]{
+  background:#fff;
+  color:#1f2b3a;
+  box-shadow:0 1px 4px #0d1a2b14;
+}
+.navigator-panel{
+  min-height:0;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.navigator-panel[hidden]{display:none!important}
+#outlinePanel .order-list{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:5px 6px 12px;
+}
+#settingsPanel{
+  overflow:auto;
+}
+#settingsPanel .paper-settings{
+  border:0;
+  padding:12px;
+}
+.navigator-actions{
+  margin-top:auto;
+  padding:10px 12px 12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  border-top:1px solid var(--tex-border);
+}
+.navigator-actions .text-btn{font-size:9px}
+
+/* Tree rows become compact like a source-file tree. */
+.texpage-navigator .order-toolbar{
+  min-height:38px;
+  padding:6px 8px 5px 10px;
+  border-bottom:1px solid #edf0f4;
+}
+.texpage-navigator .order-toolbar strong{
+  font-size:9px;
+  color:#5f6b7c;
+  letter-spacing:.03em;
+}
+.texpage-navigator .order-toolbar-actions .text-btn{
+  min-height:28px;padding:0 5px;font-size:8px
+}
+.texpage-navigator .order-item{
+  min-height:38px;
+  border:0!important;
+  border-radius:5px!important;
+  padding:4px 5px!important;
+  background:transparent!important;
+  outline:0!important;
+}
+.texpage-navigator .order-item:hover{background:#f0f3f7!important}
+.texpage-navigator .order-item.is-selected{
+  background:#e7eef9!important;
+  box-shadow:inset 2px 0 0 #507ac5!important;
+}
+.texpage-navigator .order-item.is-multi-selected{
+  background:#f7ecee!important;
+  box-shadow:inset 2px 0 0 var(--red)!important;
+}
+.texpage-navigator .order-copy b{font-size:10px}
+.texpage-navigator .order-copy small{font-size:8px;color:#8993a2}
+.texpage-navigator .order-num{
+  min-width:20px;
+  color:#6f7a89;
+  font-size:9px;
+}
+.texpage-navigator .drag-handle{opacity:.38}
+.texpage-navigator .order-controls{opacity:0;transition:opacity .12s ease}
+.texpage-navigator .order-item:hover .order-controls,
+.texpage-navigator .order-item.is-selected .order-controls{opacity:1}
+
+/* Resizable gutters. */
+.pane-resizer{
+  position:relative;
+  z-index:25;
+  cursor:col-resize;
+  touch-action:none;
+  background:#e3e6eb;
+}
+.pane-resizer::after{
+  content:"";
+  position:absolute;
+  inset:0 -3px;
+}
+.pane-resizer:hover,
+.pane-resizer.is-dragging{background:#6c8fc7}
+.navigator-resizer{border-right:1px solid #d5dae2}
+.preview-resizer{border-left:1px solid #d5dae2}
+
+/* Main editor pane. */
+.texpage-editor-pane{
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--tex-border);
+}
+.pane-tabbar{
+  height:37px;
+  flex:0 0 37px;
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  background:var(--tex-chrome-2);
+  border-bottom:1px solid #1b2533;
+  color:#dfe6ef;
+}
+.editor-tab{
+  height:33px;
+  min-width:160px;
+  max-width:72%;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  background:#fff;
+  color:#293547;
+  border-radius:5px 5px 0 0;
+  margin-left:5px;
+}
+.editor-tab strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+}
+.tab-dot{
+  width:6px;height:6px;border-radius:50%;background:#e94b5b;flex:0 0 auto
+}
+.pane-tab-actions{
+  height:100%;
+  padding:0 9px;
+  display:flex;
+  align-items:center;
+}
+.local-state{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:#aeb8c7;
+  font-size:8px;
+}
+.local-state i{
+  width:5px;height:5px;border-radius:50%;background:#4fc184
+}
+.editor-commandbar{
+  min-height:44px;
+  padding:6px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border-bottom:1px solid var(--tex-border);
+  background:#fafbfc;
+}
+.editor-commandbar>div:first-child{min-width:0}
+.editor-commandbar strong{
+  display:block;
+  color:#273344;
+  font-size:11px
+}
+.editor-commandbar span{
+  display:block;
+  margin-top:1px;
+  max-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#8a94a2;
+  font-size:8px
+}
+.editor-command-actions{display:flex;gap:4px}
+.editor-command-actions .text-btn{
+  min-height:28px;padding:0 7px;font-size:8px
+}
+.texpage-question-editor{
+  flex:1;
+  min-height:0;
+  max-height:none!important;
+  overflow:auto!important;
+  padding:18px 20px 40px!important;
+  border:0!important;
+  background:#fff;
+}
+.texpage-question-editor .question-editor-head{
+  position:sticky;
+  top:-18px;
+  z-index:8;
+  margin:0 -20px 16px;
+  padding:10px 20px;
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid #eef1f4;
+  backdrop-filter:blur(10px);
+}
+.texpage-question-editor .question-editor-head h3{
+  font-size:13px;
+  color:#202b3a;
+}
+.texpage-question-editor label{
+  margin-bottom:15px;
+  color:#667284;
+  font-size:10px;
+  font-weight:700;
+}
+.texpage-question-editor input,
+.texpage-question-editor select,
+.texpage-question-editor textarea{
+  border-radius:6px!important;
+  border-color:#d5dbe4!important;
+  background:#fbfcfd!important;
+  color:#202a38!important;
+  box-shadow:inset 0 1px 1px #18202e08;
+}
+.texpage-question-editor textarea{
+  min-height:210px;
+  resize:vertical;
+  font-family:"SFMono-Regular","Cascadia Code","JetBrains Mono","Consolas","Everflow Song",monospace;
+  font-size:12px;
+  line-height:1.75;
+  tab-size:2;
+}
+.texpage-question-editor textarea:focus,
+.texpage-question-editor input:focus,
+.texpage-question-editor select:focus{
+  outline:2px solid #6f91ca33;
+  border-color:#7191c5!important;
+}
+.texpage-question-editor .option-editor{
+  padding:3px 0;
+  align-items:center
+}
+.texpage-question-editor .option-editor b{
+  width:24px;
+  color:#526174;
+  font-size:10px
+}
+
+/* Exact preview pane, styled like a PDF editor panel. */
+.texpage-preview-pane{
+  display:flex;
+  flex-direction:column;
+  background:#d9dde3;
+}
+.preview-toolbar{
+  height:37px;
+  flex:0 0 37px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  padding:0 7px;
+  color:#dfe6ef;
+  background:var(--tex-chrome-2);
+  border-bottom:1px solid #1a2432;
+}
+.preview-toolbar-left,
+.preview-toolbar-center,
+.preview-toolbar-right{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:4px;
+}
+.preview-toolbar-right{justify-content:flex-end}
+.preview-toolbar-left strong{
+  max-width:180px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px;
+  font-weight:700;
+}
+.preview-status-dot{
+  width:6px;height:6px;border-radius:50%;background:#52bd83;flex:0 0 auto
+}
+.preview-toolbar .preview-chip{
+  min-height:22px!important;
+  height:22px!important;
+  padding:0 6px!important;
+  border-color:#46546a;
+  background:#1c2635;
+  color:#aeb9c7!important;
+  font-size:7px!important;
+}
+.viewer-btn,
+.zoom-indicator{
+  height:25px;
+  min-width:25px;
+  padding:0 6px;
+  border:0;
+  border-radius:4px;
+  background:transparent;
+  color:#d5deea;
+  font:inherit;
+  font-size:11px;
+  cursor:pointer;
+}
+.viewer-btn:hover,.zoom-indicator:hover{background:#35445a;color:#fff}
+.viewer-btn:disabled{opacity:.35;cursor:default}
+.zoom-indicator{min-width:44px;font-size:8px}
+.fit-btn{font-size:8px;min-width:36px}
+.page-indicator{
+  min-width:48px;
+  text-align:center;
+  font-size:8px;
+  font-variant-numeric:tabular-nums;
+  color:#bac4d1;
+}
+.toolbar-divider{
+  width:1px;height:15px;margin:0 2px;background:#46546a
+}
+.preview-toolbar #printButton{
+  min-height:27px!important;
+  height:27px!important;
+  padding:0 9px!important;
+  border-radius:5px!important;
+  font-size:8px!important;
+}
+.texpage-preview-pane .pdf-status{
+  flex:0 0 auto;
+  min-height:26px;
+  padding:6px 10px;
+  background:#f7f8fa;
+  border-bottom:1px solid #d8dde5;
+  color:#758092;
+  font-size:9px;
+  line-height:1.4;
+}
+.texpage-preview-pane .pdf-status:empty{display:none}
+.texpage-preview-pane .typst-preview{
+  flex:1;
+  min-height:0!important;
+  overflow:auto;
+  padding:20px 20px 56px!important;
+  background:#d9dde3!important;
+  gap:18px!important;
+}
+.texpage-preview-pane .typst-page{
+  width:var(--preview-page-width)!important;
+  max-width:none!important;
+  transition:width .12s ease;
+  box-shadow:0 5px 18px #24314622!important;
+}
+.texpage-preview-pane .typst-page>svg{width:100%!important;height:auto!important}
+
+/* Drawer backdrop for tablet/phone navigator. */
+.workbench-backdrop{
+  position:fixed;
+  inset:48px 0 0;
+  z-index:74;
+  background:#07101d70;
+  backdrop-filter:blur(1px);
+}
+.workbench-backdrop[hidden]{display:none!important}
+
+/* Desktop: true TeXPage-style simultaneous editor + preview. */
+@media(min-width:1101px){
+  .mobile-mode-switch{display:none!important}
+  .mobile-pdf-btn{display:none!important}
+  body.preview-mode .texpage-editor-pane{display:flex!important}
+  body.preview-mode .texpage-preview-pane{display:flex!important}
+  .navigator-toggle{display:grid!important}
+}
+
+/* Tablet: navigator becomes an overlay drawer, editor + preview stay split. */
+@media(min-width:768px) and (max-width:1100px){
+  :root{--editor-w:42vw;--preview-page-width:680px}
+  .texpage-workbench{
+    grid-template-columns:minmax(330px,var(--editor-w)) 5px minmax(350px,1fr);
+  }
+  .navigator-resizer{display:none}
+  .texpage-navigator{
+    position:fixed;
+    z-index:80;
+    left:0;
+    top:48px;
+    bottom:0;
+    width:min(290px,76vw);
+    transform:translateX(-102%);
+    box-shadow:12px 0 40px #111b2a30;
+    transition:transform .18s ease;
+  }
+  body.navigator-open .texpage-navigator{transform:translateX(0)}
+  body.navigator-open .workbench-backdrop{display:block!important}
+  .texpage-workbench>.texpage-editor-pane{grid-column:1}
+  .texpage-workbench>.preview-resizer{grid-column:2}
+  .texpage-workbench>.texpage-preview-pane{grid-column:3}
+  .preview-toolbar-left .preview-chip{display:none!important}
+  .preview-toolbar{grid-template-columns:minmax(0,1fr) auto auto}
+  .texpage-question-editor{padding-inline:15px!important}
+  .texpage-question-editor .question-editor-head{margin-inline:-15px;padding-inline:15px}
+  .mobile-mode-switch{display:none!important}
+  .mobile-pdf-btn{display:none!important}
+}
+
+/* Phone: one work surface at a time; navigator is a drawer. */
+@media(max-width:767px){
+  body.editor-page{height:100dvh;overflow:hidden}
+  .texpage-topbar{
+    height:auto!important;
+    min-height:48px!important;
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr)!important;
+    padding:6px 7px!important;
+    gap:5px!important;
+  }
+  .texpage-topbar .editor-brand-wrap{min-width:0}
+  .texpage-topbar .brand small,
+  .texpage-topbar .local-pill,
+  .texpage-topbar .save-state,
+  .texpage-topbar .history-actions,
+  #saveProjectButton{display:none!important}
+  .texpage-topbar .editor-top-actions{
+    min-width:0;
+    overflow-x:auto;
+    justify-content:flex-end;
+    gap:4px;
+    scrollbar-width:none;
+  }
+  .texpage-topbar .editor-top-actions::-webkit-scrollbar{display:none}
+  .navigator-toggle{display:grid!important;flex:0 0 34px}
+  .template-control{min-width:0;flex:0 1 138px}
+  #templateButton{
+    max-width:138px;
+    min-height:34px;
+    padding:0 7px!important;
+  }
+  #templateButtonLabel{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px
+  }
+  .mobile-mode-switch{display:flex!important}
+  .mobile-mode-switch button{min-height:30px!important;padding:0 8px!important;font-size:9px}
+  .mobile-pdf-btn{display:inline-flex!important;min-height:30px!important;height:30px!important}
+
+  .texpage-workbench{
+    height:calc(100dvh - 48px);
+    display:block;
+    overflow:hidden;
+  }
+  .navigator-resizer,.preview-resizer{display:none!important}
+  .texpage-navigator{
+    position:fixed;
+    z-index:80;
+    left:0;top:48px;bottom:0;
+    width:min(310px,88vw);
+    transform:translateX(-103%);
+    transition:transform .18s ease;
+    box-shadow:12px 0 40px #111b2a35;
+  }
+  body.navigator-open .texpage-navigator{transform:translateX(0)}
+  body.navigator-open .workbench-backdrop{display:block!important}
+  .workbench-backdrop{inset:48px 0 0}
+
+  .texpage-editor-pane,
+  .texpage-preview-pane{
+    width:100%;
+    height:100%;
+  }
+  body:not(.preview-mode) .texpage-editor-pane{display:flex}
+  body:not(.preview-mode) .texpage-preview-pane{display:none}
+  body.preview-mode .texpage-editor-pane{display:none!important}
+  body.preview-mode .texpage-preview-pane{display:flex!important}
+
+  .pane-tabbar{height:35px;flex-basis:35px}
+  .editor-commandbar{min-height:42px;padding:5px 8px}
+  .editor-commandbar span{max-width:55vw}
+  .texpage-question-editor{
+    padding:12px 12px 70px!important;
+  }
+  .texpage-question-editor .question-editor-head{
+    top:-12px;margin:0 -12px 12px;padding:8px 12px;
+  }
+  .texpage-question-editor textarea{
+    min-height:170px;
+    font-size:16px!important;
+  }
+  .texpage-question-editor input,
+  .texpage-question-editor select{font-size:16px!important;min-height:42px}
+  .question-editor-head>div{flex-wrap:wrap;justify-content:flex-end}
+
+  .preview-toolbar{
+    height:39px;
+    flex-basis:39px;
+    grid-template-columns:minmax(0,1fr) auto;
+    padding:0 5px;
+  }
+  .preview-toolbar-left .preview-chip{display:none!important}
+  .preview-toolbar-left strong{max-width:34vw}
+  .preview-toolbar-center{
+    order:3;
+    grid-column:1/-1;
+    position:fixed;
+    left:50%;
+    bottom:max(9px,env(safe-area-inset-bottom));
+    z-index:95;
+    transform:translateX(-50%);
+    padding:4px 6px;
+    border:1px solid #435168;
+    border-radius:9px;
+    background:#202c3d;
+    box-shadow:0 8px 24px #0c142240;
+  }
+  .preview-toolbar-right{justify-self:end}
+  .texpage-preview-pane .pdf-status{
+    min-height:24px;padding:5px 8px;font-size:8px;
+  }
+  .texpage-preview-pane .typst-preview{
+    padding:8px 6px calc(58px + env(safe-area-inset-bottom))!important;
+    gap:8px!important;
+  }
+  .texpage-preview-pane .typst-page{
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  .template-popover{
+    position:fixed!important;
+    left:7px!important;right:7px!important;top:48px!important;
+    width:auto!important;
+    max-height:calc(100dvh - 58px)!important;
+    z-index:180!important;
+  }
+}
+
+/* Very narrow phones: reduce chrome, keep content usable. */
+@media(max-width:430px){
+  .texpage-topbar .brand>span:last-child{display:none}
+  .texpage-topbar{grid-template-columns:32px minmax(0,1fr)!important}
+  .template-control{flex-basis:118px}
+  #templateButton{max-width:118px}
+  .editor-command-actions .text-btn{padding-inline:5px}
+  .preview-toolbar-left strong{max-width:29vw}
+}
