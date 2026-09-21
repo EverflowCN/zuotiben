@@ -1,5 +1,18 @@
-import { $typst, TypstSnippet, FetchAccessModel } from "../assets/vendor/typst/typst-all-in-one-lite.js";
 import { buildTypstSource } from "./typst-template.js?v=20260921-mother6";
+
+let $typst = null;
+let TypstSnippet = null;
+let FetchAccessModel = null;
+
+async function loadTypstRuntime() {
+  if ($typst) return;
+  if (typeof globalThis.window === "undefined") globalThis.window = globalThis;
+  const mod = await import("../assets/vendor/typst/typst-all-in-one-lite.js");
+  $typst = mod.$typst;
+  TypstSnippet = mod.TypstSnippet;
+  FetchAccessModel = mod.FetchAccessModel;
+  if (!$typst || !TypstSnippet || !FetchAccessModel) throw new Error("Typst Worker 运行时导出不完整");
+}
 
 let readyPromise = null;
 
