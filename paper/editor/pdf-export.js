@@ -172,9 +172,19 @@ function normalizeTemplateMacros(text) {
 function semanticLines(text) {
   let src = normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
   src = src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
-  src = src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");
-  src = src.replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n");
+  src = src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）|\([IVXLCDMivxlcdm]+\))\s*)/g,"$1\n");
+  src = (" "+src).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n").slice(1);
   return src.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+}
+
+function classifySemanticLine(line){
+  let m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
+  if(m)return {kind:"circled",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:I{1,3}|IV|V|VI{0,3})[.、．])\s*(.*)$/);
+  if(m)return {kind:"roman",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:\([1-9]\d*\)|（[1-9]\d*）|\([IVXLCDMivxlcdm]+\)))\s*(.*)$/);
+  if(m)return {kind:"subq",label:m[1],body:m[2]};
+  return {kind:"plain",label:"",body:String(line||"")};
 }
 
 function renderInlineLine(line,key,spec,prefix="") {
@@ -206,6 +216,34 @@ function contentBlocks(text) {
   return out;
 }
 
+function renderSemanticLine(line,key,spec){
+  const meta=classifySemanticLine(line);
+  if(meta.kind==="plain")return renderInlineLine(meta.body,key,spec);
+  let labelWidthEm=0,labelSepEm=0,topSepEm=0,itemSepEm=0;
+  if(meta.kind==="circled"){
+    labelWidthEm=spec.statementsLabelWidthEm;labelSepEm=spec.statementsLabelSepEm;
+    topSepEm=spec.statementsTopSepEm;itemSepEm=spec.statementsItemSepEm;
+  }else if(meta.kind==="roman"){
+    labelWidthEm=spec.romanLabelWidthEm;labelSepEm=spec.romanLabelSepEm;
+    topSepEm=spec.romanTopSepEm;itemSepEm=spec.romanItemSepEm;
+  }else{
+    labelWidthEm=Math.max(.8,spec.subquestionLeftMarginEm-spec.subquestionLabelSepEm);
+    labelSepEm=spec.subquestionLabelSepEm;topSepEm=spec.subquestionTopSepEm;itemSepEm=spec.subquestionItemSepEm;
+  }
+  return h(View,{
+    key,
+    style:{
+      flexDirection:"row",alignItems:"flex-start",
+      marginTop:topSepEm*spec.fontSize,
+      marginBottom:itemSepEm*spec.fontSize
+    }
+  },
+    mixedText(meta.label,{key:key+"-label",size:spec.fontSize,lineHeight:spec.lineHeight,
+      style:{width:labelWidthEm*spec.fontSize,textAlign:"right",marginRight:labelSepEm*spec.fontSize}}),
+    h(View,{style:{flexGrow:1,flexShrink:1,minWidth:0}},renderInlineLine(meta.body,key+"-body",spec))
+  );
+}
+
 function renderQuestionBody(content,qIndex,spec) {
   const nodes=[];let serial=0;
   contentBlocks(content).forEach(block=>{
@@ -215,7 +253,7 @@ function renderQuestionBody(content,qIndex,spec) {
       ));
       return;
     }
-    semanticLines(block.value).forEach(line=>nodes.push(renderInlineLine(line,"q"+qIndex+"-line-"+serial++,spec)));
+    semanticLines(block.value).forEach(line=>nodes.push(renderSemanticLine(line,"q"+qIndex+"-line-"+serial++,spec)));
   });
   return nodes.length?nodes:[mixedText("（空题干）",{key:"q"+qIndex+"-empty",size:spec.fontSize,lineHeight:spec.lineHeight})];
 }
@@ -299,7 +337,7 @@ function estimateQuestionHeight(q,index,spec,prevSection) {
     height+=spec.choiceBeforeSkipBaseline*spec.baselinePt + rows*spec.baselinePt + Math.max(0,rows-1)*spec.choiceRowGapEm*spec.fontSize;
   }
   height+=questionGapPt(q,spec);
-  if(q.section&&q.section!==prevSection)height+=spec.fontSize*2.2;
+  if(q.section&&q.section!==prevSection)height+=(spec.sectionBeforeSkipEx+spec.sectionAfterSkipEx)*spec.fontSize+spec.baselinePt;
   return height;
 }
 
@@ -321,8 +359,23 @@ function renderQuestion(q,index,spec) {
 }
 
 function sectionHeading(text,key,spec,breakBefore=false) {
-  return h(View,{key,break:breakBefore,minPresenceAhead:spec.fontSize*spec.lineHeight*3,style:{marginBottom:.35*spec.fontSize}},
-    mixedText(text,{key:key+"-text",size:spec.kind==="book"?12:spec.fontSize,lineHeight:spec.kind==="book"?1.35:spec.lineHeight,bold:true,sans:true})
+  const size=spec.fontSize*Number(spec.sectionFontScale||1);
+  return h(View,{
+    key,
+    break:breakBefore,
+    minPresenceAhead:spec.baselinePt*Number(spec.headingMinimumFollowLines||3),
+    style:{
+      marginTop:spec.sectionBeforeSkipEx*spec.fontSize,
+      marginBottom:spec.sectionAfterSkipEx*spec.fontSize
+    }
+  },
+    mixedText(text,{
+      key:key+"-text",
+      size,
+      lineHeight:spec.lineHeight,
+      bold:Number(spec.sectionFontWeight||700)>=700,
+      sans:spec.sectionFontFamily==="hei"
+    })
   );
 }
 
