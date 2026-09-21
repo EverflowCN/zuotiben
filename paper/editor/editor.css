@@ -1711,3 +1711,144 @@ body.is-resizing-panes *{
   body.preview-mode .texpage-preview-pane,
   body:not(.preview-mode) .texpage-preview-pane{display:flex!important}
 }
+
+
+/* 2026-09-21 canonical 3-device workbench layout.
+   Desktop >=1180: navigator + editor + preview
+   Tablet 768-1179: navigator drawer + editor + preview
+   Phone <=767: navigator drawer + edit/preview single surface */
+@media(min-width:1180px){
+  .texpage-workbench{
+    grid-template-columns:var(--navigator-w,260px) 5px minmax(360px,var(--editor-w,460px)) 5px minmax(460px,1fr)!important;
+  }
+  .texpage-navigator{position:relative!important;inset:auto!important;transform:none!important;width:auto!important;box-shadow:none!important}
+  .navigator-resizer,.preview-resizer{display:block!important}
+  .texpage-editor-pane,.texpage-preview-pane{display:flex!important;min-width:0}
+  .mobile-mode-switch,.mobile-pdf-btn{display:none!important}
+  .navigator-toggle{display:grid!important}
+  .preview-toolbar{grid-template-columns:minmax(0,1fr) auto auto!important}
+  .texpage-preview-pane .typst-preview{padding:20px 20px 56px!important}
+}
+@media(min-width:768px) and (max-width:1179px){
+  body.editor-page{overflow:hidden}
+  .texpage-topbar{min-height:48px}
+  .texpage-workbench{
+    height:calc(100dvh - 48px)!important;
+    grid-template-columns:minmax(320px,var(--editor-w,42vw)) 5px minmax(360px,1fr)!important;
+    overflow:hidden!important;
+  }
+  .texpage-navigator{
+    position:fixed!important;z-index:80!important;
+    left:0!important;top:48px!important;bottom:0!important;
+    width:min(310px,78vw)!important;
+    transform:translateX(-103%)!important;
+    transition:transform .18s ease!important;
+    box-shadow:12px 0 40px #111b2a30!important;
+  }
+  body.navigator-open .texpage-navigator{transform:translateX(0)!important}
+  body.navigator-open .workbench-backdrop{display:block!important}
+  .workbench-backdrop{inset:48px 0 0!important}
+  .navigator-resizer{display:none!important}
+  .preview-resizer{display:block!important}
+  .texpage-workbench>.texpage-editor-pane{grid-column:1!important}
+  .texpage-workbench>.preview-resizer{grid-column:2!important}
+  .texpage-workbench>.texpage-preview-pane{grid-column:3!important}
+  .texpage-editor-pane,.texpage-preview-pane{display:flex!important;min-width:0}
+  .mobile-mode-switch,.mobile-pdf-btn{display:none!important}
+  .preview-toolbar{
+    grid-template-columns:minmax(0,1fr) auto auto!important;
+    padding-inline:7px!important;
+  }
+  .preview-toolbar-left .preview-chip{display:none!important}
+  .preview-toolbar-left strong{max-width:23vw!important}
+  .texpage-question-editor{padding-inline:14px!important}
+  .texpage-question-editor .question-editor-head{margin-inline:-14px!important;padding-inline:14px!important}
+  .texpage-preview-pane .typst-preview{padding:14px 12px 54px!important}
+}
+@media(max-width:767px){
+  body.editor-page{height:100dvh!important;overflow:hidden!important}
+  .texpage-topbar{
+    min-height:52px!important;
+    padding:max(6px,env(safe-area-inset-top)) 7px 6px!important;
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr)!important;
+    gap:5px!important;
+  }
+  .texpage-topbar .editor-brand-wrap{min-width:0!important}
+  .texpage-topbar .brand small,.texpage-topbar .local-pill,.texpage-topbar .save-state,
+  .texpage-topbar .history-actions,#saveProjectButton{display:none!important}
+  .texpage-topbar .editor-top-actions{
+    min-width:0!important;overflow-x:auto!important;justify-content:flex-end!important;
+    gap:4px!important;scrollbar-width:none;
+  }
+  .texpage-topbar .editor-top-actions::-webkit-scrollbar{display:none}
+  .navigator-toggle{display:grid!important;flex:0 0 34px!important;width:34px!important;height:34px!important}
+  .template-control{min-width:0!important;flex:0 1 132px!important}
+  #templateButton{max-width:132px!important;min-height:34px!important;height:34px!important;padding:0 7px!important}
+  #templateButtonLabel{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:9px!important}
+  .mobile-mode-switch{display:flex!important}
+  .mobile-mode-switch button{min-height:34px!important;height:34px!important;padding:0 9px!important;font-size:10px!important}
+  .mobile-pdf-btn{display:inline-flex!important;min-height:34px!important;height:34px!important;padding-inline:9px!important}
+
+  .texpage-workbench{height:calc(100dvh - 52px)!important;display:block!important;overflow:hidden!important}
+  .navigator-resizer,.preview-resizer{display:none!important}
+  .texpage-navigator{
+    position:fixed!important;z-index:80!important;
+    left:0!important;top:52px!important;bottom:0!important;
+    width:min(320px,88vw)!important;
+    transform:translateX(-103%)!important;
+    transition:transform .18s ease!important;
+    box-shadow:12px 0 40px #111b2a35!important;
+  }
+  body.navigator-open .texpage-navigator{transform:translateX(0)!important}
+  body.navigator-open .workbench-backdrop{display:block!important}
+  .workbench-backdrop{inset:52px 0 0!important}
+
+  .texpage-editor-pane,.texpage-preview-pane{width:100%!important;height:100%!important;min-width:0!important}
+  body:not(.preview-mode) .texpage-editor-pane{display:flex!important}
+  body:not(.preview-mode) .texpage-preview-pane{display:none!important}
+  body.preview-mode .texpage-editor-pane{display:none!important}
+  body.preview-mode .texpage-preview-pane{display:flex!important}
+
+  .pane-tabbar{height:36px!important;flex-basis:36px!important;padding-inline:8px!important}
+  .editor-commandbar{min-height:44px!important;padding:6px 9px!important}
+  .editor-commandbar span{max-width:52vw!important}
+  .texpage-question-editor{padding:12px 12px calc(72px + env(safe-area-inset-bottom))!important}
+  .texpage-question-editor .question-editor-head{top:-12px!important;margin:0 -12px 12px!important;padding:8px 12px!important}
+  .texpage-question-editor textarea{min-height:178px!important;font-size:16px!important}
+  .texpage-question-editor input,.texpage-question-editor select{font-size:16px!important;min-height:42px!important}
+  .option-editor{align-items:flex-start!important}
+  .question-editor-head>div{flex-wrap:wrap!important;justify-content:flex-end!important}
+
+  .preview-toolbar{
+    height:42px!important;flex-basis:42px!important;
+    grid-template-columns:minmax(0,1fr) auto!important;padding:0 6px!important;
+  }
+  .preview-toolbar-left .preview-chip{display:none!important}
+  .preview-toolbar-left strong{max-width:38vw!important}
+  .preview-toolbar-center{
+    position:fixed!important;left:50%!important;bottom:max(10px,env(safe-area-inset-bottom))!important;
+    z-index:95!important;transform:translateX(-50%)!important;
+    padding:5px 7px!important;border:1px solid #435168!important;border-radius:10px!important;
+    background:#202c3d!important;box-shadow:0 8px 24px #0c142240!important;
+  }
+  .preview-toolbar-right{justify-self:end!important}
+  .texpage-preview-pane .pdf-status{min-height:24px!important;padding:5px 8px!important;font-size:8px!important}
+  .texpage-preview-pane .typst-preview{
+    padding:8px 6px calc(62px + env(safe-area-inset-bottom))!important;
+    gap:8px!important;
+  }
+  .texpage-preview-pane .typst-page{width:100%!important;max-width:100%!important}
+  .template-popover{
+    position:fixed!important;left:7px!important;right:7px!important;top:52px!important;
+    width:auto!important;max-height:calc(100dvh - 62px)!important;z-index:180!important
+  }
+}
+@media(max-width:430px){
+  .texpage-topbar .brand>span:last-child{display:none!important}
+  .texpage-topbar{grid-template-columns:32px minmax(0,1fr)!important}
+  .template-control{flex-basis:112px!important}
+  #templateButton{max-width:112px!important}
+  .editor-command-actions .text-btn{padding-inline:5px!important}
+  .preview-toolbar-left strong{max-width:31vw!important}
+}
