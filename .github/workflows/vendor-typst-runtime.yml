@@ -48,6 +48,13 @@ jobs:
           curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/FandolKai-Regular/FandolKai-Regular.otf" -o "$FONT_DIR/FandolKai-Regular.otf"
           curl -fL --retry 3 "https://raw.githubusercontent.com/Yixf-Self/fandol-fonts/$FANDOL_REF/COPYING" -o "$FONT_DIR/FANDOL-COPYING"
 
+          # Exact western text family used by the current XeLaTeX master.
+          TERMES_BASE="https://ctan.csail.mit.edu/fonts/newtx/opentype"
+          curl -fL --retry 3 "$TERMES_BASE/TeXGyreTermesX-Regular.otf" -o "$FONT_DIR/TeXGyreTermesX-Regular.otf"
+          curl -fL --retry 3 "$TERMES_BASE/TeXGyreTermesX-Bold.otf" -o "$FONT_DIR/TeXGyreTermesX-Bold.otf"
+          curl -fL --retry 3 "$TERMES_BASE/TeXGyreTermesX-Italic.otf" -o "$FONT_DIR/TeXGyreTermesX-Italic.otf"
+          curl -fL --retry 3 "https://ctan.csail.mit.edu/fonts/newtx/README" -o "$FONT_DIR/NEWTX-README"
+
           XITS_REF="master"
           curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITS-Regular.otf" -o "$FONT_DIR/XITS-Regular.otf"
           curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITS-Bold.otf" -o "$FONT_DIR/XITS-Bold.otf"
@@ -60,6 +67,9 @@ jobs:
           test -s "$FONT_DIR/FandolSong-Regular.otf"
           test -s "$FONT_DIR/FandolHei-Regular.otf"
           test -s "$FONT_DIR/FandolKai-Regular.otf"
+          test -s "$FONT_DIR/TeXGyreTermesX-Regular.otf"
+          test -s "$FONT_DIR/TeXGyreTermesX-Bold.otf"
+          test -s "$FONT_DIR/TeXGyreTermesX-Italic.otf"
           test -s "$FONT_DIR/XITSMath-Regular.otf"
 
           MITEX_VERSION="0.2.7"
