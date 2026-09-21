@@ -62,6 +62,18 @@ jobs:
           test -s "$FONT_DIR/FandolKai-Regular.otf"
           test -s "$FONT_DIR/XITSMath-Regular.otf"
 
+          MITEX_REF="985d8e725922ceb70ae5459c50c4cb3d733a0ed1"
+          MITEX_DIR="$DIR/mitex"
+          rm -rf "$MITEX_DIR"
+          mkdir -p "$MITEX_DIR"
+          curl -fL --retry 3 "https://github.com/mitex-rs/mitex/archive/$MITEX_REF.tar.gz" -o /tmp/mitex.tar.gz
+          tar -xzf /tmp/mitex.tar.gz -C /tmp
+          cp -a "/tmp/mitex-$MITEX_REF/packages/mitex/." "$MITEX_DIR/"
+          rm -rf "$MITEX_DIR/examples"
+          test -s "$MITEX_DIR/lib.typ"
+          test -s "$MITEX_DIR/mitex.typ"
+          test -s "$MITEX_DIR/mitex.wasm"
+
       - name: Commit vendored runtime
         shell: bash
         run: |
