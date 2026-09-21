@@ -1,0 +1,56 @@
+name: Vendor Typst runtime
+
+on:
+  push:
+    paths:
+      - ".github/workflows/vendor-typst-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download pinned Typst browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="0.7.0"
+          DIR="paper/assets/vendor/typst"
+          mkdir -p "$DIR"
+
+          curl -fL --retry 3             "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts@${VERSION}/dist/esm/contrib/all-in-one-lite.bundle.js"             -o "$DIR/typst-all-in-one-lite.js"
+
+          curl -fL --retry 3             "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-web-compiler@${VERSION}/pkg/typst_ts_web_compiler_bg.wasm"             -o "$DIR/typst_ts_web_compiler_bg.wasm"
+
+          curl -fL --retry 3             "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-renderer@${VERSION}/pkg/typst_ts_renderer_bg.wasm"             -o "$DIR/typst_ts_renderer_bg.wasm"
+
+          curl -fL --retry 3             "https://raw.githubusercontent.com/Myriad-Dreamin/typst.ts/main/LICENSE"             -o "$DIR/LICENSE"
+
+          printf '%s\n' "$VERSION" > "$DIR/VERSION"
+
+          test -s "$DIR/typst-all-in-one-lite.js"
+          test -s "$DIR/typst_ts_web_compiler_bg.wasm"
+          test -s "$DIR/typst_ts_renderer_bg.wasm"
+
+      - name: Commit vendored runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paper/assets/vendor/typst
+          if git diff --cached --quiet; then
+            echo "Typst runtime already vendored."
+            exit 0
+          fi
+          git commit -m "chore(paper): vendor Typst 0.7.0 browser runtime"
+          git push origin HEAD:main
