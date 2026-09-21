@@ -2,6 +2,18 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
+async function waitForTypst(page, timeout=90000){
+  await page.waitForFunction(()=>{
+    const svg=document.querySelector('#typstPreview svg');
+    const status=document.querySelector('#pdfStatus')?.textContent||'';
+    return !!svg || /失败|异常|Error|error/i.test(status);
+  },null,{timeout});
+  const status=await page.locator('#pdfStatus').innerText().catch(()=> '');
+  const count=await page.locator('#typstPreview svg').count();
+  if(!count)throw new Error('Typst preview failed: '+status);
+  return status;
+}
+
 (async()=>{
   const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   try{
@@ -51,8 +63,8 @@ const fs=require('node:fs');
     await page.locator('#headerInput').fill('数学练习');
 
     await page.locator('#previewModeButton').click();
-    await page.locator('#typstPreview svg').waitFor({state:'visible',timeout:240000});
-    assert.match(await page.locator('#pdfStatus').innerText(),/Typst 精确预览已更新|精确预览已是最新/);
+    const firstTypstStatus=await waitForTypst(page);
+    assert.match(firstTypstStatus,/Typst 精确预览已更新|精确预览已是最新|实时 Typst 预览已更新|实时 Typst 预览已是最新/);
     assert.equal(await page.locator('.editor-sidebar').isVisible(),false);
     assert.equal(await page.locator('.editor-topbar').isVisible(),true);
     await page.screenshot({path:'test-results/editor-typst-preview.png',fullPage:true});
@@ -63,7 +75,7 @@ const fs=require('node:fs');
     await page.reload({waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('#headerInput').inputValue(),'数学练习');
 
-    const dl=page.waitForEvent('download',{timeout:240000});
+    const dl=page.waitForEvent('download',{timeout:120000});
     await page.locator('#printButton').click();
     const download=await dl;
     await download.saveAs('test-results/editor.pdf');
@@ -97,7 +109,7 @@ const fs=require('node:fs');
     await page.screenshot({path:'test-results/editor-mobile-a3.png',fullPage:true});
 
     await page.locator('#previewModeButton').click();
-    await page.locator('#typstPreview svg').waitFor({state:'visible',timeout:240000});
+    await waitForTypst(page);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     const svgWidth=await page.locator('#typstPreview svg').evaluate(el=>el.getBoundingClientRect().width);
     assert.ok(svgWidth<=390);
