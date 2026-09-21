@@ -412,7 +412,7 @@ function loadUiState(){
     var d=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}");
     if(d.navigatorWidth)document.documentElement.style.setProperty("--navigator-w",Math.max(190,Math.min(360,Number(d.navigatorWidth)))+"px");
     if(d.editorWidth)document.documentElement.style.setProperty("--editor-w",Math.max(320,Math.min(820,Number(d.editorWidth)))+"px");
-    if(d.navigatorCollapsed&&window.matchMedia("(min-width:1101px)").matches)document.body.classList.add("navigator-collapsed");
+    if(d.navigatorCollapsed&&window.matchMedia("(min-width:1180px)").matches)document.body.classList.add("navigator-collapsed");
   }catch(e){}
 }
 function persistUiState(extra){
@@ -434,7 +434,7 @@ function closeNavigatorDrawer(){
   if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=true;
 }
 function toggleNavigator(){
-  if(window.matchMedia("(max-width:1100px)").matches){
+  if(window.matchMedia("(max-width:1179px)").matches){
     var open=!document.body.classList.contains("navigator-open");
     document.body.classList.toggle("navigator-open",open);
     if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=!open;
@@ -448,7 +448,7 @@ function bindPaneResizer(el,kind){
   if(!el)return;
   el.addEventListener("pointerdown",function(e){
     if(window.matchMedia("(max-width:767px)").matches)return;
-    if(kind==="navigator"&&window.matchMedia("(max-width:1100px)").matches)return;
+    if(kind==="navigator"&&window.matchMedia("(max-width:1179px)").matches)return;
     e.preventDefault();
     el.setPointerCapture&&el.setPointerCapture(e.pointerId);
     el.classList.add("is-dragging");
@@ -809,7 +809,7 @@ function init(){
   var resizeRaf=0;
   window.addEventListener("resize",function(){
     cancelAnimationFrame(resizeRaf);
-    resizeRaf=requestAnimationFrame(function(){updatePages();syncViewportMode();applyPreviewZoom();if(window.matchMedia("(min-width:1101px)").matches)closeNavigatorDrawer()});
+    resizeRaf=requestAnimationFrame(function(){updatePages();syncViewportMode();applyPreviewZoom();if(window.matchMedia("(min-width:1180px)").matches)closeNavigatorDrawer()});
   });
   if(window.visualViewport){
     window.visualViewport.addEventListener("resize",function(){
