@@ -378,12 +378,22 @@ function render(){
   els.paperName.textContent=state.title;els.questionCount.textContent=state.questions.length;els.sourceName.textContent=state.sourceName;
   renderOrder();renderPaper();renderQuestionEditor();renderSectionManager();updateBatchBar();updateHistoryButtons();
 }
+function previewAvailableWidth(){
+  var stage=els.paperStage;
+  if(!stage)return Math.max(280,window.innerWidth-24);
+  var style=getComputedStyle(stage);
+  var left=parseFloat(style.paddingLeft)||0,right=parseFloat(style.paddingRight)||0;
+  return Math.max(160,stage.clientWidth-left-right-16);
+}
 function updatePages(){
   requestAnimationFrame(function(){
-    var stage=els.paperStage,info=modeInfo();
-    var scale=Math.min(1,Math.max(.2,(stage.clientWidth-28)/(info.widthMm*3.7795275591)));
+    var info=modeInfo(),available=previewAvailableWidth(),pxPerMm=96/25.4;
+    var scale=Math.min(1,Math.max(.10,available/(info.widthMm*pxPerMm)));
+    var coverScale=Math.min(1,Math.max(.10,available/(210*pxPerMm)));
     els.paperSheet.style.setProperty("--preview-scale",String(scale));
-    els.coverSheet.style.setProperty("--preview-scale",String(Math.min(1,Math.max(.2,(stage.clientWidth-28)/(210*3.7795275591)))));
+    els.coverSheet.style.setProperty("--preview-scale",String(coverScale));
+    document.documentElement.style.setProperty("--paper-preview-scale",String(scale));
+    document.documentElement.style.setProperty("--cover-preview-scale",String(coverScale));
     var total;
     if(info.onePerPage)total=Math.max(1,state.questions.length);
     else{
@@ -584,7 +594,17 @@ function init(){
     if(key==="z"&&!e.shiftKey){if(!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();undo()}}
     if((key==="z"&&e.shiftKey)||key==="y"){if(!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();redo()}}
   });
-  window.addEventListener("resize",updatePages);
+  var resizeRaf=0;
+  window.addEventListener("resize",function(){
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf=requestAnimationFrame(updatePages);
+  });
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",function(){
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf=requestAnimationFrame(updatePages);
+    });
+  }
   undoStack.push(snapshot());render();
   els.paperStage.hidden=false;
   els.typstPreview.hidden=true;
