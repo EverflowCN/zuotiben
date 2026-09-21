@@ -494,3 +494,230 @@ body.preview-mode .paper-stage{display:none!important}
   .typst-preview{padding:12px 8px;min-height:calc(100dvh - 104px)}
   .typst-preview svg{width:100%}
 }
+
+
+/* 2026-09-21 three-surface responsive pass: desktop / tablet / phone */
+.editor-main .paper-sheet{
+  zoom:var(--preview-scale,1)!important;
+  transform:none!important;
+}
+.editor-main .paper-stage{
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.typst-preview{
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y pinch-zoom;
+}
+.typst-preview svg{max-width:100%}
+
+@media(min-width:1181px){
+  .editor-shell{grid-template-columns:310px minmax(0,1fr)}
+  .editor-main .paper-stage{padding-inline:max(28px,calc((100vw - 1420px)/2))}
+}
+
+@media(min-width:761px) and (max-width:1180px){
+  .editor-topbar{padding-inline:12px;gap:10px}
+  .editor-brand-wrap,.editor-top-actions{gap:7px;min-width:0}
+  .editor-top-actions{flex:0 1 auto}
+  .editor-shell{grid-template-columns:clamp(252px,28vw,286px) minmax(0,1fr)}
+  .editor-sidebar{min-width:0}
+  .sidebar-head{padding:15px 13px 11px}
+  .sidebar-head strong{max-width:185px}
+  .paper-settings,.question-editor{padding-inline:13px}
+  .editor-toolbar{padding:10px 12px;gap:10px}
+  .editor-toolbar-actions{gap:7px}
+  .editor-main .paper-stage{padding:20px 16px 48px}
+  .typst-preview{padding:18px 14px 36px}
+  .question-editor{max-height:43dvh}
+}
+@media(min-width:761px) and (max-width:980px){
+  .editor-topbar .local-pill,.save-state,#saveProjectButton{display:none!important}
+  .editor-topbar .brand small{display:none}
+  .mode-switch button{padding-inline:11px}
+  .template-trigger{max-width:190px;overflow:hidden}
+  .template-trigger span{overflow:hidden;text-overflow:ellipsis}
+  .editor-toolbar-actions .preview-chip:last-of-type{display:none!important}
+}
+
+@media(max-width:760px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body.editor-page{
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+  }
+
+  .editor-topbar{
+    position:sticky;top:0;height:auto;min-height:0;
+    display:grid;grid-template-columns:minmax(0,1fr);align-items:center;
+    padding:
+      calc(7px + env(safe-area-inset-top))
+      max(10px,env(safe-area-inset-right))
+      7px
+      max(10px,env(safe-area-inset-left));
+    gap:7px;
+  }
+  .editor-brand-wrap{
+    width:100%;min-width:0;justify-content:space-between;
+  }
+  .editor-topbar .brand{min-width:0}
+  .editor-topbar .brand>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .editor-topbar .brand small,.editor-topbar .local-pill,.save-state,.history-actions,#saveProjectButton{display:none!important}
+  .editor-top-actions{
+    width:100%;min-width:0;display:grid;
+    grid-template-columns:minmax(0,1fr) auto;gap:7px;
+  }
+  .template-control{min-width:0;order:0}
+  .template-trigger{
+    width:100%;max-width:none;min-width:0;justify-content:space-between;
+    min-height:40px;padding:0 11px!important;
+  }
+  .template-trigger span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mode-switch{min-width:132px}
+  .mode-switch button{min-height:34px;min-width:62px;padding:7px 9px}
+  .template-popover{
+    position:fixed;z-index:160;
+    left:max(8px,env(safe-area-inset-left));
+    right:max(8px,env(safe-area-inset-right));
+    top:calc(92px + env(safe-area-inset-top));
+    width:auto;max-height:calc(100dvh - 112px - env(safe-area-inset-top));
+    border-radius:14px;
+  }
+  .template-option{min-height:46px;padding:10px}
+  .template-option small{white-space:normal;text-align:right;line-height:1.3}
+
+  .editor-shell{display:flex;flex-direction:column;min-height:0}
+  .editor-sidebar{
+    position:relative;top:auto;height:auto;max-height:none;width:100%;
+    border-right:0;border-bottom:1px solid var(--line);
+  }
+  .sidebar-head{padding:12px 12px 9px;align-items:center}
+  .sidebar-head strong{max-width:calc(100vw - 80px);font-size:14px}
+  .sidebar-note{display:none}
+
+  .paper-settings{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px 10px;padding:10px 12px 8px;
+  }
+  .paper-settings label{margin:0;min-width:0}
+  .paper-settings #bookHeaderLabel,.paper-settings .locked-row{grid-column:1/-1}
+  .locked-row{padding:3px 0 2px}
+
+  .order-toolbar{padding:9px 12px 5px}
+  .order-toolbar-actions{gap:4px}
+  .order-toolbar-actions .text-btn{padding:6px 7px;min-height:34px}
+  .editor-sidebar .order-list{
+    display:flex;gap:8px;max-height:none;overflow-x:auto;overflow-y:hidden;
+    padding:7px 10px 10px;scroll-snap-type:x proximity;
+    scrollbar-width:thin;
+  }
+  .editor-sidebar .order-item{
+    flex:0 0 min(82vw,300px);min-width:220px;
+    scroll-snap-align:start;
+  }
+
+  .batch-bar{
+    position:relative;top:auto;margin:6px 10px 2px;padding:8px;
+    overflow-x:auto;flex-wrap:nowrap;
+  }
+  .batch-bar>*{flex:0 0 auto}
+  .section-panel{margin-inline:10px}
+  .section-manage-row{grid-template-columns:minmax(0,1fr) auto auto auto}
+  .section-manage-row>span{display:none}
+
+  .question-editor{
+    max-height:none;overflow:visible;padding:12px;
+    border-top:1px solid var(--line);
+  }
+  .question-editor textarea{min-height:112px}
+  .question-editor-head{align-items:flex-start}
+  .question-editor-head>div{flex-wrap:wrap;justify-content:flex-end}
+  .option-editor{min-height:44px}
+  .sidebar-foot{
+    padding:9px 12px calc(10px + env(safe-area-inset-bottom));
+    gap:6px;flex-wrap:wrap;
+  }
+
+  /* 16px prevents unwanted iOS focus zoom. */
+  .paper-settings input,
+  .question-editor input,
+  .question-editor textarea,
+  .question-editor select,
+  .batch-bar input,
+  .batch-bar select{font-size:16px!important}
+  .paper-settings input,.question-editor input,.question-editor select{min-height:42px}
+  .question-editor button,.sidebar-foot button,.sidebar-foot a{min-height:38px}
+
+  .editor-main{width:100%;padding-bottom:0}
+  .editor-toolbar{
+    position:relative;top:auto;min-height:58px;
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    padding:9px 10px;gap:8px;
+  }
+  .editor-toolbar>div:first-child{min-width:0}
+  .editor-toolbar>div:first-child strong{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .editor-toolbar>div:first-child small{display:none}
+  .editor-toolbar-actions{gap:6px;flex-wrap:nowrap}
+  .editor-toolbar-actions .preview-chip{display:none!important}
+  #printButton{
+    min-height:40px;padding:0 13px;white-space:nowrap;
+    font-size:11px;
+  }
+  .pdf-status{
+    padding:7px 10px;font-size:10px;line-height:1.45;
+    overflow-wrap:anywhere;
+  }
+
+  .editor-main .paper-stage{
+    min-height:0;padding:12px 8px 34px;overflow:hidden;
+  }
+  .editor-main #paperSheet,.editor-main .cover-sheet{
+    width:var(--paper-w,210mm);
+    max-width:none;
+    transform:none!important;
+  }
+  .editor-main .cover-sheet{
+    width:210mm!important;min-width:210mm!important;
+    zoom:var(--preview-scale,var(--cover-preview-scale,.44))!important;
+    margin-bottom:18px!important;
+  }
+  .editor-main #paperSheet{
+    zoom:var(--preview-scale,var(--paper-preview-scale,.44))!important;
+  }
+
+  .typst-preview{
+    min-height:calc(100dvh - 154px - env(safe-area-inset-top));
+    padding:10px 6px calc(22px + env(safe-area-inset-bottom));
+  }
+  .typst-preview svg{
+    width:100%!important;max-width:100%!important;height:auto!important;
+    margin:0 auto;border-radius:0;
+    box-shadow:0 8px 28px rgba(27,31,42,.12);
+  }
+
+  body.preview-mode .editor-main{min-height:calc(100dvh - 92px)}
+  body.preview-mode .editor-toolbar{position:sticky;top:0;z-index:35}
+}
+
+@media(max-width:430px){
+  .paper-settings{grid-template-columns:1fr}
+  .paper-settings #bookHeaderLabel,.paper-settings .locked-row{grid-column:auto}
+  .locked-row{grid-template-columns:1fr auto}
+  .locked-row em{display:none}
+  .editor-topbar .brand-mark{width:28px;height:28px}
+  .editor-topbar .brand>span:last-child{font-size:13px}
+  .template-popover{top:calc(90px + env(safe-area-inset-top))}
+  .question-editor-head{display:block}
+  .question-editor-head>div{margin-top:7px;justify-content:flex-start}
+  .sidebar-foot{justify-content:flex-start}
+}
+
+@media(pointer:coarse){
+  .editor-topbar button,.editor-toolbar button,.text-btn,.icon-text-btn{
+    touch-action:manipulation;
+  }
+}
