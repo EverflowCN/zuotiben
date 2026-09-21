@@ -16,7 +16,7 @@ var state={
   questions:[],
   originalIds:[]
 };
-var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,typstPreviewing=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,svgRevision=-1,svgExportDate="";
+var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,typstPreviewing=false,suspendTypstPreview=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,svgRevision=-1,svgExportDate="";
 var previewZoom=1,previewFit=true,currentPreviewPage=1,previewPageCount=0,previewObserver=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
@@ -539,7 +539,7 @@ function wantsLiveTypst(){
 }
 function scheduleTypstPreview(){
   clearTimeout(previewCompileTimer);
-  if(!wantsLiveTypst()||!els.typstPreview)return;
+  if(suspendTypstPreview||!wantsLiveTypst()||!els.typstPreview)return;
   els.pdfStatus.textContent="正在用本机 Typst WASM 更新精确预览…";
   previewCompileTimer=setTimeout(function(){refreshTypstPreview()},360);
 }
@@ -590,7 +590,7 @@ function setTypstSvg(svgText){
   requestAnimationFrame(applyPreviewZoom);
 }
 async function refreshTypstPreview(){
-  if(typstPreviewing)return;
+  if(suspendTypstPreview||typstPreviewing)return;
   typstPreviewing=true;
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
@@ -605,8 +605,10 @@ async function refreshTypstPreview(){
       ?"Typst 精确预览已更新；下载 PDF 使用同一母版与字体。"
       :"实时 Typst 预览已更新；右侧与下载 PDF 使用同一母版。";
   }catch(e){
-    console.error(e);
-    els.pdfStatus.textContent="Typst 预览失败："+(e.message||"未知错误");
+    if(!suspendTypstPreview){
+      console.error(e);
+      els.pdfStatus.textContent="Typst 预览失败："+(e.message||"未知错误");
+    }
   }finally{
     typstPreviewing=false;
   }
@@ -681,22 +683,37 @@ function renderQuestionEditor(){
   add.onclick=function(){q.options.push("");q.showOptions=true;touch();renderQuestionEditor()};root.appendChild(add);
 }
 async function createLatestPdf(){
-  if(pdfExporting)return null;pdfExporting=true;els.printButton.disabled=true;els.printButton.setAttribute("aria-busy","true");
+  if(pdfExporting)return null;
+  pdfExporting=true;
+  suspendTypstPreview=true;
+  clearTimeout(previewCompileTimer);
+  els.printButton.disabled=true;els.printButton.setAttribute("aria-busy","true");
+  if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=true;els.mobileDownloadButton.setAttribute("aria-busy","true")}
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    els.pdfStatus.textContent="正在本机用 Typst WASM 生成最新 PDF…";
-    var engine=await import("./typst-engine.js?v=20260921-mother6");
+    els.pdfStatus.textContent="正在本机用 Typst WASM 优先生成 PDF…";
+    var engine=await import("./typst-engine.js?v=20260921-mother7");
+    // Real-time SVG and PDF must never block each other. Abort stale preview work,
+    // then compile the requested PDF on a clean worker.
+    engine.disposeTypstWorker();
+    typstPreviewing=false;
     var blob=await engine.compileTypstPdf(snapshotState,modeInfo(),"pdf-r"+current);
     if(current!==revision){
-      els.pdfStatus.textContent="内容刚刚发生变化，正在按最新内容重新生成…";
-      pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
+      pdfBlob=null;pdfRevision=-1;
+      els.pdfStatus.textContent="内容刚刚发生变化，重新按最新内容生成 PDF…";
+      pdfExporting=false;suspendTypstPreview=false;
+      els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
+      if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=false;els.mobileDownloadButton.removeAttribute("aria-busy")}
       return createLatestPdf();
     }
     pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;
     els.pdfStatus.textContent="PDF 已在本机生成；未使用服务器编译。";
     return blob;
   }finally{
-    pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
+    pdfExporting=false;suspendTypstPreview=false;
+    els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
+    if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=false;els.mobileDownloadButton.removeAttribute("aria-busy")}
+    if(wantsLiveTypst()&&(svgRevision!==revision||svgExportDate!==localDate()))scheduleTypstPreview();
   }
 }
 async function downloadPdf(){
