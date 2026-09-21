@@ -1673,3 +1673,22 @@ body.editor-page{
   .editor-command-actions .text-btn{padding-inline:5px}
   .preview-toolbar-left strong{max-width:29vw}
 }
+
+
+/* Workbench collapse / resize states */
+body.is-resizing-panes,
+body.is-resizing-panes *{
+  cursor:col-resize!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+@media(min-width:1101px){
+  body.navigator-collapsed .texpage-workbench{
+    grid-template-columns:minmax(360px,var(--editor-w)) 5px minmax(420px,1fr)!important;
+  }
+  body.navigator-collapsed .texpage-navigator,
+  body.navigator-collapsed .navigator-resizer{display:none!important}
+  body.navigator-collapsed .texpage-editor-pane{grid-column:1}
+  body.navigator-collapsed .preview-resizer{grid-column:2}
+  body.navigator-collapsed .texpage-preview-pane{grid-column:3}
+}
