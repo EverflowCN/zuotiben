@@ -51,8 +51,11 @@ function near(actual,expected,t=.035){
     await page.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded',timeout:120000});
     await waitForSettled(page);
 
+    const initialRatio=await ratio(page,1);
+    near(initialRatio,210/297);
+    console.log('PASS MODE A4 试卷 a4 ratio',initialRatio,'chip',await page.locator('#pageSizeChip').innerText());
+
     const cases=[
-      ['A4 试卷','a4',210/297],
       ['A3 双栏试卷','a3',420/297],
       ['A4/A3 混排试卷','mixed',420/297],
       ['紧凑版','compact',210/297],
