@@ -108,6 +108,7 @@ async function waitForTypst(page, timeout=120000){
     // Tablet: navigator becomes drawer; editor and preview stay split.
     await page.setViewportSize({width:834,height:1112});
     await page.waitForTimeout(180);
+    await waitForTypst(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     await page.locator('#navigatorToggleButton').click();
