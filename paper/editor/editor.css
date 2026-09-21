@@ -969,7 +969,7 @@ body.preview-mode .paper-stage{display:none!important}
   align-items:center;
   gap:22px;
 }
-.typst-preview .typst-page{
+.typst-preview > section.typst-page{
   display:block;
   width:min(100%,1080px);
   margin:0 auto;
@@ -978,7 +978,7 @@ body.preview-mode .paper-stage{display:none!important}
   overflow:hidden;
   flex:0 0 auto;
 }
-.typst-preview .typst-page>svg{
+.typst-preview > section.typst-page > svg{
   display:block;
   width:100%!important;
   max-width:100%!important;
@@ -987,11 +987,11 @@ body.preview-mode .paper-stage{display:none!important}
   box-shadow:none!important;
 }
 @media(min-width:768px) and (max-width:1199px){
-  .typst-preview .typst-page{width:min(100%,920px)}
+  .typst-preview > section.typst-page{width:min(100%,920px)}
 }
 @media(max-width:767px){
   .typst-preview{gap:10px!important}
-  .typst-preview .typst-page{
+  .typst-preview > section.typst-page{
     width:100%!important;
     margin:0 auto!important;
     box-shadow:0 8px 28px rgba(27,31,42,.13)!important;
@@ -1477,13 +1477,13 @@ body.editor-page{
   background:#d9dde3!important;
   gap:18px!important;
 }
-.texpage-preview-pane .typst-page{
+.texpage-preview-pane .typst-preview > section.typst-page{
   width:var(--preview-page-width)!important;
   max-width:none!important;
   transition:width .12s ease;
   box-shadow:0 5px 18px #24314622!important;
 }
-.texpage-preview-pane .typst-page>svg{width:100%!important;height:auto!important}
+.texpage-preview-pane .typst-preview > section.typst-page > svg{width:100%!important;height:auto!important}
 
 /* Drawer backdrop for tablet/phone navigator. */
 .workbench-backdrop{
@@ -1650,7 +1650,7 @@ body.editor-page{
     padding:8px 6px calc(58px + env(safe-area-inset-bottom))!important;
     gap:8px!important;
   }
-  .texpage-preview-pane .typst-page{
+  .texpage-preview-pane .typst-preview > section.typst-page{
     width:100%!important;
     max-width:100%!important;
   }
@@ -1838,7 +1838,7 @@ body.is-resizing-panes *{
     padding:8px 6px calc(62px + env(safe-area-inset-bottom))!important;
     gap:8px!important;
   }
-  .texpage-preview-pane .typst-page{width:100%!important;max-width:100%!important}
+  .texpage-preview-pane .typst-preview > section.typst-page{width:100%!important;max-width:100%!important}
   .template-popover{
     position:fixed!important;left:7px!important;right:7px!important;top:52px!important;
     width:auto!important;max-height:calc(100dvh - 62px)!important;z-index:180!important
