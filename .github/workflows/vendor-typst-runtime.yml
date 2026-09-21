@@ -61,6 +61,20 @@ jobs:
           curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/XITSMath-Regular.otf" -o "$FONT_DIR/XITSMath-Regular.otf"
           curl -fL --retry 3 "https://raw.githubusercontent.com/aliftype/xits/$XITS_REF/OFL.txt" -o "$FONT_DIR/XITS-OFL.txt"
 
+          # Worker compatibility patch for the upstream all-in-one browser bundle.
+          # ESM exports are usable in a Worker, but upstream also assigns two globals to window.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("paper/assets/vendor/typst/typst-all-in-one-lite.js")
+          s = p.read_text()
+          old = 'window.$typst = Ie;\nwindow.TypstSnippet = U;'
+          new = 'if (typeof window < "u") {\n  window.$typst = Ie;\n  window.TypstSnippet = U;\n}'
+          if old in s:
+              p.write_text(s.replace(old, new))
+          elif new not in s:
+              raise SystemExit("Typst worker compatibility anchor not found")
+          PY
+
           test -s "$DIR/typst-all-in-one-lite.js"
           test -s "$DIR/typst_ts_web_compiler_bg.wasm"
           test -s "$DIR/typst_ts_renderer_bg.wasm"
