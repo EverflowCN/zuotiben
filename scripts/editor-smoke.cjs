@@ -103,15 +103,19 @@ async function waitForTypst(page, timeout=120000){
     assert.equal(fs.readFileSync('test-results/editor.pdf').subarray(0,5).toString(),'%PDF-');
 
     // Tablet: navigator becomes drawer; editor and preview stay split.
-    await page.setViewportSize({width:900,height:1100});
+    await page.setViewportSize({width:834,height:1112});
     await page.waitForTimeout(180);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),true);
-    await page.locator('#workbenchBackdrop').click({position:{x:850,y:500}});
+    await page.locator('#workbenchBackdrop').click({position:{x:790,y:500}});
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),false);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const tabletEditorWidth=await page.locator('.texpage-editor-pane').evaluate(el=>el.getBoundingClientRect().width);
+    const tabletPreviewWidth=await page.locator('.texpage-preview-pane').evaluate(el=>el.getBoundingClientRect().width);
+    assert.ok(tabletEditorWidth>=320);
+    assert.ok(tabletPreviewWidth>=360);
     await page.screenshot({path:'test-results/editor-tablet-texpage.png',fullPage:true});
 
     // Phone: one surface at a time + navigator drawer.
@@ -119,6 +123,8 @@ async function waitForTypst(page, timeout=120000){
     await page.waitForTimeout(180);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),false);
+    assert.equal(await page.locator('#mobileDownloadButton').isVisible(),true);
+    assert.equal(await page.locator('#previewModeButton').isVisible(),true);
 
     await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),true);
