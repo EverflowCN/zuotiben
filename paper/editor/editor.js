@@ -15,7 +15,7 @@ var state={
   questions:[],
   originalIds:[]
 };
-var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,pdfUrl=null;
+var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,typstPreviewing=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,svgRevision=-1,svgExportDate="";
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -96,8 +96,8 @@ function load(){
 function save(markDirty){
   revision++;
   if(markDirty!==false)checkpoint();
-  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；正在等待最新排版。";
-  schedulePdfPreview();
+  if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；PDF 将在下载时按最新内容重新生成。";
+  if(previewMode)scheduleTypstPreview();
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
@@ -124,7 +124,7 @@ function normalizeTemplateMacros(text){
 function semanticLines(text){
   var src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
   src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
-  src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");
+  src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\))\s*)/gi,"$1\n");
   src=(" "+src).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n").slice(1);
   return src.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
 }
@@ -140,8 +140,45 @@ function renderMath(root){
     });
   }catch(e){}
 }
+function classifySemanticLine(line){
+  var m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
+  if(m)return {kind:"circled",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:I{1,3}|IV|V|VI{0,3})[.、．])\s*(.*)$/);
+  if(m)return {kind:"roman",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\)))\s*(.*)$/i);
+  if(m)return {kind:"subq",label:m[1],body:m[2]};
+  return {kind:"plain",label:"",body:String(line||"")};
+}
 function textWithBreaks(root,text){
-  semanticLines(text).forEach(function(line){var p=document.createElement("p");p.textContent=line;root.appendChild(p)});
+  var previous="plain";
+  semanticLines(text).forEach(function(line){
+    var meta=classifySemanticLine(line);
+    if(meta.kind==="plain"){
+      var p=document.createElement("p");p.textContent=meta.body;root.appendChild(p);previous="plain";return;
+    }
+    var row=document.createElement("div");row.className="semantic-row "+meta.kind+(previous!==meta.kind?" is-group-start":"");
+    var label=document.createElement("span");label.className="semantic-label";label.textContent=meta.label;
+    var body=document.createElement("span");body.className="semantic-content";body.textContent=meta.body;
+    row.append(label,body);root.appendChild(row);previous=meta.kind;
+  });
+}
+function chineseSectionNumber(n){
+  var d=["零","一","二","三","四","五","六","七","八","九"];
+  if(n<10)return d[n]||String(n);
+  if(n===10)return "十";
+  if(n<20)return "十"+d[n%10];
+  if(n<100)return d[Math.floor(n/10)]+"十"+(n%10?d[n%10]:"");
+  return String(n);
+}
+function bareSectionName(name){
+  return String(name||"")
+    .replace(/^\s*[一二三四五六七八九十百]+[、.．]\s*/,"")
+    .replace(/^\s*\d+[.．、]\s*/,"")
+    .trim();
+}
+function sectionDisplayName(name,ordinal){
+  var bare=bareSectionName(name);
+  return state.template==="book"?(ordinal+". "+bare):(chineseSectionNumber(ordinal)+"、"+bare);
 }
 function move(from,to){
   if(to<0||to>=state.questions.length||from===to)return;
@@ -315,9 +352,11 @@ function renderPaper(){
   var head=document.querySelector(".paper-running-head");
   head.hidden=state.template!=="book";head.classList.toggle("book-head",state.template==="book");head.replaceChildren();
   if(state.template==="book")["彼时流年若水",state.header||"","https://zuotiben.top"].forEach(function(t){var n=document.createElement("span");n.textContent=t;head.appendChild(n)});
+  var sectionOrdinal=0,previousSection="";
   state.questions.forEach(function(q,i){
-    if(q.section&&(i===0||state.questions[i-1].section!==q.section)){
-      var heading=document.createElement("h2");heading.className="paper-section-heading";heading.textContent=q.section;els.paperQuestions.appendChild(heading);
+    if(q.section&&q.section!==previousSection){
+      sectionOrdinal++;previousSection=q.section;
+      var heading=document.createElement("h2");heading.className="paper-section-heading";heading.textContent=sectionDisplayName(q.section,sectionOrdinal);els.paperQuestions.appendChild(heading);
     }
     var sec=document.createElement("section");sec.className="question";sec.dataset.index=i;sec.dataset.questionId=q.id;
     if(q.gap)sec.style.setProperty("--question-gap",q.gap+"mm");if(q.breakBefore)sec.classList.add("force-break-before");
@@ -363,21 +402,39 @@ function bindDrag(container){
   container.addEventListener("drop",function(e){var row=e.target.closest(".order-item");if(!row||from==null)return;e.preventDefault();move(from,Number(row.dataset.index));from=null});
   container.addEventListener("dragend",function(){from=null;container.querySelectorAll(".order-item").forEach(function(x){x.classList.remove("dragging","drop-before")})});
 }
-function schedulePdfPreview(){
+function scheduleTypstPreview(){
   clearTimeout(previewCompileTimer);
-  if(!els.pdfPreview)return;
-  els.pdfStatus.textContent="正在更新本地 PDF 预览…";
-  previewCompileTimer=setTimeout(function(){refreshPdfPreview()},420);
+  if(!previewMode||!els.typstPreview)return;
+  els.pdfStatus.textContent="正在用本机 Typst WASM 更新精确预览…";
+  previewCompileTimer=setTimeout(function(){refreshTypstPreview()},360);
 }
-async function refreshPdfPreview(){
+function setTypstSvg(svg){
+  var parser=new DOMParser(),doc=parser.parseFromString(String(svg||""),"image/svg+xml");
+  if(doc.querySelector("parsererror"))throw new Error("Typst SVG 解析失败");
+  doc.querySelectorAll("script").forEach(function(n){n.remove()});
+  doc.querySelectorAll("*").forEach(function(node){
+    Array.from(node.attributes||[]).forEach(function(attr){
+      if(/^on/i.test(attr.name)||(/^href$/i.test(attr.name)&&/^\s*javascript:/i.test(attr.value)))node.removeAttribute(attr.name);
+    });
+  });
+  els.typstPreview.replaceChildren(document.importNode(doc.documentElement,true));
+}
+async function refreshTypstPreview(){
+  if(typstPreviewing)return;
+  typstPreviewing=true;
   try{
-    await createLatestPdf();
-    els.pdfPreview.hidden=false;
-    els.paperStage.hidden=true;
-    els.pdfStatus.textContent="编辑、预览与下载使用同一份本地 PDF。";
+    var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
+    var engine=await import("./typst-engine.js?v=20260921-mother4");
+    var svg=await engine.compileTypstSvg(snapshotState,modeInfo(),"svg-r"+current);
+    if(current!==revision){typstPreviewing=false;scheduleTypstPreview();return}
+    setTypstSvg(svg);svgRevision=current;svgExportDate=snapshotState.exportDate;
+    els.typstPreview.hidden=false;els.paperStage.hidden=true;
+    els.pdfStatus.textContent="Typst 精确预览已更新；下载 PDF 使用同一母版与字体。";
   }catch(e){
     console.error(e);
-    els.pdfStatus.textContent="PDF 预览失败："+(e.message||"未知错误");
+    els.pdfStatus.textContent="Typst 预览失败："+(e.message||"未知错误");
+  }finally{
+    typstPreviewing=false;
   }
 }
 async function setMode(preview){
@@ -385,10 +442,15 @@ async function setMode(preview){
   document.body.classList.toggle("preview-mode",previewMode);
   els.editModeButton.setAttribute("aria-pressed",String(!previewMode));
   els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
-  els.paperStage.hidden=true;
-  els.pdfPreview.hidden=false;
-  if(pdfRevision!==revision)await refreshPdfPreview();
-  else els.pdfStatus.textContent="编辑、预览与下载使用同一份本地 PDF。";
+  if(previewMode){
+    els.paperStage.hidden=true;els.typstPreview.hidden=false;
+    var today=localDate();
+    if(svgRevision!==revision||svgExportDate!==today)await refreshTypstPreview();
+    else els.pdfStatus.textContent="Typst 精确预览已是最新。";
+  }else{
+    els.typstPreview.hidden=true;els.paperStage.hidden=false;
+    els.pdfStatus.textContent="编辑模式：右侧为快速排版视图；切到“预览”查看 Typst 精确分页。";
+  }
 }
 function renderQuestionEditor(){
   var root=els.questionEditor;root.replaceChildren();
@@ -434,12 +496,16 @@ async function createLatestPdf(){
   if(pdfExporting)return null;pdfExporting=true;els.printButton.disabled=true;els.printButton.setAttribute("aria-busy","true");
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    els.pdfStatus.textContent="正在本机生成最新 PDF…";
-    var exporter=await import("./pdf-export.js?v=20260921-heading2");
-    var blob=await exporter.createPdf(snapshotState,{onStatus:function(s){els.pdfStatus.textContent=s}});
-    if(current!==revision){els.pdfStatus.textContent="内容刚刚发生变化，正在使用最新内容重新生成…";pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");return createLatestPdf()}
-    if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;pdfUrl=URL.createObjectURL(blob);
-    els.pdfPreview.src=pdfUrl;els.pdfStatus.textContent="PDF 已在本机生成。";
+    els.pdfStatus.textContent="正在本机用 Typst WASM 生成最新 PDF…";
+    var engine=await import("./typst-engine.js?v=20260921-mother4");
+    var blob=await engine.compileTypstPdf(snapshotState,modeInfo(),"pdf-r"+current);
+    if(current!==revision){
+      els.pdfStatus.textContent="内容刚刚发生变化，正在按最新内容重新生成…";
+      pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
+      return createLatestPdf();
+    }
+    pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;
+    els.pdfStatus.textContent="PDF 已在本机生成；未使用服务器编译。";
     return blob;
   }finally{
     pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
@@ -465,7 +531,7 @@ async function exportProject(){
 }
 function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
-   "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","pdfPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
+   "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
    "headerInput","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton",
    "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton"
   ].forEach(function(id){els[id]=byId(id)});
@@ -520,9 +586,9 @@ function init(){
   });
   window.addEventListener("resize",updatePages);
   undoStack.push(snapshot());render();
-  els.paperStage.hidden=true;
-  els.pdfPreview.hidden=false;
-  schedulePdfPreview();
+  els.paperStage.hidden=false;
+  els.typstPreview.hidden=true;
+  els.pdfStatus.textContent="编辑模式：切到“预览”即可用本机 Typst WASM 查看精确分页。";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
