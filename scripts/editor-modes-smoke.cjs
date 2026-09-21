@@ -22,7 +22,7 @@ async function choose(page,label,layout){
 async function ratio(page,index=1){
   return page.locator('.typst-page').nth(index).evaluate(wrap=>{
     const svg=wrap.querySelector('svg');
-    if(!svg)throw new Error('missing svg in page '+(index+1));
+    if(!svg)throw new Error('missing svg in Typst page');
     const vb=(svg.getAttribute('viewBox')||'').trim().split(/[ ,]+/).map(Number);
     if(vb.length===4&&vb[2]>0&&vb[3]>0)return vb[2]/vb[3];
     const box=svg.getBoundingClientRect();
