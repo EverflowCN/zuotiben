@@ -721,3 +721,9 @@ body.preview-mode .paper-stage{display:none!important}
     touch-action:manipulation;
   }
 }
+
+
+/* Mobile stacking correction: topbar owns the sticky layer. */
+@media(max-width:760px){
+  body.preview-mode .editor-toolbar{position:relative!important;top:auto!important;z-index:25}
+}
