@@ -960,3 +960,40 @@ body.preview-mode .paper-stage{display:none!important}
     border-radius:9px!important;font-size:10px!important;
   }
 }
+
+
+/* Exact Typst pagination: one rendered SVG page per paper card */
+.typst-preview{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:22px;
+}
+.typst-preview .typst-page{
+  display:block;
+  width:min(100%,1080px);
+  margin:0 auto;
+  background:#fff;
+  box-shadow:0 16px 54px rgba(27,31,42,.14);
+  overflow:hidden;
+  flex:0 0 auto;
+}
+.typst-preview .typst-page>svg{
+  display:block;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  margin:0!important;
+  box-shadow:none!important;
+}
+@media(min-width:768px) and (max-width:1199px){
+  .typst-preview .typst-page{width:min(100%,920px)}
+}
+@media(max-width:767px){
+  .typst-preview{gap:10px!important}
+  .typst-preview .typst-page{
+    width:100%!important;
+    margin:0 auto!important;
+    box-shadow:0 8px 28px rgba(27,31,42,.13)!important;
+  }
+}
