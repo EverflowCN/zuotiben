@@ -94,7 +94,8 @@ function load(){
   }catch(e){return false}
 }
 function save(markDirty){
-  if(markDirty!==false){revision++;checkpoint()}
+  revision++;
+  if(markDirty!==false)checkpoint();
   if(pdfBlob&&pdfRevision!==revision)els.pdfStatus.textContent="内容已修改；正在等待最新排版。";
   schedulePdfPreview();
   try{
