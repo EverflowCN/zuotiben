@@ -64,15 +64,28 @@ jobs:
 
           MITEX_REF="985d8e725922ceb70ae5459c50c4cb3d733a0ed1"
           MITEX_DIR="$DIR/mitex"
-          rm -rf "$MITEX_DIR"
+          rm -rf "$MITEX_DIR" /tmp/mitex-src
+          git clone --filter=blob:none --no-checkout https://github.com/mitex-rs/mitex.git /tmp/mitex-src
+          git -C /tmp/mitex-src checkout "$MITEX_REF"
           mkdir -p "$MITEX_DIR"
-          curl -fL --retry 3 "https://github.com/mitex-rs/mitex/archive/$MITEX_REF.tar.gz" -o /tmp/mitex.tar.gz
-          tar -xzf /tmp/mitex.tar.gz -C /tmp
-          cp -a "/tmp/mitex-$MITEX_REF/packages/mitex/." "$MITEX_DIR/"
+          cp -a /tmp/mitex-src/packages/mitex/. "$MITEX_DIR/"
           rm -rf "$MITEX_DIR/examples"
           test -s "$MITEX_DIR/lib.typ"
           test -s "$MITEX_DIR/mitex.typ"
           test -s "$MITEX_DIR/mitex.wasm"
+
+          # Extract the exact existing watermark PNG from paper/styles.css.
+          python3 - <<'PY'
+          import base64, pathlib, re
+          css = pathlib.Path("paper/styles.css").read_text(encoding="utf-8")
+          m = re.search(r'background-image:url\("data:image/png;base64,([^"]+)"\)', css)
+          if not m:
+              raise SystemExit("embedded watermark PNG not found")
+          out = pathlib.Path("paper/assets/watermark/water.png")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_bytes(base64.b64decode(m.group(1)))
+          PY
+          test -s "paper/assets/watermark/water.png"
 
       - name: Commit vendored runtime
         shell: bash
