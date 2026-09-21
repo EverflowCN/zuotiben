@@ -434,7 +434,7 @@ async function refreshTypstPreview(){
   typstPreviewing=true;
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    var engine=await import("./typst-engine.js?v=20260921-mother4");
+    var engine=await import("./typst-engine.js?v=20260921-mother6");
     var svg=await engine.compileTypstSvg(snapshotState,modeInfo(),"svg-r"+current);
     if(current!==revision){typstPreviewing=false;scheduleTypstPreview();return}
     setTypstSvg(svg);svgRevision=current;svgExportDate=snapshotState.exportDate;
@@ -507,7 +507,7 @@ async function createLatestPdf(){
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
     els.pdfStatus.textContent="正在本机用 Typst WASM 生成最新 PDF…";
-    var engine=await import("./typst-engine.js?v=20260921-mother4");
+    var engine=await import("./typst-engine.js?v=20260921-mother6");
     var blob=await engine.compileTypstPdf(snapshotState,modeInfo(),"pdf-r"+current);
     if(current!==revision){
       els.pdfStatus.textContent="内容刚刚发生变化，正在按最新内容重新生成…";
