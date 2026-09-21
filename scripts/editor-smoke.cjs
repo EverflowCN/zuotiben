@@ -87,7 +87,7 @@ const fs=require('node:fs');
     await page.screenshot({path:'test-results/editor-mobile.png',fullPage:true});
 
     await page.locator('#templateButton').click();
-    await page.locator('.template-option').filter({hasText:'A3 横向双栏'}).click();
+    await page.locator('.template-option').filter({hasText:'A3 双栏试卷'}).click();
     await page.waitForTimeout(120);
     assert.equal(await page.locator('body').getAttribute('data-layout'),'a3');
     assert.equal(await page.evaluate(()=>{
