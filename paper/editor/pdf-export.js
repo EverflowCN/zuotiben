@@ -216,44 +216,56 @@ function contentBlocks(text) {
   return out;
 }
 
-function renderSemanticLine(line,key,spec){
+function semanticListMetrics(meta,spec){
+  if(meta.kind==="circled")return {
+    labelWidthEm:spec.statementsLabelWidthEm,labelSepEm:spec.statementsLabelSepEm,
+    topSepEm:spec.statementsTopSepEm,itemSepEm:spec.statementsItemSepEm
+  };
+  if(meta.kind==="roman")return {
+    labelWidthEm:spec.romanLabelWidthEm,labelSepEm:spec.romanLabelSepEm,
+    topSepEm:spec.romanTopSepEm,itemSepEm:spec.romanItemSepEm
+  };
+  return {
+    labelWidthEm:Math.max(.8,spec.subquestionLeftMarginEm-spec.subquestionLabelSepEm),
+    labelSepEm:spec.subquestionLabelSepEm,
+    topSepEm:spec.subquestionTopSepEm,itemSepEm:spec.subquestionItemSepEm
+  };
+}
+
+function renderSemanticLine(line,key,spec,previousKind){
   const meta=classifySemanticLine(line);
   if(meta.kind==="plain")return renderInlineLine(meta.body,key,spec);
-  let labelWidthEm=0,labelSepEm=0,topSepEm=0,itemSepEm=0;
-  if(meta.kind==="circled"){
-    labelWidthEm=spec.statementsLabelWidthEm;labelSepEm=spec.statementsLabelSepEm;
-    topSepEm=spec.statementsTopSepEm;itemSepEm=spec.statementsItemSepEm;
-  }else if(meta.kind==="roman"){
-    labelWidthEm=spec.romanLabelWidthEm;labelSepEm=spec.romanLabelSepEm;
-    topSepEm=spec.romanTopSepEm;itemSepEm=spec.romanItemSepEm;
-  }else{
-    labelWidthEm=Math.max(.8,spec.subquestionLeftMarginEm-spec.subquestionLabelSepEm);
-    labelSepEm=spec.subquestionLabelSepEm;topSepEm=spec.subquestionTopSepEm;itemSepEm=spec.subquestionItemSepEm;
-  }
+  const metrics=semanticListMetrics(meta,spec);
+  const startsGroup=previousKind!==meta.kind;
   return h(View,{
     key,
     style:{
       flexDirection:"row",alignItems:"flex-start",
-      marginTop:topSepEm*spec.fontSize,
-      marginBottom:itemSepEm*spec.fontSize
+      marginTop:(startsGroup?metrics.topSepEm:0)*spec.fontSize,
+      marginBottom:metrics.itemSepEm*spec.fontSize
     }
   },
     mixedText(meta.label,{key:key+"-label",size:spec.fontSize,lineHeight:spec.lineHeight,
-      style:{width:labelWidthEm*spec.fontSize,textAlign:"right",marginRight:labelSepEm*spec.fontSize}}),
+      style:{width:metrics.labelWidthEm*spec.fontSize,textAlign:"right",marginRight:metrics.labelSepEm*spec.fontSize}}),
     h(View,{style:{flexGrow:1,flexShrink:1,minWidth:0}},renderInlineLine(meta.body,key+"-body",spec))
   );
 }
 
 function renderQuestionBody(content,qIndex,spec) {
-  const nodes=[];let serial=0;
+  const nodes=[];let serial=0,previousKind="plain";
   contentBlocks(content).forEach(block=>{
     if(block.type==="displayMath"){
       nodes.push(h(View,{key:"q"+qIndex+"-display-"+serial++,style:{marginVertical:.35*spec.fontSize,alignItems:"center"}},
         h(NaturalMath,{value:block.value.trim(),fontSize:spec.fontSize*1.08,inline:false})
       ));
+      previousKind="plain";
       return;
     }
-    semanticLines(block.value).forEach(line=>nodes.push(renderSemanticLine(line,"q"+qIndex+"-line-"+serial++,spec)));
+    semanticLines(block.value).forEach(line=>{
+      const meta=classifySemanticLine(line);
+      nodes.push(renderSemanticLine(line,"q"+qIndex+"-line-"+serial++,spec,previousKind));
+      previousKind=meta.kind;
+    });
   });
   return nodes.length?nodes:[mixedText("（空题干）",{key:"q"+qIndex+"-empty",size:spec.fontSize,lineHeight:spec.lineHeight})];
 }
