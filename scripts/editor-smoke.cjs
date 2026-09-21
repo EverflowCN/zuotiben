@@ -23,7 +23,8 @@ async function waitForTypst(page, timeout=120000){
     page.on('console',m=>{if(m.type()==='error')console.log('BROWSER:',m.text())});
 
     await page.addInitScript(()=>{
-      localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({
+      if(!localStorage.getItem('zuotiben-local-paper-v1')){
+        localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({
         title:'编辑器验证试卷',
         coverTitle:'编辑器验证试卷',
         template:'exam',
@@ -44,8 +45,8 @@ async function waitForTypst(page, timeout=120000){
             showOptions:false
           }
         ]
-      }));
-      localStorage.removeItem('zuotiben-editor-ui-v2');
+        }));
+      }
     });
 
     await page.goto('http://127.0.0.1:8765/paper/editor/',{
