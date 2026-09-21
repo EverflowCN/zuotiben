@@ -1,5 +1,5 @@
 import { $typst, TypstSnippet, FetchAccessModel } from "../assets/vendor/typst/typst-all-in-one-lite.js";
-import { buildTypstSource } from "./typst-template.js";
+import { buildTypstSource } from "./typst-template.js?v=20260921-mother6";
 
 let readyPromise = null;
 
@@ -31,7 +31,7 @@ async function mapWatermark() {
 }
 
 async function addMotherTemplate() {
-  const response = await fetch(editorUrl("./everflow-template.txt"), { cache: "no-cache" });
+  const response = await fetch(editorUrl("./everflow-template.txt?v=20260921-mother6"), { cache: "no-cache" });
   if (!response.ok) throw new Error("无法加载 Everflow Typst 母版");
   await $typst.addSource("/everflow-template.typ", await response.text());
 }
