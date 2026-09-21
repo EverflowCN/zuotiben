@@ -274,7 +274,7 @@
 #let everflow-document(cfg, body) = {
   everflow-cover(cfg)
 
-  counter(page).update(0)
+  counter(page).update(1)
   set columns(gutter: cfg.column-gap)
   set page(
     width: cfg.page-width,
