@@ -435,7 +435,7 @@ async function createLatestPdf(){
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
     els.pdfStatus.textContent="正在本机生成最新 PDF…";
-    var exporter=await import("./pdf-export.js?v=20260921-masterparity3");
+    var exporter=await import("./pdf-export.js?v=20260921-heading2");
     var blob=await exporter.createPdf(snapshotState,{onStatus:function(s){els.pdfStatus.textContent=s}});
     if(current!==revision){els.pdfStatus.textContent="内容刚刚发生变化，正在使用最新内容重新生成…";pdfExporting=false;els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");return createLatestPdf()}
     if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;pdfUrl=URL.createObjectURL(blob);
