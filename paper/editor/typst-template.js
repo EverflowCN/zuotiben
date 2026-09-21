@@ -1,35 +1,210 @@
-// Everflow fixed-template -> Typst source generator.
-function q(v){return JSON.stringify(String(v==null?"":v))}
-function norm(v){return String(v||"").replace(/\\par\b/g,"\n").replace(/\\blankbox\b/g,"（\u2002\u2002\u2002）").replace(/（\s*\\hspace\{1\.5em\}\s*）/g,"（\u2002\u2002\u2002）").replace(/\\blankline\b/g,"＿＿＿").replace(/\\quad\b/g,"\u2003")}
-function lines(v){let s=norm(v).replace(/\r\n?/g,"\n");s=s.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");s=s.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）)\s*)/g,"$1\n");s=(" "+s).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n").slice(1);return s.split(/\n+/).map(x=>x.trim()).filter(Boolean)}
-function inline(line){const out=[];const re=/(\$[^$\n]+\$|\\\([^]*?\\\))/g;let last=0,m;while((m=re.exec(line))){if(m.index>last)out.push("#text("+q(line.slice(last,m.index))+")");const raw=m[0];out.push("#mi("+q(raw.startsWith("$")?raw.slice(1,-1):raw.slice(2,-2))+")");last=m.index+raw.length}if(last<line.length)out.push("#text("+q(line.slice(last))+")");return out.join("")}
-function body(v){const src=norm(v),re=/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g,nodes=[];let last=0,m;function addText(t){for(const l of lines(t))nodes.push("#par["+inline(l)+"]")}while((m=re.exec(src))){if(m.index>last)addText(src.slice(last,m.index));nodes.push("#mimath("+q(m[0].slice(2,-2).trim())+", block: true)");last=m.index+m[0].length}if(last<src.length)addText(src.slice(last));if(!nodes.length)nodes.push('#par[#text("（空题干）")]');return "[\n"+nodes.join("\n")+"\n]"}
-function optionCell(label,v){return "[#grid(columns:(2.25em,1fr),column-gutter:0em,[#text("+q(label)+")],"+body(v)+")]"}
-function options(list){if(!Array.isArray(list)||!list.length)return "";const measures=list.map((v,i)=>"[#text("+q("("+String.fromCharCode(65+i)+") ")+")"+inline(lines(v)[0]||"")+"]");const cells=list.map((v,i)=>optionCell("("+String.fromCharCode(65+i)+")",v));return "#pad(left:2.8em,top:everflow-choice-before,everflow-choices(("+measures.join(",")+(measures.length===1?",":"")+"),("+cells.join(",")+(cells.length===1?",":"")+")))"}
-function gapMm(s){if(typeof s.questionGapMm==="number")return s.questionGapMm;if(typeof s.questionGapBaseline==="number")return s.baselinePt*s.questionGapBaseline*25.4/72;return 0}
-function question(qn,i,s){const gap=Number(qn.gap)>0?Number(qn.gap):gapMm(s);const opts=qn.showOptions!==false&&Array.isArray(qn.options)&&qn.options.length?options(qn.options):"";const force=qn.breakBefore?"#pagebreak()\n":"";const chars=String(qn.content||"").length+(qn.options||[]).reduce((n,x)=>n+String(x||"").length,0);const br=chars>1400?"true":"false";return force+"#block(breakable:"+br+")[#grid(columns:(2.25em,1fr),column-gutter:0.55em,[#align(right)[#text("+q((i+1)+".")+")]],"+body(qn.content||"")+")\n"+opts+"]\n#v("+gap.toFixed(4)+"mm)"}
-function section(name,s,br){const size=s.kind==="book"?12:s.fontPt;return (br?"#pagebreak()\n":"")+"#block(breakable:false,above:0pt,below:0.35em)[#text(font:\"FandolHei\",weight:\"bold\",size:"+size+"pt,"+q(name)+")]"}
-function pageSetup(st,s){const book=s.kind==="book",a3=s.kind==="exam"&&Number(s.columns||1)===2;const header=book?"everflow-book-header("+q(st.header||"")+")":"none";const footer=book?"everflow-book-footer":(a3?"everflow-exam-a3-footer("+q(st.title||"试卷")+")":"everflow-exam-a4-footer("+q(st.title||"试卷")+")");return "#set page(width:"+s.widthMm+"mm,height:"+s.heightMm+"mm,margin:(top:"+s.topMm+"mm,bottom:"+s.bottomMm+"mm,left:"+s.leftMm+"mm,right:"+s.rightMm+"mm),header:"+header+",footer:"+footer+",foreground:everflow-overlay)"}
-function flow(st,s){const arr=Array.isArray(st.questions)?st.questions:[],out=[];let prev="",sc=0;arr.forEach((x,i)=>{const sec=String(x.section||"").trim();if(sec&&sec!==prev){out.push(section(sec,s,s.kind==="book"&&sc>0));prev=sec;sc++}out.push(question(x,i,s));if(s.onePerPage&&i<arr.length-1)out.push("#pagebreak()")});const c=out.join("\n\n");return s.kind==="exam"&&Number(s.columns||1)===2?"#columns(2,gutter:"+Number(s.columnGapMm||24)+"mm)[\n"+c+"\n]":c}
-export function buildTypstSource(st,spec){const s=Object.assign({},spec,{kind:st.template==="book"?"book":"exam"});const fs=Number(s.fontPt||(s.kind==="book"?10.5:9)),base=Number(s.baselinePt||(s.kind==="book"?16.38:14.04)),lead=Math.max(0,base-fs),before=base*Number(s.choiceBeforeSkipBaseline||0.45),cover=s.kind==="book"?21.9178:24.7871,dateColor=s.kind==="exam"?"red":"rgb(36,39,43)",date=String(st.exportDate||"");return `#import "/vendor/typst/mitex/lib.typ": mi, mimath
-#set text(font:("XITS","FandolSong"),size:${fs}pt)
-#set par(leading:${lead.toFixed(4)}pt,spacing:0pt,first-line-indent:0pt)
-#show math.equation: set text(font:"XITS Math")
-#let everflow-choice-before=${before.toFixed(4)}pt
-#let everflow-choices(measures,cells)=layout(size=>{let widths=measures.map(it=>measure(it).width);let mw=if widths.len()==0{0pt}else{calc.max(..widths)};let cols=if mw<=size.width*${Number(s.choiceFourColumnThreshold||0.22)}{4}else if mw<=size.width*${Number(s.choiceTwoColumnThreshold||0.46)}{2}else{1};let cols=if cells.len()==3 and cols==4{3}else if cells.len()==6 and cols==4{3}else{cols};grid(columns:(1fr,)*cols,column-gutter:${Number(s.choiceColumnGapEm||1.2)}em,row-gutter:${Number(s.choiceRowGapEm||0.22)}em,..cells)})
-#let everflow-overlay=context{if counter(page).get().first()>1{place(bottom+right,dx:-13mm,dy:-30mm,image("/watermark/water.png",height:34mm));place(bottom+left,dx:3mm,dy:-5.8mm,box(width:15mm)[#align(center)[#image("/zuotiben-qr.svg",width:13mm)]#align(center)[#text(font:"XITS",size:5.8pt,"zuotiben.top")]])}}
-#let everflow-book-header(center-text)=context{if counter(page).get().first()>1{grid(columns:(1fr,1fr,1fr),stroke:(bottom:0.4pt+rgb(36,39,43)),inset:(bottom:1.2mm),[#text(font:"FandolSong",weight:"bold",size:10pt,"彼时流年若水")],[#align(center)[#text(font:"FandolSong",weight:"bold",size:10pt,center-text)]],[#align(right)[#text(font:"XITS",weight:"bold",size:10pt,"https://zuotiben.top")]])}}
-#let everflow-book-footer=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolSong",size:9pt,"· 第 "+str(current)+" 页 / 共 "+str(total)+" 页 ·")]}
-#let everflow-exam-a4-footer(title)=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolKai",size:9pt,title+"  第 "+str(current)+" 页（共 "+str(total)+" 页）")]}
-#let everflow-exam-a3-footer(title)=context{let physical=counter(page).get().first()-2;let l=physical*2+1;let r=l+1;let total=(counter(page).final().first()-1)*2;grid(columns:(1fr,1fr),column-gutter:${Number(s.columnGapMm||24)}mm,[#align(center)[#text(font:"FandolKai",size:9pt,title+"  第 "+str(l)+" 页（共 "+str(total)+" 页）")]],[#align(center)[#text(font:"FandolKai",size:9pt,title+"  第 "+str(r)+" 页（共 "+str(total)+" 页）")]])}
-#set page(width:210mm,height:297mm,margin:0mm,header:none,footer:none)
-#place(top+center,dy:120.9mm)[#text(font:"FandolSong",weight:"bold",size:${cover}pt,${q(st.coverTitle||st.title||"未命名试卷")})]
-#place(top+center,dy:148.05mm)[#text(font:"FandolSong",weight:"bold",size:18.3313pt,"·彼时流年若水·")]
-#place(top+left,dx:18mm,dy:266mm)[#line(length:50mm,stroke:0.4pt)]
-#place(top+left,dx:19.3mm,dy:270.55mm)[#text(font:"FandolSong",weight:"bold",size:9.4645pt,"Everflow·彼时流年若水")]
-#place(top+left,dx:19.3mm,dy:277.15mm)[#text(font:"FandolSong",weight:"bold",size:8.9664pt,fill:${dateColor},${q("> > > 更新时间："+date)})]
-#pagebreak()
-${pageSetup(st,s)}
-${flow(st,s)}
-`}
-export function makeCompilePayload(st,spec){return{source:buildTypstSource(st,spec),title:st.coverTitle||st.title||"Everflow"}}
+// Everflow editor state -> safe Typst content.
+// All visual/layout rules live in everflow-template.typ.
+
+function typstString(value){
+  return '"' + String(value==null?"":value)
+    .replace(/\\/g,"\\\\")
+    .replace(/"/g,'\\"')
+    .replace(/\r/g,"\\r")
+    .replace(/\n/g,"\\n")
+    .replace(/\t/g,"\\t")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,"") + '"';
+}
+
+function normalizeTemplateMacros(text){
+  return String(text||"")
+    .replace(/\\par\b/g,"\n")
+    .replace(/\\blankbox\b/g,"（\u2002\u2002\u2002）")
+    .replace(/（\s*\\hspace\{1\.5em\}\s*）/g,"（\u2002\u2002\u2002）")
+    .replace(/\\blankline\b/g,"＿＿＿")
+    .replace(/\\quad\b/g,"\u2003");
+}
+
+function semanticLines(text){
+  let src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
+  src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
+  src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\))\s*)/gi,"$1\n");
+  src=(" "+src)
+    .replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n")
+    .slice(1);
+  return src.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+}
+
+function classifyLine(line){
+  let m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
+  if(m)return {kind:"circled",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:I{1,3}|IV|V|VI{0,3})[.、．])\s*(.*)$/);
+  if(m)return {kind:"roman",label:m[1],body:m[2]};
+  m=String(line||"").match(/^((?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\)))\s*(.*)$/i);
+  if(m)return {kind:"subq",label:m[1],body:m[2]};
+  return {kind:"plain",label:"",body:String(line||"")};
+}
+
+function inlineParts(text,book){
+  const source=String(text||"");
+  const re=/(\$[^$\n]+\$|\\\([^]*?\\\))/g;
+  const out=[];
+  let last=0,m;
+  while((m=re.exec(source))){
+    if(m.index>last)out.push("#text("+typstString(source.slice(last,m.index))+")");
+    const raw=m[0];
+    let math=raw.startsWith("$")?raw.slice(1,-1):raw.slice(2,-2);
+    if(book&&!/^\s*\\displaystyle\b/.test(math))math="\\displaystyle "+math;
+    out.push("#everflow-inline-math("+typstString(math)+")");
+    last=m.index+raw.length;
+  }
+  if(last<source.length)out.push("#text("+typstString(source.slice(last))+")");
+  if(!out.length)out.push("#text("+typstString(source)+")");
+  return out.join("");
+}
+
+function questionBody(text,book){
+  const src=normalizeTemplateMacros(text);
+  const displayRe=/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g;
+  const nodes=[];
+  let last=0,m,previousKind="plain";
+
+  function addText(chunk){
+    for(const line of semanticLines(chunk)){
+      const meta=classifyLine(line);
+      const groupStart=meta.kind!=="plain"&&meta.kind!==previousKind;
+      nodes.push(
+        "#everflow-semantic-line("+
+        typstString(meta.kind)+","+
+        typstString(meta.label)+
+        ",["+inlineParts(meta.body,book)+"],group-start:"+(groupStart?"true":"false")+")"
+      );
+      previousKind=meta.kind;
+    }
+  }
+
+  while((m=displayRe.exec(src))){
+    if(m.index>last)addText(src.slice(last,m.index));
+    const raw=m[0];
+    nodes.push("#block(above:3pt,below:3pt)[#everflow-display-math("+typstString(raw.slice(2,-2).trim())+")]" );
+    previousKind="plain";
+    last=m.index+raw.length;
+  }
+  if(last<src.length)addText(src.slice(last));
+  if(!nodes.length)nodes.push("#text("+typstString("（空题干）")+")");
+  return "[\n"+nodes.join("\n")+"\n]";
+}
+
+function optionBody(text,book){
+  const source=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
+  const ls=source.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(!ls.length)return "[#text(\"\")]";
+  return "["+ls.map((line,i)=>(i?"#linebreak()":"")+inlineParts(line,book)).join("")+"]";
+}
+
+function sectionName(raw){
+  return String(raw||"")
+    .replace(/^\s*[一二三四五六七八九十百]+[、.．]\s*/,"")
+    .replace(/^\s*\d+[.．、]\s*/,"")
+    .trim();
+}
+
+function questionGapMm(spec){
+  if(typeof spec.questionGapMm==="number")return spec.questionGapMm;
+  if(typeof spec.questionGapBaseline==="number"){
+    return Number(spec.baselinePt||0)*Number(spec.questionGapBaseline)*25.4/72;
+  }
+  return 0;
+}
+
+function configSource(state,spec){
+  const kind=state.template==="book"?"book":"exam";
+  const bodySize=Number(spec.fontPt||(kind==="book"?10.53937:9.03374));
+  const baseline=Number(spec.baselinePt||(kind==="book"?16.44145:14.09265));
+  const width=Number(spec.widthMm||210),height=Number(spec.heightMm||297);
+  const top=Number(spec.topMm||(kind==="book"?14:16));
+  const bottom=Number(spec.bottomMm||(kind==="book"?14:12));
+  const left=Number(spec.leftMm||(kind==="book"?18:20));
+  const right=Number(spec.rightMm||(kind==="book"?18:20));
+  const columnGap=Number(spec.columnGapMm||0);
+  const columns=Number(spec.columns||1);
+  const usable=height-top-bottom;
+
+  return "("+
+    "kind:"+typstString(kind)+","+
+    "title:"+typstString(state.title||"试卷")+","+
+    "cover-title:"+typstString(state.coverTitle||state.title||"未命名试卷")+","+
+    "export-date:"+typstString(state.exportDate||"")+","+
+    "header-center:"+typstString(state.header||"")+","+
+    "page-width:"+width+"mm,"+
+    "page-height:"+height+"mm,"+
+    "top:"+top+"mm,"+
+    "bottom:"+bottom+"mm,"+
+    "left:"+left+"mm,"+
+    "right:"+right+"mm,"+
+    "columns:"+columns+","+
+    "column-gap:"+columnGap+"mm,"+
+    "foot-skip:"+Number(spec.footSkipMm||(kind==="book"?9:5.3))+"mm,"+
+    "body-size:"+bodySize+"pt,"+
+    "baseline:"+baseline+"pt,"+
+    "usable-height:"+usable+"mm,"+
+    "question-gap:"+questionGapMm(spec).toFixed(5)+"mm,"+
+    "one-per-page:"+(spec.onePerPage?"true":"false")+
+  ")";
+}
+
+function optionsSource(options,book){
+  if(!Array.isArray(options)||!options.length)return "()";
+  const items=options.map((value,i)=>
+    "(label:"+typstString("("+String.fromCharCode(65+i)+")")+",body:"+optionBody(value,book)+")"
+  );
+  return "("+items.join(",")+(items.length===1?",":"")+")";
+}
+
+function flowSource(state,spec){
+  const questions=Array.isArray(state.questions)?state.questions:[];
+  const book=state.template==="book";
+  const out=[];
+  let previous="",sectionOrdinal=0;
+
+  questions.forEach((q,index)=>{
+    const rawSection=String(q.section||"").trim();
+    const nextSection=sectionName(rawSection);
+    const sectionStart=!!nextSection&&rawSection!==previous;
+
+    if(sectionStart){
+      sectionOrdinal++;
+      if(book&&sectionOrdinal>1&&!spec.onePerPage)out.push("#pagebreak()");
+      out.push("#everflow-section("+typstString(nextSection)+","+sectionOrdinal+",cfg)");
+      previous=rawSection;
+    }
+
+    const defaultGap=questionGapMm(spec);
+    const gap=spec.onePerPage?0:(Number(q.gap)>0?Number(q.gap):defaultGap);
+    let force=!!q.breakBefore;
+    if(book&&sectionStart&&sectionOrdinal>1&&!spec.onePerPage)force=false;
+
+    const opts=(q.showOptions!==false&&Array.isArray(q.options)&&q.options.length)
+      ?optionsSource(q.options,book)
+      :"()";
+
+    out.push(
+      "#everflow-question("+(index+1)+","+
+      questionBody(q.content||"",book)+
+      ",options:"+opts+
+      ",cfg:cfg,gap:"+gap.toFixed(5)+"mm,break-before:"+(force?"true":"false")+")"
+    );
+
+    if(spec.onePerPage&&index<questions.length-1)out.push("#pagebreak()");
+  });
+
+  return out.join("\n\n");
+}
+
+export function buildTypstSource(state,spec){
+  return "#import \"/everflow-template.typ\": *\n"+
+    "#let cfg = "+configSource(state,spec)+"\n"+
+    "#everflow-document(cfg)[\n"+flowSource(state,spec)+"\n]\n";
+}
+
+export function makeCompilePayload(state,spec){
+  return {
+    source:buildTypstSource(state,spec),
+    title:state.coverTitle||state.title||"Everflow",
+  };
+}
