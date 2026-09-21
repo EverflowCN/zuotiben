@@ -365,35 +365,30 @@ function bindDrag(container){
 }
 function schedulePdfPreview(){
   clearTimeout(previewCompileTimer);
-  if(!previewMode)return;
+  if(!els.pdfPreview)return;
+  els.pdfStatus.textContent="正在更新本地 PDF 预览…";
   previewCompileTimer=setTimeout(function(){refreshPdfPreview()},420);
 }
 async function refreshPdfPreview(){
-  if(!previewMode)return;
   try{
     await createLatestPdf();
-    if(!previewMode)return;
     els.pdfPreview.hidden=false;
     els.paperStage.hidden=true;
-    els.pdfStatus.textContent="预览与下载使用同一份本地 PDF。";
+    els.pdfStatus.textContent="编辑、预览与下载使用同一份本地 PDF。";
   }catch(e){
     console.error(e);
     els.pdfStatus.textContent="PDF 预览失败："+(e.message||"未知错误");
   }
 }
 async function setMode(preview){
-  previewMode=!!preview;document.body.classList.toggle("preview-mode",previewMode);
-  els.editModeButton.setAttribute("aria-pressed",String(!previewMode));els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
-  if(previewMode){
-    els.paperStage.hidden=true;
-    els.pdfPreview.hidden=false;
-    await refreshPdfPreview();
-  }else{
-    clearTimeout(previewCompileTimer);
-    els.pdfPreview.hidden=true;
-    els.paperStage.hidden=false;
-    els.pdfStatus.textContent="";
-  }
+  previewMode=!!preview;
+  document.body.classList.toggle("preview-mode",previewMode);
+  els.editModeButton.setAttribute("aria-pressed",String(!previewMode));
+  els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
+  els.paperStage.hidden=true;
+  els.pdfPreview.hidden=false;
+  if(pdfRevision!==revision)await refreshPdfPreview();
+  else els.pdfStatus.textContent="编辑、预览与下载使用同一份本地 PDF。";
 }
 function renderQuestionEditor(){
   var root=els.questionEditor;root.replaceChildren();
@@ -525,6 +520,9 @@ function init(){
   });
   window.addEventListener("resize",updatePages);
   undoStack.push(snapshot());render();
+  els.paperStage.hidden=true;
+  els.pdfPreview.hidden=false;
+  schedulePdfPreview();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
