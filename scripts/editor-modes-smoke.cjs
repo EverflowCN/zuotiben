@@ -20,7 +20,7 @@ async function choose(page,label,layout){
   },before,{timeout:120000});
 }
 async function ratio(page,index=1){
-  return page.locator('.typst-page').nth(index).evaluate(wrap=>{
+  return page.locator('#typstPreview > section.typst-page').nth(index).evaluate(wrap=>{
     const svg=wrap.querySelector('svg');
     if(!svg)throw new Error('missing svg in Typst page');
     const vb=(svg.getAttribute('viewBox')||'').trim().split(/[ ,]+/).map(Number);
