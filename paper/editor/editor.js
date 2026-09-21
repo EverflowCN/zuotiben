@@ -509,7 +509,7 @@ function updatePreviewPageIndicator(page){
 }
 function observePreviewPages(){
   if(previewObserver){previewObserver.disconnect();previewObserver=null}
-  var pages=Array.from(els.typstPreview?els.typstPreview.querySelectorAll(".typst-page"):[]);
+  var pages=Array.from(els.typstPreview?els.typstPreview.querySelectorAll(":scope > section.typst-page"):[]);
   previewPageCount=pages.length;
   updatePreviewPageIndicator(Math.min(currentPreviewPage,Math.max(1,previewPageCount)));
   if(!pages.length||typeof IntersectionObserver!=="function")return;
@@ -524,7 +524,7 @@ function observePreviewPages(){
 }
 function scrollPreviewPage(page){
   if(!els.typstPreview)return;
-  var target=els.typstPreview.querySelector('.typst-page[data-page="'+page+'"]');
+  var target=els.typstPreview.querySelector(':scope > section.typst-page[data-page="'+page+'"]');
   if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function bindDrag(container){
