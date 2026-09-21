@@ -2,6 +2,7 @@
 "use strict";
 
 var STORAGE_KEY="zuotiben-local-paper-v1";
+var UI_STORAGE_KEY="zuotiben-editor-ui-v2";
 var MODES=window.EverflowTemplateModes;
 var SAVE=window.EverflowSaveManager;
 var QUESTION_TYPES=["选择题","填空题","判断题","简答题","计算题","证明题","解答题","综合题","自定义"];
@@ -16,6 +17,7 @@ var state={
   originalIds:[]
 };
 var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,typstPreviewing=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,svgRevision=-1,svgExportDate="";
+var previewZoom=1,previewFit=true,currentPreviewPage=1,previewPageCount=0,previewObserver=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -405,6 +407,126 @@ function updatePages(){
     els.previewPageCurrent.textContent="1";els.previewPageTotal.textContent=String(total);
   });
 }
+function loadUiState(){
+  try{
+    var d=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}");
+    if(d.navigatorWidth)document.documentElement.style.setProperty("--navigator-w",Math.max(190,Math.min(360,Number(d.navigatorWidth)))+"px");
+    if(d.editorWidth)document.documentElement.style.setProperty("--editor-w",Math.max(320,Math.min(820,Number(d.editorWidth)))+"px");
+    if(d.navigatorCollapsed&&window.matchMedia("(min-width:1101px)").matches)document.body.classList.add("navigator-collapsed");
+  }catch(e){}
+}
+function persistUiState(extra){
+  try{
+    var current={};
+    try{current=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}")}catch(e){}
+    localStorage.setItem(UI_STORAGE_KEY,JSON.stringify(Object.assign(current,extra||{})));
+  }catch(e){}
+}
+function setNavigatorTab(name){
+  var settings=name==="settings";
+  if(els.outlineTabButton)els.outlineTabButton.setAttribute("aria-selected",String(!settings));
+  if(els.settingsTabButton)els.settingsTabButton.setAttribute("aria-selected",String(settings));
+  if(els.outlinePanel)els.outlinePanel.hidden=settings;
+  if(els.settingsPanel)els.settingsPanel.hidden=!settings;
+}
+function closeNavigatorDrawer(){
+  document.body.classList.remove("navigator-open");
+  if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=true;
+}
+function toggleNavigator(){
+  if(window.matchMedia("(max-width:1100px)").matches){
+    var open=!document.body.classList.contains("navigator-open");
+    document.body.classList.toggle("navigator-open",open);
+    if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=!open;
+    return;
+  }
+  var collapsed=!document.body.classList.contains("navigator-collapsed");
+  document.body.classList.toggle("navigator-collapsed",collapsed);
+  persistUiState({navigatorCollapsed:collapsed});
+}
+function bindPaneResizer(el,kind){
+  if(!el)return;
+  el.addEventListener("pointerdown",function(e){
+    if(window.matchMedia("(max-width:767px)").matches)return;
+    if(kind==="navigator"&&window.matchMedia("(max-width:1100px)").matches)return;
+    e.preventDefault();
+    el.setPointerCapture&&el.setPointerCapture(e.pointerId);
+    el.classList.add("is-dragging");
+    document.body.classList.add("is-resizing-panes");
+    function move(ev){
+      if(kind==="navigator"){
+        var box=els.workbench.getBoundingClientRect();
+        var width=Math.max(190,Math.min(360,ev.clientX-box.left));
+        document.documentElement.style.setProperty("--navigator-w",width+"px");
+        persistUiState({navigatorWidth:Math.round(width)});
+      }else{
+        var box=els.editPane.getBoundingClientRect();
+        var available=els.workbench.getBoundingClientRect().right-box.left-360;
+        var width=Math.max(320,Math.min(Math.max(320,available),ev.clientX-box.left));
+        document.documentElement.style.setProperty("--editor-w",width+"px");
+        persistUiState({editorWidth:Math.round(width)});
+        requestAnimationFrame(applyPreviewZoom);
+      }
+    }
+    function up(ev){
+      el.releasePointerCapture&&el.releasePointerCapture(ev.pointerId);
+      el.classList.remove("is-dragging");
+      document.body.classList.remove("is-resizing-panes");
+      window.removeEventListener("pointermove",move);
+      window.removeEventListener("pointerup",up);
+    }
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",up);
+  });
+}
+function previewBaseWidth(){
+  var info=modeInfo();
+  return Math.max(560,Math.round(Number(info.widthMm||210)*3.45));
+}
+function applyPreviewZoom(){
+  if(!els.typstPreview)return;
+  var width;
+  if(window.matchMedia("(max-width:767px)").matches){
+    width=Math.max(260,els.typstPreview.clientWidth-12);
+  }else if(previewFit){
+    width=Math.max(320,els.typstPreview.clientWidth-40);
+  }else{
+    width=Math.round(previewBaseWidth()*previewZoom);
+  }
+  els.typstPreview.style.setProperty("--preview-page-width",width+"px");
+  if(els.previewZoomLabel)els.previewZoomLabel.textContent=previewFit?"适宽":Math.round(previewZoom*100)+"%";
+}
+function setPreviewZoom(next){
+  previewFit=false;
+  previewZoom=Math.max(.45,Math.min(2.2,Number(next)||1));
+  applyPreviewZoom();
+}
+function updatePreviewPageIndicator(page){
+  currentPreviewPage=Math.max(1,Math.min(previewPageCount||1,Number(page)||1));
+  if(els.previewPageIndicator)els.previewPageIndicator.textContent=previewPageCount?currentPreviewPage+" / "+previewPageCount:"— / —";
+  if(els.previewPrevPageButton)els.previewPrevPageButton.disabled=currentPreviewPage<=1;
+  if(els.previewNextPageButton)els.previewNextPageButton.disabled=!previewPageCount||currentPreviewPage>=previewPageCount;
+}
+function observePreviewPages(){
+  if(previewObserver){previewObserver.disconnect();previewObserver=null}
+  var pages=Array.from(els.typstPreview?els.typstPreview.querySelectorAll(".typst-page"):[]);
+  previewPageCount=pages.length;
+  updatePreviewPageIndicator(Math.min(currentPreviewPage,Math.max(1,previewPageCount)));
+  if(!pages.length||typeof IntersectionObserver!=="function")return;
+  previewObserver=new IntersectionObserver(function(entries){
+    var best=null;
+    entries.forEach(function(entry){
+      if(entry.isIntersecting&&(!best||entry.intersectionRatio>best.intersectionRatio))best=entry;
+    });
+    if(best)updatePreviewPageIndicator(Number(best.target.dataset.page)||1);
+  },{root:els.typstPreview,threshold:[.2,.4,.6,.8]});
+  pages.forEach(function(page){previewObserver.observe(page)});
+}
+function scrollPreviewPage(page){
+  if(!els.typstPreview)return;
+  var target=els.typstPreview.querySelector('.typst-page[data-page="'+page+'"]');
+  if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+}
 function bindDrag(container){
   var from=null;
   container.addEventListener("dragstart",function(e){var row=e.target.closest(".order-item");if(!row)return;from=Number(row.dataset.index);row.classList.add("dragging")});
@@ -464,6 +586,8 @@ function setTypstSvg(svgText){
     frag.appendChild(wrap);
   });
   els.typstPreview.replaceChildren(frag);
+  observePreviewPages();
+  requestAnimationFrame(applyPreviewZoom);
 }
 async function refreshTypstPreview(){
   if(typstPreviewing)return;
@@ -519,6 +643,7 @@ function renderQuestionEditor(){
   var root=els.questionEditor;root.replaceChildren();
   var q=state.questions.find(function(x){return x.id===selectedId});if(!q)return;
   var idx=state.questions.indexOf(q),h=document.createElement("div");h.className="question-editor-head";
+  if(els.activeQuestionLabel)els.activeQuestionLabel.textContent="第 "+(idx+1)+" 题 · "+(q.type||"题目");
   var title=document.createElement("h3");title.textContent="第 "+(idx+1)+" 题";
   var actions=document.createElement("div");
   var insert=document.createElement("button");insert.type="button";insert.className="text-btn";insert.textContent="后插题";insert.onclick=function(){mutateState(function(){var nq=newQuestion(q.section);state.questions.splice(idx+1,0,nq);selectedId=nq.id},"已插入新题")};
@@ -596,10 +721,27 @@ function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
    "headerInput","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton",
-   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton"
+   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
   selectedId=state.questions[0].id;syncInputs();bindDrag(els.orderList);
+  loadUiState();
+  bindPaneResizer(els.navigatorResizer,"navigator");
+  bindPaneResizer(els.previewResizer,"preview");
+  if(els.outlineTabButton)els.outlineTabButton.onclick=function(){setNavigatorTab("outline")};
+  if(els.settingsTabButton)els.settingsTabButton.onclick=function(){setNavigatorTab("settings")};
+  if(els.navigatorToggleButton)els.navigatorToggleButton.onclick=toggleNavigator;
+  if(els.workbenchBackdrop)els.workbenchBackdrop.onclick=closeNavigatorDrawer;
+  if(els.focusStemButton)els.focusStemButton.onclick=function(){var x=els.questionEditor.querySelector("textarea");if(x){x.focus();x.scrollIntoView({block:"center"})}};
+  if(els.focusOptionsButton)els.focusOptionsButton.onclick=function(){var x=els.questionEditor.querySelector(".option-editor input");if(x){x.focus();x.scrollIntoView({block:"center"})}};
+  if(els.previewPrevPageButton)els.previewPrevPageButton.onclick=function(){scrollPreviewPage(Math.max(1,currentPreviewPage-1))};
+  if(els.previewNextPageButton)els.previewNextPageButton.onclick=function(){scrollPreviewPage(Math.min(previewPageCount,currentPreviewPage+1))};
+  if(els.previewZoomOutButton)els.previewZoomOutButton.onclick=function(){setPreviewZoom(previewFit?.9:previewZoom-.15)};
+  if(els.previewZoomInButton)els.previewZoomInButton.onclick=function(){setPreviewZoom(previewFit?1.1:previewZoom+.15)};
+  if(els.previewZoomLabel)els.previewZoomLabel.onclick=function(){setPreviewZoom(1)};
+  if(els.previewFitButton)els.previewFitButton.onclick=function(){previewFit=true;applyPreviewZoom()};
+  setNavigatorTab("outline");
+  updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
   els.printButton.onclick=downloadPdf;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
@@ -650,7 +792,7 @@ function init(){
   var resizeRaf=0;
   window.addEventListener("resize",function(){
     cancelAnimationFrame(resizeRaf);
-    resizeRaf=requestAnimationFrame(function(){updatePages();syncViewportMode()});
+    resizeRaf=requestAnimationFrame(function(){updatePages();syncViewportMode();applyPreviewZoom();if(window.matchMedia("(min-width:1101px)").matches)closeNavigatorDrawer()});
   });
   if(window.visualViewport){
     window.visualViewport.addEventListener("resize",function(){
@@ -660,6 +802,7 @@ function init(){
   }
   undoStack.push(snapshot());render();
   syncViewportMode();
+  applyPreviewZoom();
   els.pdfStatus.textContent=window.matchMedia("(min-width:768px)").matches
     ?"正在准备右侧实时 Typst 精确预览…"
     :"手机编辑模式：切到“预览”查看同一 Typst 精确分页。";
