@@ -39,6 +39,7 @@ async function addMotherTemplate() {
 async function initTypst() {
   if (readyPromise) return readyPromise;
   readyPromise = (async () => {
+    await loadTypstRuntime();
     $typst.setCompilerInitOptions({
       getModule: () => assetUrl("vendor/typst/typst_ts_web_compiler_bg.wasm"),
     });
