@@ -720,7 +720,7 @@ async function downloadPdf(){
   try{
     var today=localDate();var blob=(pdfBlob&&pdfRevision===revision&&pdfExportDate===today)?pdfBlob:await createLatestPdf();if(!blob)return;
     var name=(state.coverTitle||state.title||"Everflow")+"";
-    var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf"});
+    var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf",preferNative:false});
     if(result.method!=="cancelled")toast("PDF 已交给浏览器保存");
   }catch(err){console.error(err);els.pdfStatus.textContent="PDF 生成或保存失败："+(err.message||"未知错误")}
 }
