@@ -79,9 +79,11 @@ jobs:
           curl -fL --retry 3             "https://packages.typst.org/preview/mitex-$MITEX_VERSION.tar.gz"             -o /tmp/mitex.tar.gz
           tar -xzf /tmp/mitex.tar.gz -C /tmp/mitex-package
           cp -a /tmp/mitex-package/. "$MITEX_DIR/"
+          find "$MITEX_DIR" -type f -printf '%P\n' | LC_ALL=C sort > "$MITEX_DIR/manifest.txt"
           test -s "$MITEX_DIR/lib.typ"
           test -s "$MITEX_DIR/mitex.typ"
           test -s "$MITEX_DIR/mitex.wasm"
+          test -s "$MITEX_DIR/manifest.txt"
           python3 - <<'PY'
           import json, pathlib
           root = pathlib.Path("paper/assets/vendor/typst/mitex")
