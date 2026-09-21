@@ -727,3 +727,227 @@ body.preview-mode .paper-stage{display:none!important}
 @media(max-width:760px){
   body.preview-mode .editor-toolbar{position:relative!important;top:auto!important;z-index:25}
 }
+
+
+/* 2026-09-21 three-device editor layout
+   Desktop >= 1200, Tablet 768-1199, Phone <= 767 */
+
+/* Desktop */
+@media (min-width:1200px){
+  .editor-shell{grid-template-columns:320px minmax(0,1fr)!important}
+  .editor-sidebar{top:64px;height:calc(100dvh - 64px)}
+  .editor-topbar{min-width:0}
+  .editor-top-actions{min-width:0}
+  .editor-toolbar{top:64px}
+  .typst-preview{padding-inline:max(28px,calc((100% - 1120px)/2))}
+}
+
+/* Tablet */
+@media (min-width:768px) and (max-width:1199px){
+  .editor-topbar{
+    height:68px;padding:0 12px;gap:10px;
+  }
+  .editor-brand-wrap{min-width:150px}
+  .editor-topbar .brand small{display:none}
+  .editor-topbar .local-pill{display:none}
+  .editor-top-actions{gap:6px;min-width:0}
+  .editor-top-actions .ghost-btn{padding-inline:9px}
+  .save-state{display:none}
+  .history-actions .icon-text-btn{width:32px;height:32px}
+  .mode-switch button{padding:7px 10px}
+  .editor-shell{
+    grid-template-columns:292px minmax(0,1fr)!important;
+    min-height:calc(100dvh - 68px);
+  }
+  .editor-sidebar{
+    top:68px;height:calc(100dvh - 68px);
+  }
+  .sidebar-head{padding:14px 12px 10px}
+  .paper-settings,.question-editor{padding:10px 12px}
+  .order-toolbar{padding-inline:12px}
+  .editor-toolbar{
+    top:68px;min-height:60px;padding:9px 12px;
+  }
+  .editor-toolbar-actions{gap:6px}
+  .preview-chip{padding-inline:8px!important}
+  .typst-preview{
+    min-height:calc(100dvh - 128px);
+    padding:18px 14px 34px;
+  }
+  .typst-preview svg{
+    width:min(100%,920px);
+  }
+  .template-popover{width:310px}
+  .batch-bar{margin-inline:6px}
+}
+
+/* Phone */
+@media (max-width:767px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body.editor-page{padding-bottom:max(0px,env(safe-area-inset-bottom))}
+
+  .editor-topbar{
+    position:sticky;top:0;z-index:100;
+    height:auto!important;min-height:54px;
+    padding:7px 8px!important;
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:6px!important;
+  }
+  .editor-brand-wrap{min-width:0}
+  .editor-topbar .brand{min-width:0}
+  .editor-topbar .brand>span:last-child{
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+  }
+  .editor-topbar .brand small,.local-pill,.save-state,.history-actions,#saveProjectButton{
+    display:none!important;
+  }
+  .editor-top-actions{
+    min-width:0;width:100%;
+    justify-content:flex-end!important;
+    gap:5px!important;
+    overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .editor-top-actions::-webkit-scrollbar{display:none}
+  .template-control{flex:0 1 auto;min-width:0;order:0!important}
+  #templateButton{
+    display:flex!important;max-width:148px;
+    min-height:38px;padding:0 8px!important;
+    overflow:hidden;
+  }
+  #templateButtonLabel{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:10px;
+  }
+  .mode-switch{
+    flex:0 0 auto;padding:2px;border-radius:9px;
+  }
+  .mode-switch button{
+    min-height:34px;padding:0 9px!important;font-size:10px;
+  }
+  .template-popover{
+    position:fixed!important;
+    left:8px!important;right:8px!important;top:56px!important;
+    width:auto!important;max-height:calc(100dvh - 68px)!important;
+    border-radius:14px;
+    overscroll-behavior:contain;
+  }
+  .template-option{min-height:46px}
+  .template-option strong{font-size:12px}
+  .template-option small{font-size:8px}
+
+  .editor-shell{
+    display:block!important;width:100%;min-height:0;
+  }
+  .editor-sidebar{
+    position:relative!important;top:auto!important;
+    width:100%;height:auto!important;max-height:none!important;
+    border:0!important;background:var(--card);
+  }
+  body.preview-mode .editor-sidebar{display:none!important}
+
+  .sidebar-head{padding:12px 12px 9px}
+  .sidebar-head strong{max-width:calc(100vw - 90px);font-size:14px}
+  .sidebar-note{padding:8px 12px;font-size:9px}
+  .paper-settings,.question-editor{padding:10px 12px}
+  .paper-settings label,.question-editor label{font-size:11px}
+  .paper-settings input,.question-editor input,.question-editor textarea,.question-editor select{
+    min-height:42px;font-size:16px; /* prevents iOS focus zoom */
+    padding:9px 10px;
+  }
+  .question-editor textarea{min-height:120px;line-height:1.55}
+  .question-editor{
+    max-height:none!important;overflow:visible!important;
+  }
+  .question-editor-head{
+    position:sticky;top:54px;z-index:12;
+    padding:7px 0;background:var(--card);
+  }
+  .question-editor-head>div{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .question-editor-head .text-btn{min-height:34px;padding-inline:7px}
+
+  .order-toolbar{
+    position:sticky;top:54px;z-index:14;
+    padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line)
+  }
+  .order-toolbar-actions{gap:4px}
+  .order-toolbar-actions .text-btn{min-height:34px;padding:0 7px}
+  .editor-sidebar .order-list{
+    max-height:32dvh!important;min-height:96px;
+    padding:6px 8px!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+  }
+  .order-item{min-height:46px}
+  .order-controls button{min-width:32px;min-height:32px}
+  .order-check{width:18px;height:18px}
+  .batch-bar{
+    position:sticky!important;top:96px!important;z-index:13;
+    margin:5px 8px;padding:7px;
+  }
+  .batch-bar input,.batch-bar select{min-height:36px;font-size:12px}
+  .section-panel{margin:5px 8px;padding:7px}
+  .section-manage-row{
+    grid-template-columns:minmax(0,1fr) auto auto auto!important;
+    min-height:42px;
+  }
+  .section-manage-row>span{display:none!important}
+  .sidebar-foot{
+    position:sticky;bottom:0;z-index:20;
+    padding:8px 12px max(8px,env(safe-area-inset-bottom));
+    background:color-mix(in srgb,var(--card) 97%,transparent);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  }
+  .sidebar-foot .text-btn{min-height:36px}
+
+  .editor-main{width:100%;padding:0}
+  .editor-toolbar{
+    position:sticky!important;top:54px!important;z-index:80;
+    min-height:50px!important;padding:7px 8px!important;
+    gap:6px!important;background:color-mix(in srgb,var(--card) 97%,transparent);
+  }
+  .editor-toolbar>div:first-child{min-width:0}
+  .editor-toolbar>div:first-child>span,.editor-toolbar>div:first-child small{display:none!important}
+  .editor-toolbar strong{
+    max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:10px!important;
+  }
+  .editor-toolbar-actions{margin-left:auto;gap:5px!important;flex-wrap:nowrap!important}
+  .editor-toolbar-actions .preview-chip{display:none!important}
+  #printButton{
+    min-height:38px;padding:0 11px!important;font-size:10px!important;white-space:nowrap;
+  }
+  .pdf-status{
+    padding:7px 10px;font-size:10px;line-height:1.45;
+    position:sticky;top:104px;z-index:70;
+    background:color-mix(in srgb,var(--card) 96%,transparent);
+  }
+
+  /* Phone editing is editor-first. Exact pages are shown by the Preview tab. */
+  body:not(.preview-mode) .editor-main .paper-stage{display:none!important}
+  body:not(.preview-mode) .editor-main .typst-preview{display:none!important}
+  body:not(.preview-mode) .editor-main .editor-toolbar{display:none!important}
+  body:not(.preview-mode) .editor-main .pdf-status{display:none!important}
+
+  body.preview-mode .editor-main{display:block!important}
+  body.preview-mode .editor-toolbar{top:54px!important}
+  body.preview-mode .typst-preview{
+    display:block!important;
+    min-height:calc(100dvh - 104px);
+    padding:10px 6px calc(20px + env(safe-area-inset-bottom))!important;
+    overflow:auto;
+    overscroll-behavior:contain;
+  }
+  .typst-preview svg{
+    width:100%!important;max-width:100%!important;height:auto!important;
+    margin:0 auto 10px!important;
+    box-shadow:0 8px 28px rgba(27,31,42,.13)!important;
+  }
+
+  .toast{
+    left:10px!important;right:10px!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;
+    max-width:none!important;
+  }
+}
