@@ -16,28 +16,6 @@ async function waitForTypst(page, timeout=120000){
   return status;
 }
 
-async function chooseTemplate(page,label){
-  await page.locator('#templateButton').click();
-  await page.locator('.template-option').filter({hasText:label}).click();
-  await page.waitForFunction(()=>{
-    const s=document.querySelector('#pdfStatus')?.textContent||'';
-    return /已更新|已是最新/.test(s) && !/正在/.test(s);
-  },null,{timeout:120000});
-  await page.waitForTimeout(120);
-}
-async function pageAspect(page,index=1){
-  const pages=page.locator('.typst-page');
-  assert.ok((await pages.count())>index,'missing Typst page '+(index+1));
-  return await pages.nth(index).locator('svg').evaluate(svg=>{
-    const vb=(svg.getAttribute('viewBox')||'').trim().split(/[ ,]+/).map(Number);
-    if(vb.length===4&&vb[2]>0&&vb[3]>0)return vb[2]/vb[3];
-    const r=svg.getBoundingClientRect();
-    return r.width/r.height;
-  });
-}
-function near(actual,expected,tolerance=.035){
-  assert.ok(Math.abs(actual-expected)<=tolerance,`aspect ${actual} not near ${expected}`);
-}
 
 (async()=>{
   if(!browserType)throw new Error('Unsupported browser: '+browserName);
@@ -92,29 +70,11 @@ function near(actual,expected,tolerance=.035){
     assert.ok((await page.locator('.typst-page').count())>=1);
     assert.notEqual(await page.locator('#previewPageIndicator').innerText(),'— / —');
 
-    // Physical paper modes: the first page is the fixed A4 cover; inspect the first body page.
-    await chooseTemplate(page,'A3 双栏试卷');
-    assert.equal(await page.locator('body').getAttribute('data-layout'),'a3');
-    near(await pageAspect(page,1),420/297);
-
-    await chooseTemplate(page,'A4/A3 混排试卷');
-    assert.equal(await page.locator('body').getAttribute('data-layout'),'mixed');
-    near(await pageAspect(page,1),420/297);
-
-    await chooseTemplate(page,'一题一页');
-    assert.equal(await page.locator('body').getAttribute('data-layout'),'single');
-    near(await pageAspect(page,1),210/297);
-
-    await chooseTemplate(page,'平板横版（200×150 mm）');
-    assert.equal(await page.locator('body').getAttribute('data-layout'),'padl');
-    near(await pageAspect(page,1),200/150);
-
-    await chooseTemplate(page,'平板竖版（200×250 mm）');
-    assert.equal(await page.locator('body').getAttribute('data-layout'),'padp');
-    near(await pageAspect(page,1),200/250);
-
-    // Return to Book standard for header persistence + responsive tests.
-    await chooseTemplate(page,'标准版');
+    // Cross-browser smoke uses Book standard; physical dimensions are verified in a separate fast CI.
+    await page.locator('#templateButton').click();
+    await page.locator('.template-option').filter({hasText:'标准版'}).click();
+    await page.waitForFunction(()=>document.body.dataset.template==='book'&&document.body.dataset.layout==='standard',{},{timeout:30000});
+    await waitForTypst(page);
 
     // Structure/settings act like the left project panel.
     await page.locator('#settingsTabButton').click();
