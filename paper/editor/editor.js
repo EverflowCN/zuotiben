@@ -421,16 +421,49 @@ function scheduleTypstPreview(){
   els.pdfStatus.textContent="正在用本机 Typst WASM 更新精确预览…";
   previewCompileTimer=setTimeout(function(){refreshTypstPreview()},360);
 }
-function setTypstSvg(svg){
-  var parser=new DOMParser(),doc=parser.parseFromString(String(svg||""),"image/svg+xml");
-  if(doc.querySelector("parsererror"))throw new Error("Typst SVG 解析失败");
-  doc.querySelectorAll("script").forEach(function(n){n.remove()});
-  doc.querySelectorAll("*").forEach(function(node){
+function sanitizeSvgNode(svg){
+  svg.querySelectorAll("script,foreignObject").forEach(function(n){n.remove()});
+  svg.querySelectorAll("*").forEach(function(node){
     Array.from(node.attributes||[]).forEach(function(attr){
-      if(/^on/i.test(attr.name)||(/^href$/i.test(attr.name)&&/^\s*javascript:/i.test(attr.value)))node.removeAttribute(attr.name);
+      var name=attr.name.toLowerCase(),value=String(attr.value||"");
+      if(/^on/i.test(name)||(name==="href"&&/^\s*javascript:/i.test(value)))node.removeAttribute(attr.name);
     });
   });
-  els.typstPreview.replaceChildren(document.importNode(doc.documentElement,true));
+  return svg;
+}
+function setTypstSvg(svgText){
+  var raw=String(svgText||"").trim();
+  if(!raw)throw new Error("Typst 返回了空 SVG");
+
+  // typst.ts may return multiple sibling SVG roots for a multi-page document.
+  // HTML parsing accepts those siblings while XML parsing requires exactly one root.
+  var htmlDoc=new DOMParser().parseFromString("<body>"+raw+"</body>","text/html");
+  var pages=Array.from(htmlDoc.querySelectorAll("svg"));
+
+  if(!pages.length){
+    var xmlDoc=new DOMParser().parseFromString(raw,"image/svg+xml");
+    if(!xmlDoc.querySelector("parsererror")&&xmlDoc.documentElement&&xmlDoc.documentElement.localName==="svg"){
+      pages=[xmlDoc.documentElement];
+    }
+  }
+  if(!pages.length){
+    throw new Error("Typst SVG 解析失败："+raw.slice(0,120).replace(/\s+/g," "));
+  }
+
+  var frag=document.createDocumentFragment();
+  pages.forEach(function(source,index){
+    var wrap=document.createElement("section");
+    wrap.className="typst-page";
+    wrap.dataset.page=String(index+1);
+    wrap.setAttribute("aria-label","第 "+(index+1)+" 页");
+    var imported=document.importNode(sanitizeSvgNode(source.cloneNode(true)),true);
+    imported.removeAttribute("width");
+    imported.removeAttribute("height");
+    imported.setAttribute("preserveAspectRatio","xMidYMid meet");
+    wrap.appendChild(imported);
+    frag.appendChild(wrap);
+  });
+  els.typstPreview.replaceChildren(frag);
 }
 async function refreshTypstPreview(){
   if(typstPreviewing)return;
