@@ -67,7 +67,7 @@ async function waitForTypst(page, timeout=120000){
     assert.match(await page.locator('#activeQuestionLabel').innerText(),/第 1 题/);
     const firstTypstStatus=await waitForTypst(page);
     assert.match(firstTypstStatus,/Typst|实时|精确预览/);
-    assert.ok((await page.locator('.typst-page').count())>=1);
+    assert.ok((await page.locator('#typstPreview > section.typst-page').count())>=1);
     assert.notEqual(await page.locator('#previewPageIndicator').innerText(),'— / —');
 
     // Cross-browser smoke uses Book standard; physical dimensions are verified in a separate fast CI.
@@ -146,7 +146,7 @@ async function waitForTypst(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    const pageWidth=await page.locator('.typst-page').first().evaluate(el=>el.getBoundingClientRect().width);
+    const pageWidth=await page.locator('#typstPreview > section.typst-page').first().evaluate(el=>el.getBoundingClientRect().width);
     assert.ok(pageWidth<=390);
     await page.screenshot({path:'test-results/editor-mobile-texpage.png',fullPage:true});
 
