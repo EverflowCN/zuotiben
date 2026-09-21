@@ -1,0 +1,39 @@
+// Everflow fixed-template -> Typst source generator.
+function q(v){return JSON.stringify(String(v==null?"":v))}
+function norm(v){return String(v||"").replace(/\\par\b/g,"\n").replace(/\\blankbox\b/g,"ï¼ˆ\u2002\u2002\u2002ï¼‰").replace(/ï¼ˆ\s*\\hspace\{1\.5em\}\s*ï¼‰/g,"ï¼ˆ\u2002\u2002\u2002ï¼‰").replace(/\\blankline\b/g,"ï¼¿ï¼¿ï¼¿").replace(/\\quad\b/g,"\u2003")}
+function lines(v){let s=norm(v).replace(/\r\n?/g,"\n");s=s.replace(/([^\n])\s+(?=(?:â‘ |â‘¡|â‘¢|â‘£|â‘¤|â‘¥|â‘¦|â‘§|â‘¨|â‘©))/g,"$1\n");s=s.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|ï¼ˆ[1-9]\d*ï¼‰)\s*)/g,"$1\n");s=(" "+s).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.ã€ï¼]\s*)/g,"$1\n").slice(1);return s.split(/\n+/).map(x=>x.trim()).filter(Boolean)}
+function inline(line){const out=[];const re=/(\$[^$\n]+\$|\\\([^]*?\\\))/g;let last=0,m;while((m=re.exec(line))){if(m.index>last)out.push("#text("+q(line.slice(last,m.index))+")");const raw=m[0];out.push("#mi("+q(raw.startsWith("$")?raw.slice(1,-1):raw.slice(2,-2))+")");last=m.index+raw.length}if(last<line.length)out.push("#text("+q(line.slice(last))+")");return out.join("")}
+function body(v){const src=norm(v),re=/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g,nodes=[];let last=0,m;function addText(t){for(const l of lines(t))nodes.push("#par["+inline(l)+"]")}while((m=re.exec(src))){if(m.index>last)addText(src.slice(last,m.index));nodes.push("#mimath("+q(m[0].slice(2,-2).trim())+", block: true)");last=m.index+m[0].length}if(last<src.length)addText(src.slice(last));if(!nodes.length)nodes.push('#par[#text("ï¼ˆç©ºé¢˜å¹²ï¼‰")]');return "[\n"+nodes.join("\n")+"\n]"}
+function optionCell(label,v){return "[#grid(columns:(2.25em,1fr),column-gutter:0em,[#text("+q(label)+")],"+body(v)+")]"}
+function options(list){if(!Array.isArray(list)||!list.length)return "";const measures=list.map((v,i)=>"[#text("+q("("+String.fromCharCode(65+i)+") ")+")"+inline(lines(v)[0]||"")+"]");const cells=list.map((v,i)=>optionCell("("+String.fromCharCode(65+i)+")",v));return "#pad(left:2.8em,top:everflow-choice-before,everflow-choices(("+measures.join(",")+(measures.length===1?",":"")+"),("+cells.join(",")+(cells.length===1?",":"")+")))"}
+function gapMm(s){if(typeof s.questionGapMm==="number")return s.questionGapMm;if(typeof s.questionGapBaseline==="number")return s.baselinePt*s.questionGapBaseline*25.4/72;return 0}
+function question(qn,i,s){const gap=Number(qn.gap)>0?Number(qn.gap):gapMm(s);const opts=qn.showOptions!==false&&Array.isArray(qn.options)&&qn.options.length?options(qn.options):"";const force=qn.breakBefore?"#pagebreak()\n":"";const chars=String(qn.content||"").length+(qn.options||[]).reduce((n,x)=>n+String(x||"").length,0);const br=chars>1400?"true":"false";return force+"#block(breakable:"+br+")[#grid(columns:(2.25em,1fr),column-gutter:0.55em,[#align(right)[#text("+q((i+1)+".")+")]],"+body(qn.content||"")+")\n"+opts+"]\n#v("+gap.toFixed(4)+"mm)"}
+function section(name,s,br){const size=s.kind==="book"?12:s.fontPt;return (br?"#pagebreak()\n":"")+"#block(breakable:false,above:0pt,below:0.35em)[#text(font:\"FandolHei\",weight:\"bold\",size:"+size+"pt,"+q(name)+")]"}
+function pageSetup(st,s){const book=s.kind==="book",a3=s.kind==="exam"&&Number(s.columns||1)===2;const header=book?"everflow-book-header("+q(st.header||"")+")":"none";const footer=book?"everflow-book-footer":(a3?"everflow-exam-a3-footer("+q(st.title||"è¯•å·")+")":"everflow-exam-a4-footer("+q(st.title||"è¯•å·")+")");return "#set page(width:"+s.widthMm+"mm,height:"+s.heightMm+"mm,margin:(top:"+s.topMm+"mm,bottom:"+s.bottomMm+"mm,left:"+s.leftMm+"mm,right:"+s.rightMm+"mm),header:"+header+",footer:"+footer+",foreground:everflow-overlay)"}
+function flow(st,s){const arr=Array.isArray(st.questions)?st.questions:[],out=[];let prev="",sc=0;arr.forEach((x,i)=>{const sec=String(x.section||"").trim();if(sec&&sec!==prev){out.push(section(sec,s,s.kind==="book"&&sc>0));prev=sec;sc++}out.push(question(x,i,s));if(s.onePerPage&&i<arr.length-1)out.push("#pagebreak()")});const c=out.join("\n\n");return s.kind==="exam"&&Number(s.columns||1)===2?"#columns(2,gutter:"+Number(s.columnGapMm||24)+"mm)[\n"+c+"\n]":c}
+export function buildTypstSource(st,spec){const s=Object.assign({},spec,{kind:st.template==="book"?"book":"exam"});const fs=Number(s.fontPt||(s.kind==="book"?10.5:9)),base=Number(s.baselinePt||(s.kind==="book"?16.38:14.04)),lead=Math.max(0,base-fs),before=base*Number(s.choiceBeforeSkipBaseline||0.45),cover=s.kind==="book"?21.9178:24.7871,dateColor=s.kind==="exam"?"red":"rgb(36,39,43)",date=String(st.exportDate||"");return `#import "/vendor/typst/mitex/lib.typ": mi, mimath
+#set text(font:("XITS","FandolSong"),size:${fs}pt)
+#set par(leading:${lead.toFixed(4)}pt,spacing:0pt,first-line-indent:0pt)
+#show math.equation: set text(font:"XITS Math")
+#let everflow-choice-before=${before.toFixed(4)}pt
+#let everflow-choices(measures,cells)=layout(size=>{let widths=measures.map(it=>measure(it).width);let mw=if widths.len()==0{0pt}else{calc.max(..widths)};let cols=if mw<=size.width*${Number(s.choiceFourColumnThreshold||0.22)}{4}else if mw<=size.width*${Number(s.choiceTwoColumnThreshold||0.46)}{2}else{1};let cols=if cells.len()==3 and cols==4{3}else if cells.len()==6 and cols==4{3}else{cols};grid(columns:(1fr,)*cols,column-gutter:${Number(s.choiceColumnGapEm||1.2)}em,row-gutter:${Number(s.choiceRowGapEm||0.22)}em,..cells)})
+#let everflow-overlay=context{if counter(page).get().first()>1{place(bottom+right,dx:-13mm,dy:-30mm,image("/watermark/water.png",height:34mm));place(bottom+left,dx:3mm,dy:-5.8mm,box(width:15mm)[#align(center)[#image("/zuotiben-qr.svg",width:13mm)]#align(center)[#text(font:"XITS",size:5.8pt,"zuotiben.top")]])}}
+#let everflow-book-header(center-text)=context{if counter(page).get().first()>1{grid(columns:(1fr,1fr,1fr),stroke:(bottom:0.4pt+rgb(36,39,43)),inset:(bottom:1.2mm),[#text(font:"FandolSong",weight:"bold",size:10pt,"å½¼æ—¶æµå¹´è‹¥æ°´")],[#align(center)[#text(font:"FandolSong",weight:"bold",size:10pt,center-text]],[#align(right)[#text(font:"XITS",weight:"bold",size:10pt,"https://zuotiben.top")]])}}
+#let everflow-book-footer=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolSong",size:9pt,"Â· ç¬¬ "+str(current)+" é¡µ / å…± "+str(total)+" é¡µ Â·")]}
+#let everflow-exam-a4-footer(title)=context{let current=counter(page).get().first()-1;let total=counter(page).final().first()-1;align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(current)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰")]}
+#let everflow-exam-a3-footer(title)=context{let physical=counter(page).get().first()-2;let l=physical*2+1;let r=l+1;let total=(counter(page).final().first()-1)*2;grid(columns:(1fr,1fr),column-gutter:${Number(s.columnGapMm||24)}mm,[#align(center)[#text(font:"FandolKai",size:9pt,title+"  ç¬¬ "+str(l)+" é¡µï¼ˆå…± "+str(total)+" é¡µï¼‰(ŠWWKÈØ[YÛŠÙ[\ŠVÈİ^
+›Ûˆ‘˜[™ÛØZH‹Ú^™N\]JÈˆ9ë+ŠÜİŠŠJÈˆ:hm{ï"9alHŠÜİŠİ[
+JÈˆ:hm{ï"HŠWWJ_BˆÜÙ]YÙJÚYŒŒL[KZYÚŒMÛ[KX\™Ú[Œ[KXY\››Û™K›Ûİ\››Û™JBˆÜXÙJÜ
+ØÙ[\‹NŒLŒ[[JVÈİ^
+›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™N‰ØÛİ™\Ÿ\	ÜJİ˜Ûİ™\•]_İ]_¹§*¹doyd#z+åycmÈŠ_JWBˆÜXÙJÜ
+ØÙ[\‹NŒMŒ[[JVÈİ^
+›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NŒNŒÌÌLÜ°­ùoo9¥í¹­`yîm9¥m:`ï¹­`ynm:"éy¬-ŠWBˆÜXÙJÜ
+ÛYŒN[KNŒ›[JVÈÛ[™J[™İL[Kİ›ÚÙNŒ
+WBˆÜXÙJÜ
+ÛYŒNKŒÛ[KNŒÌM[[JVÈİ^
+›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NK\‘]™\™›İğ­ùoo9¥í¹­`yîm9¥m:`ïŠWBˆÜXÙJÜ
+ÛYŒNKŒÛ[KNŒÍËŒM[[JVÈİ^
+›Ûˆ‘˜[™ÛÛÛ™È‹ÙZYÚˆ˜›Û‹Ú^™NMš[‰Ù]PÛÛÜŸK	ÜJˆˆˆ9¦í9¥¬9¥íºeí;ï&ˆŠÙ]J_JWBˆÜYÙXœ™XZÊ
+B‰ÜYÙTÙ]\
+İÊ_B‰Ù›İÊİÊ_B˜B™^Ü[˜İ[ÛˆXZÙPÛÛ\[T^[ØY
+İÜXÊ^Ü™]\›ÜÛİ\˜ÙN˜Z[\İÛİ\˜ÙJİÜXÊK]Nœİ˜Ûİ™\•]_İ]_‘]™\™›İÈŸ_B
