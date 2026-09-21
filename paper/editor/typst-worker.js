@@ -93,9 +93,37 @@ function transferableCopy(data) {
   return copy;
 }
 
+async function diagnosticText(source) {
+  try {
+    const path = "/tmp/everflow-diagnostic.typ";
+    const compiler = await $typst.getCompiler();
+    compiler.addSource(path, source);
+    const result = await compiler.compile({
+      mainFilePath: path,
+      diagnostics: "unix",
+    });
+    const diagnostics = result && result.diagnostics ? result.diagnostics : [];
+    return diagnostics.length ? diagnostics.join("\n") : "";
+  } catch (error) {
+    return error && error.message ? error.message : String(error);
+  }
+}
+
+async function withDiagnostics(source, operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    const details = await diagnosticText(source);
+    const base = error && error.message ? error.message : String(error);
+    throw new Error(details ? base + "\n" + details : base);
+  }
+}
+
 async function renderSvg(source) {
-  const vector = await $typst.vector({ mainContent: source });
-  return await $typst.svg({ vectorData: vector });
+  return await withDiagnostics(source, async () => {
+    const vector = await $typst.vector({ mainContent: source });
+    return await $typst.svg({ vectorData: vector });
+  });
 }
 
 async function handleMessage(event) {
@@ -118,14 +146,14 @@ async function handleMessage(event) {
     }
 
     if (msg.op === "pdf") {
-      const bytes = transferableCopy(await $typst.pdf({ mainContent: source }));
+      const bytes = transferableCopy(await withDiagnostics(source, () => $typst.pdf({ mainContent: source })));
       self.postMessage({ id, ok: true, pdf: bytes.buffer, sourceHash: msg.sourceHash || null }, [bytes.buffer]);
       return;
     }
 
     if (msg.op === "both") {
       const svg = await renderSvg(source);
-      const bytes = transferableCopy(await $typst.pdf({ mainContent: source }));
+      const bytes = transferableCopy(await withDiagnostics(source, () => $typst.pdf({ mainContent: source })));
       self.postMessage(
         { id, ok: true, svg, pdf: bytes.buffer, sourceHash: msg.sourceHash || null },
         [bytes.buffer],
