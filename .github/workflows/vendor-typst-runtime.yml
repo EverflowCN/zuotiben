@@ -82,6 +82,20 @@ jobs:
           test -s "$MITEX_DIR/lib.typ"
           test -s "$MITEX_DIR/mitex.typ"
           test -s "$MITEX_DIR/mitex.wasm"
+          python3 - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("paper/assets/vendor/typst/mitex")
+          files = sorted(
+              p.relative_to(root).as_posix()
+              for p in root.rglob("*")
+              if p.is_file() and p.name != "manifest.json"
+          )
+          (root / "manifest.json").write_text(
+              json.dumps({"version":"0.2.7","files":files}, ensure_ascii=False, indent=2),
+              encoding="utf-8",
+          )
+          PY
+          test -s "$MITEX_DIR/manifest.json"
 
           # Extract the exact existing watermark PNG from paper/styles.css.
           python3 - <<'PY'
