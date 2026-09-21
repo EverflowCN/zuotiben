@@ -71,14 +71,40 @@ const fs=require('node:fs');
     assert.match(await page.locator('#pdfStatus').innerText(),/PDF 已在本机生成|PDF 已交给浏览器保存|未使用服务器编译/);
 
     await page.locator('#editModeButton').click();
+    await page.setViewportSize({width:1440,height:1000});
+    await page.waitForTimeout(120);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.screenshot({path:'test-results/editor-desktop.png',fullPage:true});
 
-    await page.setViewportSize({width:390,height:844});
-    await page.screenshot({path:'test-results/editor-mobile.png',fullPage:true});
+    await page.setViewportSize({width:834,height:1112});
+    await page.waitForTimeout(120);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:'test-results/editor-tablet.png',fullPage:true});
+
+    await page.setViewportSize({width:390,height:844});
+    await page.waitForTimeout(120);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:'test-results/editor-mobile.png',fullPage:true});
+
+    await page.locator('#templateButton').click();
+    await page.locator('.template-option').filter({hasText:'A3 横向双栏'}).click();
+    await page.waitForTimeout(120);
+    assert.equal(await page.locator('body').getAttribute('data-layout'),'a3');
+    assert.equal(await page.evaluate(()=>{
+      const r=document.querySelector('#paperSheet').getBoundingClientRect();
+      return r.left>=-1 && r.right<=innerWidth+1;
+    }),true);
+    await page.screenshot({path:'test-results/editor-mobile-a3.png',fullPage:true});
+
+    await page.locator('#previewModeButton').click();
+    await page.locator('#typstPreview svg').waitFor({state:'visible',timeout:240000});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const svgWidth=await page.locator('#typstPreview svg').evaluate(el=>el.getBoundingClientRect().width);
+    assert.ok(svgWidth<=390);
+    await page.screenshot({path:'test-results/editor-mobile-typst-a3.png',fullPage:true});
 
     assert.deepEqual(errors,[]);
-    console.log('PASS: edit, persistence, Typst SVG preview, local PDF download, mobile width');
+    console.log('PASS: desktop/tablet/mobile edit layout, A3 mobile scaling, Typst SVG preview, local PDF download');
   }finally{
     await browser.close();
   }
