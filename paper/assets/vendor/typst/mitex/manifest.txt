@@ -1,0 +1,12 @@
+CHANGELOG.md
+LICENSE
+README.md
+lib.typ
+manifest.txt
+mitex.typ
+mitex.wasm
+specs/README.md
+specs/latex/standard.typ
+specs/mod.typ
+specs/prelude.typ
+typst.toml
