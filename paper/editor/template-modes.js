@@ -32,14 +32,6 @@ var COMMON={
   publicationUnitTitleNeedSpaceBaseline:9,
   sectionNoteNeedSpaceBaseline:4,
 
-  // exam-zh section style: inherits body size, black-face + bold.
-  sectionFontFamily:"hei",
-  sectionFontWeight:700,
-  sectionFontScale:1,
-  sectionBeforeSkipEx:2,
-  sectionAfterSkipEx:1,
-  sectionNumberSeparator:"、",
-
   // Unified question-core list geometry.
   statementsLabelWidthEm:2.2,
   statementsLabelSepEm:0.38,
@@ -62,7 +54,32 @@ var EXAM={
   baselinePt:14.04,
   lineHeight:14.04/9,
   questionGapBaseline:0.45,
+
+  // FINAL Exam title stack from original ZIP after all overrides.
+  questionGroupFontFamily:"hei",
+  questionGroupFontWeight:700,
+  questionGroupFontPt:16,
+  questionGroupLeadingPt:21,
+  questionGroupAlign:"center",
+  questionGroupPosition:"leftpage",
+  questionGroupBeforeSkipPt:1,
+  questionGroupAfterSkipEx:2,
+
   sectionForceNewPage:false,
+  sectionFontFamily:"hei",
+  sectionFontWeight:700,
+  sectionFontPt:9,
+  sectionLineHeight:14.04/9,
+  sectionAlign:"left",
+  sectionNumberStyle:"chinese-comma",
+  sectionBeforeSkipEx:2,
+  sectionAfterSkipEx:1,
+
+  sectionNoteFontFamily:"hei",
+  sectionNoteFontPt:12,
+  sectionNoteAlign:"left",
+  sectionNoteAfterSkipEm:0.35,
+
   a3HeadingAdvance:"column",
   headerHeightPt:14,
   headerSepMm:2.5,
@@ -75,8 +92,33 @@ var BOOK={
   fontPt:10.5,
   baselinePt:16.38,
   lineHeight:16.38/10.5,
-  sectionFontPt:12,
+
+  // FINAL Book part/section styles from original ZIP after AtBeginDocument overrides.
+  partNumberFontFamily:"hei",
+  partNumberFontWeight:400,
+  partNumberFontPt:22,
+  partTitleFontFamily:"hei",
+  partTitleFontWeight:700,
+  partTitleFontPt:18,
+  partNumberAfterSkipEm:1,
+  partVerticalCenter:true,
+
   sectionForceNewPage:true,
+  sectionFontFamily:"hei",
+  sectionFontWeight:400,
+  sectionFontPt:12,
+  sectionLineHeight:1,
+  sectionAlign:"center",
+  sectionNumberStyle:"arabic-dot",
+  sectionNumberSepEm:1,
+  sectionBeforeSkipPt:2,
+  sectionAfterSkipPt:4,
+
+  sectionNoteFontFamily:"hei",
+  sectionNoteFontPt:12,
+  sectionNoteAlign:"left",
+  sectionNoteAfterSkipEm:0.35,
+
   headerHeightPt:25,
   headerFontPt:10,
   headerLeadingPt:12,
