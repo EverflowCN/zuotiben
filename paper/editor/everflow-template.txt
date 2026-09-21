@@ -4,7 +4,7 @@
 
 #import "/vendor/typst/mitex/lib.typ": mi, mimath
 
-#let western = "TeX Gyre TermesX"
+#let western = "TeX Gyre Termes X"
 #let song = "FandolSong"
 #let hei = "FandolHei"
 #let kai = "FandolKai"
@@ -110,7 +110,7 @@
     [#str(number)#text(".")],
     question-body,
   )
-  let height = measure(core, width: 100%).height
+  let height = measure(core, width: cfg.content-width).height
   let oversized = height > cfg.usable-height - 2 * cfg.baseline
 
   if break-before { pagebreak() }
