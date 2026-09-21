@@ -10,7 +10,7 @@ const pending = new Map();
 function ensureWorker() {
   if (!supportsTypst()) throw new Error("当前浏览器不支持本地 Typst WASM");
   if (worker) return worker;
-  worker = new Worker(new URL("./typst-worker.js?v=20260921-worker7", import.meta.url), { type: "module", name: "everflow-typst" });
+  worker = new Worker(new URL("./typst-worker.js?v=20260921-worker8", import.meta.url), { type: "module", name: "everflow-typst" });
   worker.onmessage = event => {
     const msg = event.data || {};
     const item = pending.get(msg.id);
