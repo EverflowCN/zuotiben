@@ -121,8 +121,32 @@ function initTheme(){
   els.themeToggle.onclick=function(){document.body.classList.toggle("dark");localStorage.setItem(THEME_KEY,document.body.classList.contains("dark")?"dark":"light")};
 }
 function init(){
-  ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal"].forEach(function(id){els[id]=byId(id)});
+  ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton","dropZone"].forEach(function(id){els[id]=byId(id)});
   initTheme();
+  els.startBlankButton.onclick=function(){
+    var questions=[
+      normalizeQuestion({content:"设函数 $f(x)=x^2+2x$，则 $f'(1)=$（　）。",options:["$2$","$3$","$4$","$5$"],section:"选择题（共 10 小题，每题 5 分）"},0),
+      normalizeQuestion({content:"设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，求 $\\det A$。",section:"解答题"},1)
+    ];
+    saveAndOpen({title:"未命名试卷",coverTitle:"未命名试卷",questions:questions},"新建示例工程");
+  };
+  var dropZone=els.dropZone;
+  ["dragenter","dragover"].forEach(function(type){
+    dropZone.addEventListener(type,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.add("drag-over")});
+  });
+  ["dragleave","dragend"].forEach(function(type){
+    dropZone.addEventListener(type,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over")});
+  });
+  dropZone.addEventListener("drop",function(e){
+    e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over");
+    var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+    if(file){
+      if(!/\\.(md|markdown|json|everflow)$/i.test(file.name)){toast("暂不支持此格式，请使用 .md、.json 或 .everflow");return}
+      importFile(file);
+    }
+  });
+  document.addEventListener("dragover",function(e){if(e.dataTransfer&&e.dataTransfer.types.includes("Files"))e.preventDefault()});
+  document.addEventListener("drop",function(e){if(e.dataTransfer&&e.dataTransfer.files.length)e.preventDefault()});
   els.importButton.onclick=function(){els.fileInput.click()};
   els.openProjectButton.onclick=function(){els.fileInput.click()};
   els.fileInput.onchange=function(){importFile(els.fileInput.files&&els.fileInput.files[0])};
