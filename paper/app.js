@@ -124,6 +124,7 @@ function init(){
   ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton","dropZone"].forEach(function(id){els[id]=byId(id)});
   initTheme();
   els.startBlankButton.onclick=function(){
+    if(hasDraft()&&!window.confirm("新建项目会覆盖当前浏览器草稿。请先在编辑器保存 .everflow 项目备份。仍要新建吗？"))return;
     var questions=[
       normalizeQuestion({content:"设函数 $f(x)=x^2+2x$，则 $f'(1)=$（　）。",options:["$2$","$3$","$4$","$5$"],section:"选择题（共 10 小题，每题 5 分）"},0),
       normalizeQuestion({content:"设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，求 $\\det A$。",section:"解答题"},1)
