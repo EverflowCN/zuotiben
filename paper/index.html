@@ -3,131 +3,112 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="description" content="研库本地排版：题目文件仅在浏览器中处理，不上传服务器，可生成试卷或做题本。">
-  <meta name="theme-color" content="#ffffff">
-  <title>本地试卷与做题本 · 研库</title>
-  <link rel="stylesheet" href="./assets/fonts/fandol/fonts.css?v=20260921-fandol1">
+  <meta name="description" content="Everflow Paper Studio · 免费本地组卷。导入 Markdown / JSON，编辑试卷与做题本，并在浏览器内导出 PDF。">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>Paper Studio · 在线试卷排版 | 研库</title>
   <link rel="stylesheet" href="./styles.css?v=20260921-fandol1">
+  <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
 </head>
-<body>
-<header class="topbar">
-  <div class="wrap nav">
-    <a class="brand" href="../" aria-label="返回研库">
-      <span class="brand-mark">E</span>
-      <span>Everflow<small>研库 · 本地排版</small></span>
+<body class="paper-home">
+<header class="ps-header">
+  <div class="ps-shell ps-header-inner">
+    <a class="ps-brand" href="../" aria-label="返回研库首页">
+      <span class="ps-brand-mark" aria-hidden="true">E</span>
+      <span class="ps-brand-copy"><b>Everflow</b><small>PAPER STUDIO · 研库</small></span>
     </a>
-    <div class="nav-actions">
-      <span class="local-pill"><i></i> 本地模式</span>
-      <button class="icon-btn" id="themeToggle" type="button" aria-label="切换主题">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8 8 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8Z"/></svg>
-      </button>
-      <a class="back-link" href="../">返回研库</a>
-    </div>
+    <nav class="ps-header-links" aria-label="页面导航">
+      <span class="ps-signal ps-status-hide">浏览器本地处理</span>
+      <a href="#workbench">开始使用</a>
+      <button id="themeToggle" type="button" aria-label="切换深色或浅色主题">◐ 主题</button>
+      <a href="../" class="ps-header-cta">← 返回研库</a>
+    </nav>
   </div>
 </header>
-
-<main class="page-shell">
-  <section class="hero wrap">
+<main>
+  <section class="ps-shell ps-hero">
     <div>
-      <div class="eyebrow">EVERFLOW · LOCAL PAPER</div>
-      <h1>本地试卷与做题本</h1>
-      <p>把自己的题目文件导入浏览器，在本地编辑器中生成固定模板的试卷或做题本，并直接导出 PDF。题目内容不上传研库服务器。</p>
+      <div class="ps-eyebrow">EVERFLOW · PAPER STUDIO</div>
+      <h1>你的题目，<br><em>排成一份试卷。</em></h1>
+      <p class="ps-lead">从题目到试卷，不必反复调整格式。导入自己的题目，选择试卷或做题本版式，在浏览器中编辑、预览，直接生成 PDF。</p>
+      <div class="ps-actions">
+        <button class="ps-button primary" id="startBlankButton" type="button">＋ 新建试卷 <span aria-hidden="true">↗</span></button>
+        <button class="ps-button secondary" id="continueButton" type="button" hidden>继续上次编辑 →</button>
+        <button class="ps-button secondary" id="openProjectButton" type="button">打开已有项目</button>
+      </div>
+      <div class="ps-smallnote"><span>无须登录</span><span>本地自动保存</span><span>PDF 直接下载</span></div>
     </div>
-    <div class="hero-badges">
-      <span>不上传题目</span><span>无需登录</span><span>独立编辑器</span><span>固定模板</span>
+    <div class="ps-document-frame" aria-label="试卷排版风格示意，不代表真实渲染结果">
+      <div class="ps-document-top"><span><i></i>试卷排版预览 · 示意</span><b>A4 · 210 × 297 mm</b></div>
+      <div class="ps-paper-demo" aria-hidden="true">
+        <div class="ps-watermark">Everflow</div>
+        <div class="ps-sheet-kicker">EVERFLOW · 彼时流年若水</div>
+        <div class="ps-sheet-title">考研数学二 · 模拟试卷</div>
+        <div class="ps-sheet-sub">考试时间：180 分钟　　满分：150 分</div>
+        <div class="ps-sheet-rule"></div>
+        <div style="font-family:'Songti SC','SimSun',serif;font-weight:700;font-size:12px;margin:0 0 14px">一、选择题（共 10 小题，每题 5 分）</div>
+        <div class="ps-q"><span class="ps-q-num">1.</span> 设函数 <span class="ps-formula">f(x) = x² + 2x</span>，则 <span class="ps-formula">f′(1)</span> 等于（　）。</div>
+        <div class="ps-choices"><span>(A) 2</span><span>(B) 3</span><span>(C) 4</span><span>(D) 5</span></div>
+        <div class="ps-q"><span class="ps-q-num">2.</span> 已知矩阵 <span class="ps-formula">A</span> 满足下列条件，则：</div>
+        <div class="ps-math-display">A = <span style="font-size:23px;vertical-align:-3px">(</span><span style="display:inline-block;font-size:13px;line-height:1.1;vertical-align:middle">1　2<br>3　4</span><span style="font-size:23px;vertical-align:-3px">)</span></div>
+        <div class="ps-q"><span class="ps-q-num">3.</span> 设区域 <span class="ps-formula">D</span> 为平面有界区域，计算二重积分：</div>
+        <div class="ps-math-display">∬<sub style="font-size:9px">D</sub> (x² + y²) dx dy</div>
+        <div class="ps-sheet-foot">彼时流年若水　·　第 1 页 / 共 6 页</div>
+      </div>
+      <div class="ps-document-caption"><span>排版样式仅供展示</span><strong>真实内容以编辑器导出为准</strong></div>
     </div>
   </section>
 
-  <section class="notice wrap">
-    <div class="notice-icon">◆</div>
-    <div>
-      <strong>本地隐私模式</strong>
-      <p>导入文件只由当前浏览器读取。导入成功后会进入独立的试卷编辑器页面；本地题目不会发送到 Supabase、Railway 或研库 API。</p>
+  <section class="ps-section ps-shell" id="workbench">
+    <div class="ps-section-head">
+      <div><span class="ps-section-label">GET STARTED</span><h2>从这里开始制作</h2></div>
+      <p>第一次使用可以直接创建示例工程。已有题目时，导入本地文件即可进入三栏编辑器。</p>
+    </div>
+    <div class="ps-task-grid">
+      <article class="ps-task-card">
+        <h3>导入你的题目</h3>
+        <p>支持 Everflow Markdown（.md）、JSON 和 .everflow 项目；导入后自动进入编辑器。</p>
+        <div class="ps-dropzone" id="dropZone">
+          <div class="ps-drop-icon" aria-hidden="true">⇧</div>
+          <strong>将题目文件拖放到这里</strong>
+          <small>或点击下方按钮选择文件（最大 8 MB）</small>
+          <button class="ps-button primary" id="importButton" type="button">选择本地文件</button>
+        </div>
+        <input id="fileInput" type="file" accept=".md,.markdown,.json,.everflow,text/markdown,application/json" hidden>
+        <div class="ps-microcopy">仅支持上述结构化文本格式。暂不直接识别 PDF、Word、ZIP 或扫描图片；数学公式可以使用 LaTeX 语法。</div>
+      </article>
+      <article class="ps-task-card">
+        <h3>还没有整理好的题目？</h3>
+        <p>先生成一份规范题目文件，也可以直接从内置示例进入编辑器体验。</p>
+        <div class="ps-helper-list">
+          <div class="ps-helper-row"><span class="ps-helper-number">01</span><div class="ps-helper-text"><strong>用 AI 整理</strong><small>复制转录规则，粘贴给 AI 并提供原始题目。</small></div><button id="copyPromptButton" type="button">复制提示词</button></div>
+          <div class="ps-helper-row"><span class="ps-helper-number">02</span><div class="ps-helper-text"><strong>查看导入示例</strong><small>下载标准 Markdown 示例，按格式补充题目。</small></div><button id="downloadTemplateButton" type="button">下载示例</button></div>
+          <div class="ps-helper-row"><span class="ps-helper-number">03</span><div class="ps-helper-text"><strong>了解格式与限制</strong><small>查看题干、选项和公式的导入约定。</small></div><button id="howButton" type="button">格式说明</button></div>
+        </div>
+      </article>
     </div>
   </section>
 
-  <section class="start-grid wrap">
-    <article class="start-card primary-card">
-      <span class="step">01</span>
-      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v3h14v-3"/></svg></div>
-      <h2>导入本地题目</h2>
-      <p>支持 Everflow Markdown、JSON 与 .everflow。导入后自动进入独立编辑器。</p>
-      <div class="card-actions">
-        <button class="primary-btn" id="importButton" type="button">选择题目文件</button>
-        <button class="ghost-btn" id="openProjectButton" type="button">打开项目</button>
-      </div>
-      <input id="fileInput" type="file" accept=".md,.markdown,.json,.everflow,text/markdown,application/json" hidden>
-    </article>
-
-    <article class="start-card">
-      <span class="step">02</span>
-      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M8 9h8M8 13h5"/><path d="M5 4h14v16H5z"/></svg></div>
-      <h2>用 AI 整理题目</h2>
-      <p>可先用豆包、ChatGPT、通义或 OCR 工具转录 PDF、图片或 Word，再保存为 Everflow Markdown。</p>
-      <div class="card-actions">
-        <button class="ghost-btn" id="copyPromptButton" type="button">复制 AI 提示词</button>
-        <button class="ghost-btn" id="downloadTemplateButton" type="button">下载示例模板</button>
-      </div>
-    </article>
-
-    <article class="start-card">
-      <span class="step">03</span>
-      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h4M8 13h8M8 17h6"/></svg></div>
-      <h2>进入独立编辑器</h2>
-      <p>编辑器与入口页完全分离。题目顺序、内容、大题、选项和间距等操作只在编辑器内进行。</p>
-      <div class="card-actions">
-        <button class="ghost-btn" id="continueButton" type="button" hidden>继续上次编辑</button>
-        <button class="ghost-btn" id="howButton" type="button">查看格式说明</button>
-      </div>
-    </article>
-  </section>
-
-  <section class="guide wrap">
-    <div class="section-head">
-      <div><span>FORMAT</span><h2>如何准备题目文件</h2></div>
-      <p>推荐让 AI 严格输出 Everflow Markdown，然后保存到手机“文件”或电脑本地。</p>
-    </div>
-    <div class="guide-grid">
-      <div class="guide-flow"><ol>
-        <li><b>准备原始资料</b><span>PDF、Word、图片或纸质试卷拍照。</span></li>
-        <li><b>使用 AI / OCR 转录</b><span>豆包、ChatGPT、通义等均可。</span></li>
-        <li><b>保存到本地</b><span>保存为 .md / .json / .everflow。</span></li>
-        <li><b>导入</b><span>浏览器读取后自动进入 /paper/editor/。</span></li>
-        <li><b>编辑并导出</b><span>所有试卷编辑集中在独立页面。</span></li>
-      </ol></div>
-      <pre class="format-example"><code># 2026 数学模拟卷
-
-## 1
-设函数 $f(x)=x^2$，则 $f'(x)=$
-
-A. $x$
-B. $2x$
-C. $x^2$
-D. $2$
-
-## 2
-设矩阵 $A=\begin{bmatrix}1&2\\3&4\end{bmatrix}$，求……
-
-(1) 求 $\det A$；
-(2) 求 $A^{-1}$。</code></pre>
-    </div>
+  <section class="ps-shell ps-about" aria-label="功能说明">
+    <article><strong>01 / 本地排版</strong><p>项目编辑和 PDF 编译运行在当前浏览器中。注意及时导出项目备份，清理浏览器存储可能丢失草稿。</p></article>
+    <article><strong>02 / 多种纸张</strong><p>支持 A4、A3 双栏、混排及多种做题本模式。特殊分页和复杂数学公式请检查最终 PDF。</p></article>
+    <article><strong>03 / 编辑与预览</strong><p>电脑端提供结构、题目编辑和排版预览；移动端可在编辑与预览之间切换。</p></article>
   </section>
 </main>
-
+<footer class="ps-footer"><div class="ps-shell ps-footer-inner"><span>Everflow · 彼时流年若水</span><span>zuotiben.top · 让资源与工具保持免费开放</span></div></footer>
 <div class="modal-layer" id="formatModal" hidden>
-  <button class="modal-backdrop" type="button" data-modal-close aria-label="关闭"></button>
-  <section class="modal" role="dialog" aria-modal="true">
-    <header><div><span>IMPORT FORMAT</span><h2>Everflow 本地导入格式</h2></div><button class="icon-btn" type="button" data-modal-close>×</button></header>
+  <button class="modal-backdrop" type="button" data-modal-close aria-label="关闭弹窗"></button>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="formatTitle">
+    <header><div><span>IMPORT FORMAT</span><h2 id="formatTitle">文件格式说明</h2></div><button class="icon-btn" type="button" data-modal-close aria-label="关闭弹窗">×</button></header>
     <div class="modal-body">
-      <p><b>Markdown：</b>每题使用 <code>## 1</code>、<code>## 2</code> 开始；选择题选项使用 <code>A.</code> 至 <code>D.</code>；公式使用 LaTeX。</p>
-      <p><b>JSON：</b>支持 <code>{"title":"试卷名","questions":[{"content":"题干","options":["A","B","C","D"]}]}</code>。</p>
-      <p><b>.everflow：</b>由编辑器“保存 .everflow”生成，可重新打开继续编辑。</p>
-      <div class="warning-box">AI/OCR 识别可能出错，请重点核对公式、上下标、正负号和选项。</div>
+      <p><b>Markdown：</b>首行 <code># 试卷名</code>，每道题以 <code>## 1</code>、<code>## 2</code> 开始，选项每行写 <code>A. 内容</code>、<code>B. 内容</code> 等。</p>
+      <p><b>数学公式：</b>行内用 <code>$...$</code>，独立公式用 <code>$$...$$</code>。复杂公式导入后请核对预览。</p>
+      <p><b>JSON：</b><code>{"title":"试卷名","questions":[{"content":"题干","options":["选项A","选项B"]}]}</code>。</p>
+      <p><b>.everflow：</b>由编辑器“保存项目”导出，可重新导入修改。</p>
+      <div class="warning-box">本工具使用浏览器端 Typst WASM 排版，并非直接运行原始 XeLaTeX.cls。复杂 TikZ、图片、跨页公式及特殊模板宏尚不能保证与原版相同。</div>
     </div>
   </section>
 </div>
-
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="./app.js?v=20260921-landing2"></script>
+<script src="./app.js?v=20261009-v2"></script>
 </body>
 </html>
