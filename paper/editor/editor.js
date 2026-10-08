@@ -540,7 +540,7 @@ function wantsLiveTypst(){
 function scheduleTypstPreview(){
   clearTimeout(previewCompileTimer);
   if(suspendTypstPreview||!wantsLiveTypst()||!els.typstPreview)return;
-  els.pdfStatus.textContent="正在用本机 Typst WASM 更新精确预览…";
+  els.pdfStatus.textContent="正在本机重新排版 PDF 预览…";
   previewCompileTimer=setTimeout(function(){refreshTypstPreview()},360);
 }
 function sanitizeSvgNode(svg){
