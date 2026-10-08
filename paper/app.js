@@ -142,7 +142,7 @@ function init(){
     e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over");
     var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
     if(file){
-      if(!/\\.(md|markdown|json|everflow)$/i.test(file.name)){toast("暂不支持此格式，请使用 .md、.json 或 .everflow");return}
+      if(!/\.(md|markdown|json|everflow)$/i.test(file.name)){toast("暂不支持此格式，请使用 .md、.json 或 .everflow");return}
       importFile(file);
     }
   });
