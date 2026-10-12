@@ -596,48 +596,54 @@ function wantsLiveTypst(){
 function scheduleTypstPreview(){
   clearTimeout(previewCompileTimer);
   if(suspendTypstPreview||!wantsLiveTypst()||!els.typstPreview)return;
-  els.pdfStatus.textContent="正在测量题目、公式和图片…";
+  els.pdfStatus.textContent="正在准备统一 Typst 矢量排版…";
   previewCompileTimer=setTimeout(function(){refreshTypstPreview()},220);
 }
 async function refreshTypstPreview(){
   if(suspendTypstPreview||typstPreviewing)return;
-  if(!window.EverflowBrowserLayout)throw new Error("浏览器分页引擎未加载");
   typstPreviewing=true;
-  if(browserLayoutController)browserLayoutController.abort();
-  browserLayoutController=new AbortController();
+  var current=revision,compiledDate=localDate();
+  els.typstPreview.dataset.layoutReady="false";
+  els.typstPreview.removeAttribute("data-revision");
   try{
-    var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    var records=layoutRecords(snapshotState),info=MODES.mode(snapshotState.template,snapshotState.layout);
-    var result=await window.EverflowBrowserLayout.render({
-      host:els.typstPreview,records:records,info:info,template:snapshotState.template,
-      title:snapshotState.title,header:snapshotState.header,layoutVersion:"browser-r"+current,signal:browserLayoutController.signal,
-      createItem:function(record){return createLayoutItem(record)},
-      createCover:function(){return createBrowserCover(snapshotState)},renderMath:renderMath,
-      onProgress:function(progress){
-        if(progress.phase==="measuring")els.pdfStatus.textContent="正在测量题目、公式和图片…";
-        else if(progress.phase==="repairing")els.pdfStatus.textContent="正在自动调整分页 · 第 "+progress.pass+"/3 轮";
-      }
+    var snapshotState=deepClone(state);
+    snapshotState.exportDate=compiledDate;
+    var spec=MODES.mode(snapshotState.template,snapshotState.layout);
+    if(!window.EverflowVectorPreview)throw new Error("统一矢量预览模块未加载");
+    els.pdfStatus.textContent="Typst 正在编译矢量 PDF（预览与下载共用文件）…";
+    // Compile the PDF ONCE. PDF.js renders the SAME bytes in the preview.
+    var engine=await import("./typst-engine.js?v=20261013-vector1");
+    var blob=await engine.compileTypstPdf(snapshotState,spec,"vector-r"+current);
+    if(current!==revision||compiledDate!==localDate())return;
+    els.pdfStatus.textContent="正在从已编译的 PDF 建立页面预览…";
+    var result=await window.EverflowVectorPreview.render({
+      host:els.typstPreview,blob:blob,info:spec,revision:current
     });
-    if(current!==revision){typstPreviewing=false;scheduleTypstPreview();return}
-    browserLayoutResult=result;svgRevision=current;svgExportDate=snapshotState.exportDate;
-    observePreviewPages();requestAnimationFrame(applyPreviewZoom);
-    if(wantsLiveTypst()){
-      els.typstPreview.hidden=false;els.paperStage.hidden=true;
-    }
+    if(current!==revision||compiledDate!==localDate())return;
+    if(result.status!=="ready"||result.pageCount<1)throw new Error("矢量 PDF 页面验证失败");
+    pdfBlob=blob;pdfRevision=current;pdfExportDate=compiledDate;
+    browserLayoutResult=result;
+    svgRevision=current;svgExportDate=compiledDate;
     els.typstPreview.dataset.layoutReady="true";
     els.typstPreview.dataset.revision=String(current);
-    var adjusted=Object.keys(result.scales||{}).length;
-    els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览与浏览器打印使用同一布局。";
+    observePreviewPages();
+    requestAnimationFrame(applyPreviewZoom);
+    if(wantsLiveTypst()){els.typstPreview.hidden=false;els.paperStage.hidden=true}
+    els.pdfStatus.textContent="矢量预览已完成 · "+result.pageCount+" 页 · 直接下载复用完全相同的 PDF 文件。";
+    return result;
   }catch(e){
-    if(!suspendTypstPreview&&!(e&&e.name==="AbortError")){
+    if(current===revision){
       console.error(e);
-      browserLayoutResult=null;svgRevision=-1;els.typstPreview.dataset.layoutReady="false";
+      browserLayoutResult=null;svgRevision=-1;
+      pdfBlob=null;pdfRevision=-1;
+      els.typstPreview.dataset.layoutReady="false";
       els.typstPreview.removeAttribute("data-revision");
       els.typstPreview.replaceChildren();observePreviewPages();
-      els.pdfStatus.textContent="浏览器分页失败："+(e.message||"未知错误")+"；未生成可打印布局，请修正后重试。";
+      els.pdfStatus.textContent="Typst 矢量编译或预览失败："+(e.message||"未知错误")+"；未生成可下载 PDF。";
     }
   }finally{
     typstPreviewing=false;
+    if(current!==revision||compiledDate!==localDate())scheduleTypstPreview();
   }
 }
 function syncViewportMode(){
@@ -664,9 +670,9 @@ async function setMode(preview){
   if(wantsLiveTypst()){
     var today=localDate();
     if(svgRevision!==revision||svgExportDate!==today)await refreshTypstPreview();
-    else els.pdfStatus.textContent="分页已完成 · 预览已是最新；打印复用当前页面布局。";
+    else els.pdfStatus.textContent="矢量预览已是最新，下载使用完全相同的 PDF。";
   }else{
-    els.pdfStatus.textContent="手机编辑模式：切到“预览”查看 ExamA4 浏览器分页。";
+    els.pdfStatus.textContent="手机编辑模式：切到“预览”查看原生矢量 PDF 页面。";
   }
 }
 function renderQuestionEditor(){
@@ -751,82 +757,41 @@ function bindBrowserPreviewInteractions(){
     window.addEventListener("pointermove",moveGap);window.addEventListener("pointerup",finish,{once:true});window.addEventListener("pointercancel",cancel,{once:true});
   });
 }
-async function createLatestPdf(){
-  if(pdfExporting)return null;
-  pdfExporting=true;
-  suspendTypstPreview=true;
-  clearTimeout(previewCompileTimer);
-  els.printButton.disabled=true;els.printButton.setAttribute("aria-busy","true");
-  if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=true;els.mobileDownloadButton.setAttribute("aria-busy","true")}
-  try{
-    var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    els.pdfStatus.textContent="正在本机用 Typst WASM 优先生成 PDF…";
-    var engine=await import("./typst-engine.js?v=20261012-layout4");
-    // Exact PDF compilation uses a clean Typst worker and stays independent from
-    // the browser-measured preview/print layout.
-    engine.disposeTypstWorker();
-    typstPreviewing=false;
-    var blob=await engine.compileTypstPdf(snapshotState,modeInfo(),"pdf-r"+current);
-    if(current!==revision){
-      pdfBlob=null;pdfRevision=-1;
-      els.pdfStatus.textContent="内容刚刚发生变化，重新按最新内容生成 PDF…";
-      pdfExporting=false;suspendTypstPreview=false;
-      els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
-      if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=false;els.mobileDownloadButton.removeAttribute("aria-busy")}
-      return createLatestPdf();
-    }
-    pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;
-    els.pdfStatus.textContent=(browserLayoutResult&&svgRevision===revision?"分页已完成 · ":"")+"精确 PDF 已在本机生成；未使用服务器编译。";
-    return blob;
-  }finally{
-    pdfExporting=false;suspendTypstPreview=false;
-    els.printButton.disabled=false;els.printButton.removeAttribute("aria-busy");
-    if(els.mobileDownloadButton){els.mobileDownloadButton.disabled=false;els.mobileDownloadButton.removeAttribute("aria-busy")}
-    if(wantsLiveTypst()&&(svgRevision!==revision||svgExportDate!==localDate()))scheduleTypstPreview();
+async function ensureVectorPdfReady(){
+  var current=revision,today=localDate();
+  if(pdfBlob&&pdfRevision===current&&pdfExportDate===today&&svgRevision===current&&
+      els.typstPreview.dataset.layoutReady==="true"&&els.typstPreview.dataset.revision===String(current)){
+    return pdfBlob;
   }
+  if(!wantsLiveTypst())await setMode(true);
+  if(!typstPreviewing)await refreshTypstPreview();
+  if(pdfRevision!==current||!pdfBlob||els.typstPreview.dataset.layoutReady!=="true")
+    await waitForBrowserLayoutRevision(current,180000);
+  if(revision!==current||pdfRevision!==current||pdfExportDate!==today||!pdfBlob||
+      els.typstPreview.dataset.revision!==String(current))
+    throw new Error("内容更新中，请在矢量预览完成后重试");
+  return pdfBlob;
 }
 async function downloadPdf(){
   if(pdfExporting)return;
   pdfExporting=true;
-  var button=els.printButton,mobileButton=els.mobileDownloadButton;
-  if(button){button.disabled=true;button.setAttribute("aria-busy","true")}
-  if(mobileButton){mobileButton.disabled=true;mobileButton.setAttribute("aria-busy","true")}
+  var buttons=[els.printButton,els.mobileDownloadButton].filter(Boolean);
+  buttons.forEach(function(btn){btn.disabled=true;btn.setAttribute("aria-busy","true")});
   try{
-    // Never trigger window.print for direct PDF download.
-    // Screen zoom and device viewport are NOT part of the PDF page geometry.
-    if(!wantsLiveTypst())await setMode(true);
-    var current=revision;
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
-      if(!typstPreviewing)await refreshTypstPreview();
-      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,20000);
-    }
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"||
-      els.typstPreview.dataset.revision!==String(revision)||
-      els.typstPreview.dataset.layoutReady!=="true"){
-      throw new Error("当前预览没有通过分页校验，请先处理错误，不能下载 PDF");
-    }
-    if(!window.EverflowPreviewPdf)throw new Error("直接下载模块未加载，请刷新页面");
-    if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
-    els.pdfStatus.textContent="正在准备 PDF · 逐页按照当前预览生成，无需系统打印…";
-    var blob=await window.EverflowPreviewPdf.exportPreview({
-      host:els.typstPreview,
-      isStale:function(){return current!==revision||svgRevision!==current||els.typstPreview.dataset.layoutReady!=="true"},
-      onProgress:function(done,total){els.pdfStatus.textContent="正在直接生成 PDF · "+done+" / "+total+" 页；未调用系统打印"}
-    });
-    if(current!==revision)throw new Error("导出过程中题目有变化，请重新下载");
-    var name=state.coverTitle||state.title||"Everflow";
-    var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf",preferNative:false});
+    els.pdfStatus.textContent="正在校验预览版本并准备原生矢量 PDF…";
+    var blob=await ensureVectorPdfReady();
+    if(!(blob instanceof Blob)||blob.size<1000)throw new Error("编译结果为空");
+    var filename=(state.coverTitle||state.title||"Everflow")+".pdf";
+    var result=await SAVE.saveBlob(blob,{fileName:filename,mime:"application/pdf",extension:".pdf",preferNative:false});
     if(result.method!=="cancelled"){
-      els.pdfStatus.textContent="PDF 直接下载完成 · 与当前预览使用同一组分页页面（高清图像型 PDF）。";
-      toast("PDF 已直接生成并保存");
+      els.pdfStatus.textContent="矢量 PDF 下载完成 · 与当前预览使用完全相同的 PDF 字节，未转图片。";
+      toast("已下载可搜索文字的矢量 PDF");
     }
   }catch(err){
-    console.error(err);
-    els.pdfStatus.textContent="直接下载失败："+(err&&err.message||"未知错误")+"。预览未更改，可再次尝试。";
+    console.error(err);els.pdfStatus.textContent="PDF 下载失败："+(err.message||"未知错误");
   }finally{
     pdfExporting=false;
-    if(button){button.disabled=false;button.removeAttribute("aria-busy")}
-    if(mobileButton){mobileButton.disabled=false;mobileButton.removeAttribute("aria-busy")}
+    buttons.forEach(function(btn){btn.disabled=false;btn.removeAttribute("aria-busy")});
   }
 }
 async function browserPrint(){
@@ -834,36 +799,33 @@ async function browserPrint(){
   browserPrintBusy=true;
   if(els.browserPrintButton){els.browserPrintButton.disabled=true;els.browserPrintButton.setAttribute("aria-busy","true")}
   try{
-    // The mobile edit tab hides the preview host; measurement must run in a visible host.
-    // Switch to preview before any validation, otherwise hidden DOM has zero-sized boxes.
-    if(!wantsLiveTypst())await setMode(true);
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
-      if(!typstPreviewing)await refreshTypstPreview();
-      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,12000);
-    }
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"||els.typstPreview.dataset.revision!==String(revision)||els.typstPreview.dataset.layoutReady!=="true")throw new Error("当前预览尚未通过分页检查，禁止导出不一致的 PDF");
-    if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
-    document.body.classList.add("browser-print-active");
-    els.pdfStatus.textContent="同一份预览已交给系统打印；请选择“存储为 PDF”或“另存为 PDF”。";
-    var cleanup=function(){
-      document.body.classList.remove("browser-print-active");window.removeEventListener("afterprint",cleanup);
-      els.pdfStatus.textContent="分页已完成 · PDF 打印复用了预览的同一份分页布局。";
+    var blob=await ensureVectorPdfReady();
+    // Print the PDF itself, not a second HTML pagination system.
+    var url=URL.createObjectURL(blob);
+    var iframe=document.createElement("iframe");
+    iframe.setAttribute("title","Everflow 矢量 PDF 打印");
+    iframe.style.cssText="position:fixed;left:-99999px;width:1px;height:1px;border:0";
+    document.body.appendChild(iframe);
+    iframe.onload=function(){
+      try{
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        els.pdfStatus.textContent="已打开矢量 PDF 打印窗口。";
+      }catch(e){
+        var opened=window.open(url,"_blank","noopener");
+        els.pdfStatus.textContent=opened?"请在打开的矢量 PDF 页面选择打印。":"浏览器阻止了打印窗口，请先直接下载 PDF，再使用阅读器打印。";
+      }
+      setTimeout(function(){iframe.remove();URL.revokeObjectURL(url)},90000);
     };
-    window.addEventListener("afterprint",cleanup,{once:true});
-    window.print();
-  }catch(error){
-    document.body.classList.remove("browser-print-active");
-    console.error(error);els.pdfStatus.textContent="浏览器打印准备失败："+(error.message||"未知错误");
-  }finally{
-    browserPrintBusy=false;
-    if(els.browserPrintButton){els.browserPrintButton.disabled=false;els.browserPrintButton.removeAttribute("aria-busy")}
-  }
+    iframe.src=url;
+  }catch(error){console.error(error);els.pdfStatus.textContent="PDF 打印准备失败："+(error.message||"未知错误")}
+  finally{browserPrintBusy=false;if(els.browserPrintButton){els.browserPrintButton.disabled=false;els.browserPrintButton.removeAttribute("aria-busy")}}
 }
 function waitForBrowserLayoutRevision(targetRevision,timeout){
   return new Promise(function(resolve,reject){
     var started=Date.now();
     function check(){
-      if(svgRevision===targetRevision&&browserLayoutResult&&browserLayoutResult.status==="ready")return resolve(browserLayoutResult);
+      if(svgRevision===targetRevision&&pdfRevision===targetRevision&&pdfBlob&&browserLayoutResult&&browserLayoutResult.status==="ready"&&els.typstPreview.dataset.layoutReady==="true")return resolve(browserLayoutResult);
       if(Date.now()-started>timeout)return reject(new Error("分页等待超时，请检查题目中无法加载的图片或公式"));
       setTimeout(check,60);
     }
@@ -908,8 +870,8 @@ function init(){
   updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
-  // Download: locally rasterize exactly the validated preview pages into a PDF.
-  // Print: separately invoke the system print dialog using the same physical preview DOM.
+  // The preview paints the original compiled PDF; both actions reuse its identical bytes.
+  // Download is direct; Print opens the actual vector PDF for the system dialog.
   els.printButton.onclick=downloadPdf;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
@@ -970,8 +932,8 @@ function init(){
   syncViewportMode();
   applyPreviewZoom();
   els.pdfStatus.textContent=window.matchMedia("(min-width:768px)").matches
-    ?"正在准备 ExamA4 浏览器分页预览…"
-    :"手机编辑模式：切到“预览”查看 ExamA4 浏览器分页。";
+    ?"正在准备 Typst 原生矢量 PDF 预览…"
+    :"手机编辑模式：切到“预览”查看矢量 PDF。";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
