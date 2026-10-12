@@ -15,6 +15,9 @@ async function inspect(browser,name){
     for(const vp of viewports){
       await page.setViewportSize({width:vp.width,height:vp.height});
       await page.goto(host+'/',{waitUntil:'domcontentloaded'});
+      page.on('console',m=>{if(m.type()==='error')console.log("BROWSER_CONSOLE",m.text())});
+      await page.waitForTimeout(2800);
+      console.log("THREE_FRAME_STATE",JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('.ps-book-template-frame')].map(f=>({src:f.src,ready:f.contentDocument?.documentElement.dataset.previewReady,status:f.contentDocument?.getElementById('previewStatus')?.textContent})))));
       await page.waitForFunction(()=>[...document.querySelectorAll('.ps-book-template-frame')].length===3
         && [...document.querySelectorAll('.ps-book-template-frame')].every(f=>f.contentDocument?.documentElement.dataset.previewReady==='true'),{timeout:33000});
       await page.locator('.ps-book-card.is-centered').waitFor();
