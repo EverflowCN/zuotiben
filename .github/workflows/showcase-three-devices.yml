@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
       - 'paper/book-showcase.css'
       - 'paper/book-showcase.js'
       - 'paper/index.html'
