@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
   <link rel="stylesheet" href="./quick-flow.css?v=20261013-quick1">
-  <link rel="stylesheet" href="./book-showcase.css?v=20261013-template-real2">
+  <link rel="stylesheet" href="./book-showcase.css?v=20261013-three-original3">
 </head>
 <body class="paper-home">
 <header class="ps-header">
@@ -45,26 +45,30 @@
       </div>
       <div class="ps-smallnote"><span>永久免费</span><span>项目开源</span><span>本机历史版本</span><span>PDF 直接下载</span></div>
     </div>
-    <div class="ps-document-frame ps-book-showcase ps-book-showcase--template" aria-label="Everflow 原模板做题本实际排版展示">
-      <div class="ps-document-top"><span><i></i> EVERFLOW · 原模板做题本</span><b id="psBookModeBadge">Book · A4 紧凑版</b></div>
-      <div class="ps-books-stage" id="psBooksStage" aria-label="使用实际浏览器分页引擎生成的 A4 紧凑版和 PAD 做题本展示">
-        <div class="ps-book-card is-centered" role="button" tabindex="0" data-book-index="0" aria-label="显示 A4 紧凑做题本" aria-current="true">
-          <iframe title="Everflow 原模板 Book compact A4 实际分页效果" class="ps-book-template-frame" src="./showcase-preview.html?mode=compact" scrolling="no" loading="eager" tabindex="-1"></iframe>
+    <div class="ps-document-frame ps-book-showcase ps-book-showcase--template" aria-label="Everflow 原模板三种实体版式展示">
+      <div class="ps-document-top"><span><i></i> EVERFLOW · 原模板实页预览</span><b id="psBookModeBadge">Book · 封面</b></div>
+      <div class="ps-books-stage" id="psBooksStage" aria-label="展示原模板封面、密集 A4 做题本、PAD 横版单题做题本">
+        <div class="ps-book-card is-centered" role="button" tabindex="0" data-book-index="0" aria-label="显示原模板 A4 封面" aria-current="true">
+          <iframe title="Everflow Book 原模板 A4 封面" class="ps-book-template-frame" src="./showcase-preview.html?mode=cover" scrolling="no" loading="eager" tabindex="-1"></iframe>
         </div>
-        <div class="ps-book-card is-next" role="button" tabindex="-1" data-book-index="1" aria-label="显示 PAD 竖版一题一页做题本" aria-current="false">
-          <iframe title="Everflow 原模板 Book PAD 竖版 200×250mm 实际分页效果" class="ps-book-template-frame" src="./showcase-preview.html?mode=padp" scrolling="no" loading="eager" tabindex="-1"></iframe>
+        <div class="ps-book-card is-next" role="button" tabindex="-1" data-book-index="1" aria-label="显示原模板 A4 密集做题本" aria-current="false">
+          <iframe title="Everflow Book compact A4 密集排版" class="ps-book-template-frame" src="./showcase-preview.html?mode=compact" scrolling="no" loading="eager" tabindex="-1"></iframe>
+        </div>
+        <div class="ps-book-card is-prev" role="button" tabindex="-1" data-book-index="2" aria-label="显示原模板 PAD 横版一题一页做题本" aria-current="false">
+          <iframe title="Everflow Book padl 200×150mm 横版单题排版" class="ps-book-template-frame" src="./showcase-preview.html?mode=padl" scrolling="no" loading="eager" tabindex="-1"></iframe>
         </div>
       </div>
       <div class="ps-books-control">
-        <button id="psBookPrevious" type="button" aria-label="上一种模板" title="上一种">‹</button>
-        <div class="ps-books-caption"><strong id="psBookLabel">Book · A4 紧凑做题本</strong><span>来自 Everflow 原模板的实测版式</span></div>
-        <button id="psBookNext" type="button" aria-label="下一种模板" title="下一种">›</button>
+        <button id="psBookPrevious" type="button" aria-label="上一个模板示例" title="上一张">‹</button>
+        <div class="ps-books-caption"><strong id="psBookLabel">封面 · Everflow 原模板</strong><span>依次查看封面 / A4 密集 / PAD 横版单题</span></div>
+        <button id="psBookNext" type="button" aria-label="下一个模板示例" title="下一张">›</button>
       </div>
-      <div class="ps-books-dots" role="group" aria-label="选择 Book 模板">
-        <button data-book-dot="0" type="button" aria-label="Book A4 紧凑版" aria-current="true"></button>
-        <button data-book-dot="1" type="button" aria-label="Book PAD 竖版" aria-current="false"></button>
+      <div class="ps-books-dots" role="group" aria-label="选择模板样式">
+        <button data-book-dot="0" type="button" aria-label="封面" aria-current="true"></button>
+        <button data-book-dot="1" type="button" aria-label="A4 密集做题本" aria-current="false"></button>
+        <button data-book-dot="2" type="button" aria-label="PAD 横版单题" aria-current="false"></button>
       </div>
-      <p class="ps-books-note">Book compact：210×297 mm · Book padp：200×250 mm；两者使用正式编辑器相同的排版引擎，首页缩放不改变纸张尺寸。</p>
+      <p class="ps-books-note">封面 A4 210×297 mm · 密集 A4 210×297 mm · 横版 PAD 200×150 mm。均采用 Everflow 既有模板尺寸与版式，无额外装饰。</p>
     </div>
   </section>
 
@@ -212,6 +216,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./editor/local-projects.js?v=20261013-workspace2"></script>
 <script src="./app.js?v=20261013-quick1"></script>
-<script src="./book-showcase.js?v=20261013-template-real2"></script>
+<script src="./book-showcase.js?v=20261013-three-original3"></script>
 </body>
 </html>
