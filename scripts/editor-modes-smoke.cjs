@@ -1,5 +1,6 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
 
 async function waitForSettled(page,timeout=120000){
   await page.waitForFunction(()=>{
@@ -80,8 +81,34 @@ function near(actual,expected,t=.035){
       near(actual,expected);
       console.log('PASS MODE',label);
     }
+    // A3 two-column stress test with the eight Math-II demonstration questions.
+    // This reproduces the reported "question 8 below 50%" class of failures.
+    const raw=JSON.parse(fs.readFileSync('paper/test/example.json','utf8'));
+    const questions=raw.questions.map((entry,i)=>{
+      const q=entry.question;
+      return {
+        id:'regression-'+i,
+        content:q.stem,
+        section:entry.section_title,
+        options:Object.values(q.options||{}),
+        type:Object.keys(q.options||{}).length?'选择题':'解答题',
+        gap:0,showOptions:!!Object.keys(q.options||{}).length
+      };
+    });
+    await page.evaluate(qs=>localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({
+      title:'A3 数学二八题回归测试',coverTitle:'A3 数学二八题回归测试',template:'exam',layout:'a3',questions:qs
+    })),questions);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>{
+      const txt=document.querySelector('#pdfStatus')?.textContent||'';
+      return /分页已完成|浏览器分页失败/.test(txt);
+    },null,{timeout:45000});
+    const regressionStatus=await page.locator('#pdfStatus').innerText();
+    assert.match(regressionStatus,/分页已完成/,'A3 math-II eight-question layout failed: '+regressionStatus);
+    assert.equal(await page.locator('#typstPreview .browser-paper-page').count()>0,true);
+    console.log('PASS A3 8-question sample:',regressionStatus);
     assert.deepEqual(errors,[]);
-    console.log('PASS: all physical paper modes');
+    console.log('PASS: all physical paper modes and A3 math-II sample');
   }finally{
     await browser.close();
   }
