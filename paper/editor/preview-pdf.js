@@ -6,9 +6,9 @@
 (function(global){
 "use strict";
 var urls={
-  snapshot:"https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js",
-  fallback:"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-  pdf:"https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"
+  snapshot:"./vendor/html-to-image.js",
+  fallback:"./vendor/html2canvas.min.js",
+  pdf:"./vendor/jspdf.umd.min.js"
 };
 var loads={};
 function scriptOnce(key,test){
