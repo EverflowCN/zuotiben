@@ -395,7 +395,7 @@ function renderOrder(){
     // rather than raw backslash commands where Temml can render it safely.
     if(window.EverflowSafeMath)window.EverflowSafeMath.render(b);
     var s=document.createElement("small");s.textContent=(q.section?q.section+" · ":"")+q.type+(q.showOptions&&q.options.length?" · "+q.options.length+" 个选项":"");
-    c.append(b,s);c.onclick=function(){navigateQuestion(i,false)};
+    c.append(b,s);c.onclick=function(e){e.stopPropagation();navigateQuestion(i,false)};
     row.onclick=function(ev){if(ev.target.closest("button,input,select,.drag-handle"))return;navigateQuestion(i,false)};
     c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click()}};
     var ctr=document.createElement("span");ctr.className="order-controls";
@@ -656,7 +656,7 @@ function workbenchWidths(){
   var w=els.workbench.getBoundingClientRect().width||window.innerWidth;
   var tablet=window.matchMedia("(min-width:768px) and (max-width:1179px)").matches;
   var nav=tablet?0:(document.body.classList.contains("navigator-collapsed")?0:els.navigatorPanel.getBoundingClientRect().width);
-  return {total:w,navigator:nav,tablet:tablet,gutter:tablet?6:14};
+  return {total:w,navigator:nav,tablet:tablet,gutter:tablet?10:20};
 }
 function resizePane(kind,pixels,store){
   var dims=workbenchWidths(),value=Math.round(Number(pixels));
@@ -666,7 +666,7 @@ function resizePane(kind,pixels,store){
     document.documentElement.style.setProperty("--navigator-w",value+"px");
     if(store!==false)persistUiState({navigatorWidth:value});
   }else{
-    var available=dims.total-dims.gutter-dims.navigator-350;
+    var available=dims.total-dims.gutter-dims.navigator-(dims.tablet?360:350);
     value=clampPaneSize(value,dims.tablet?320:280,Math.max(dims.tablet?320:280,available));
     document.documentElement.style.setProperty("--editor-w",value+"px");
     if(store!==false)persistUiState({editorWidth:value});
