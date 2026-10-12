@@ -16,9 +16,9 @@
 html,body{margin:0!important;padding:0!important;box-sizing:border-box;width:100%;height:100%;overflow:hidden!important;background:#fff!important;-webkit-text-size-adjust:none!important;text-size-adjust:none!important}
 body{min-height:0!important}
 #typstPreview{display:block!important;box-sizing:border-box!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;padding:0!important;margin:0!important;background:#fff!important;box-shadow:none!important;border:0!important;gap:0!important}
-/* Scale only the visual page; never shrink the layout viewport (which
-   changes native Book typography/page calculation in Safari/WebKit). */
-#typstPreview>.browser-paper-page{position:relative!important;max-width:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;flex:none!important;zoom:1!important;transform:scale(var(--showcase-scale,1))!important;transform-origin:top left!important}
+/* A full-size iframe is scaled by the parent carousel. Keep internal pages at
+   physical millimetre dimensions for accurate pagination and typography. */
+#typstPreview>.browser-paper-page{position:relative!important;max-width:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;flex:none!important;zoom:1!important;transform:none!important}
 #typstPreview>.browser-paper-page .browser-cover-title,
 #typstPreview>.browser-paper-page .browser-cover-signature{white-space:nowrap!important;overflow:visible!important}
 #typstPreview>.browser-paper-page~.browser-paper-page{display:none!important}
