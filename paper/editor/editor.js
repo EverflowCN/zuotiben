@@ -664,11 +664,13 @@ function resizePane(kind,pixels,store){
     if(dims.tablet)return;
     value=clampPaneSize(value,210,Math.min(470,dims.total-14-280-350));
     document.documentElement.style.setProperty("--navigator-w",value+"px");
+    document.body.style.setProperty("--navigator-w",value+"px");
     if(store!==false)persistUiState({navigatorWidth:value});
   }else{
     var available=dims.total-dims.gutter-dims.navigator-(dims.tablet?360:350);
     value=clampPaneSize(value,dims.tablet?320:280,Math.max(dims.tablet?320:280,available));
     document.documentElement.style.setProperty("--editor-w",value+"px");
+    document.body.style.setProperty("--editor-w",value+"px");
     if(store!==false)persistUiState({editorWidth:value});
   }
   requestAnimationFrame(applyPreviewZoom);
