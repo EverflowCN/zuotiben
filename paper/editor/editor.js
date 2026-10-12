@@ -1266,7 +1266,7 @@ function init(){
   if(els.previewZoomInButton)els.previewZoomInButton.onclick=function(){setPreviewZoom(previewFit?1.1:previewZoom+.15)};
   if(els.previewZoomLabel)els.previewZoomLabel.onclick=function(){setPreviewZoom(1)};
   if(els.previewFitButton)els.previewFitButton.onclick=function(){previewFit=true;applyPreviewZoom()};
-  setNavigatorTab("outline");
+  setNavigatorTab(savedTab);
   updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
