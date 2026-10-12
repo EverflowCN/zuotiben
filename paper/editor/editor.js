@@ -14,6 +14,7 @@ var state={
   template:"exam",
   layout:"a4",
   header:"",
+  testVisualConfig:null,
   questions:[],
   originalIds:[]
 };
@@ -31,7 +32,21 @@ function localDate(){
   var d=new Date();
   return d.getFullYear()+" 年 "+(d.getMonth()+1)+" 月 "+d.getDate()+" 日";
 }
-function modeInfo(){return MODES.mode(state.template,state.layout)}
+function modeInfoFor(subject){
+  var base=MODES.mode(subject.template,subject.layout),c=subject.testVisualConfig;
+  if(!c)return base;
+  var custom=Object.assign({},base);
+  if(Number.isFinite(Number(c.fontPt))&&Number(c.fontPt)>=9&&Number(c.fontPt)<=12)
+    custom.fontPt=Number(c.fontPt);
+  return custom;
+}
+function modeInfo(){return modeInfoFor(state)}
+function testDefaultGap(subject){
+  var c=subject.testVisualConfig;
+  return c&&Number.isFinite(Number(c.gapPx))&&Number(c.gapPx)>=0?
+    Math.max(0,Math.min(25,Number(c.gapPx)*25.4/96)):
+    MODES.questionGapMm(subject.template,subject.layout);
+}
 function modeLabel(){return MODES.label(state.template,state.layout)}
 function normalizeOption(v){return cleanText(typeof v==="object"&&v?(v.text||v.content||v.label||""):v)}
 // A named section has priority over an inferred question type.
@@ -57,7 +72,7 @@ function normalizeQuestion(raw,index){
 }
 function snapshot(){return deepClone({
   title:state.title,coverTitle:state.coverTitle,sourceName:state.sourceName,template:state.template,layout:state.layout,
-  header:state.header,questions:state.questions,originalIds:state.originalIds
+  header:state.header,testVisualConfig:state.testVisualConfig,questions:state.questions,originalIds:state.originalIds
 })}
 function applySnapshot(s){
   state=s;selectedId=state.questions.some(function(q){return q.id===selectedId})?selectedId:(state.questions[0]&&state.questions[0].id);
@@ -96,6 +111,7 @@ function load(){
     var normalized=MODES.normalize(state.template,d.layout||d.mode);
     state.template=normalized.group;state.layout=normalized.mode;
     state.header=cleanText(d.header||"");
+    state.testVisualConfig=d.testVisualConfig&&typeof d.testVisualConfig==="object"?Object.assign({},d.testVisualConfig):null;
     state.sourceName=cleanText(d.sourceName||"浏览器本地草稿");
     state.questions=d.questions.map(normalizeQuestion);
     state.originalIds=Array.isArray(d.originalIds)&&d.originalIds.length?d.originalIds.map(String):state.questions.map(function(q){return q.id});
@@ -111,7 +127,7 @@ function save(markDirty){
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
       title:state.title,coverTitle:state.coverTitle,sourceName:state.sourceName,
-      template:state.template,layout:state.layout,header:state.header,
+      template:state.template,layout:state.layout,header:state.header,testVisualConfig:state.testVisualConfig,
       savedAt:new Date().toISOString(),
       questions:state.questions.map(function(q){return Object.assign({},q,{localId:q.id})}),
       originalIds:state.originalIds
@@ -234,10 +250,13 @@ function renderTemplateState(){
   els.paperSheet.style.setProperty("--master-right",info.rightMm+"mm");
   els.paperSheet.style.setProperty("--master-font",info.fontPt+"pt");
   els.paperSheet.style.setProperty("--master-leading",String(info.lineHeight));
-  els.paperSheet.style.setProperty("--master-question-gap",MODES.questionGapMm(state.template,state.layout)+"mm");
+  els.paperSheet.style.setProperty("--master-question-gap",testDefaultGap(state)+"mm");
   els.paperSheet.style.setProperty("--master-choice-before",MODES.choiceBeforeSkipMm(state.template,state.layout)+"mm");
   els.paperSheet.style.setProperty("--master-column-gap",(info.columnGapMm||0)+"mm");
   els.paperSheet.style.setProperty("--master-footer-skip",info.footSkipMm+"mm");
+  if(els.testFontPt)els.testFontPt.value=String(info.fontPt);
+  if(els.testGapMm)els.testGapMm.value=String(Math.round(testDefaultGap(state)*10)/10);
+  if(els.formalCoverToggle)els.formalCoverToggle.checked=state.testVisualConfig?.withCover!==false;
   renderTemplateMenu();
 }
 function newQuestion(section){
@@ -348,7 +367,7 @@ function choiceClass(options){
   return medium&&n>1?"cols-2":"cols-1";
 }
 function layoutRecords(snapshotState){
-  var records=[],previousSection="",sectionOrdinal=0,info=MODES.mode(snapshotState.template,snapshotState.layout);
+  var records=[],previousSection="",sectionOrdinal=0,info=modeInfoFor(snapshotState);
   snapshotState.questions.forEach(function(q,index){
     var sectionHeading="",sectionChanged=!!(q.section&&q.section!==previousSection);
     if(sectionChanged){
@@ -359,7 +378,7 @@ function layoutRecords(snapshotState){
     records.push(Object.assign({},q,{
       id:q.id,number:index+1,sectionHeading:sectionHeading,
       printAnswer:answerMode.answers,printExplanation:answerMode.explanations,
-      gapMm:info.onePerPage?0:(q.gap>0?q.gap:MODES.questionGapMm(snapshotState.template,snapshotState.layout)),
+      gapMm:info.onePerPage?0:(q.gap>0?q.gap:testDefaultGap(snapshotState)),
       breakBefore:q.breakBefore===true||(snapshotState.template==="book"&&info.sectionForceNewPage&&sectionChanged&&index>0)
     }));
   });
@@ -419,6 +438,7 @@ function renderPaper(){
   els.previewTitle.textContent=state.title;
   els.coverPreviewTitle.textContent=state.coverTitle||state.title;
   els.coverPreviewDate.textContent="> > > 更新时间："+localDate();
+  if(els.coverSheet)els.coverSheet.hidden=state.testVisualConfig?.withCover===false;
   els.previewMeta.textContent=modeLabel()+" · "+state.questions.length+" 题";
   var head=document.querySelector(".paper-running-head");
   head.hidden=state.template!=="book";head.classList.toggle("book-head",state.template==="book");head.replaceChildren();
@@ -622,12 +642,12 @@ async function refreshTypstPreview(){
   browserLayoutController=new AbortController();
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
-    var records=layoutRecords(snapshotState),info=MODES.mode(snapshotState.template,snapshotState.layout);
+    var records=layoutRecords(snapshotState),info=modeInfoFor(snapshotState);
     var result=await window.EverflowBrowserLayout.render({
       host:els.typstPreview,records:records,info:info,template:snapshotState.template,
       title:snapshotState.title,header:snapshotState.header,layoutVersion:"browser-r"+current,signal:browserLayoutController.signal,
       createItem:function(record){return createLayoutItem(record)},
-      createCover:function(){return createBrowserCover(snapshotState)},renderMath:renderMath,
+      createCover:snapshotState.testVisualConfig?.withCover===false?null:function(){return createBrowserCover(snapshotState)},renderMath:renderMath,
       onProgress:function(progress){
         if(progress.phase==="measuring")els.pdfStatus.textContent="正在测量题目、公式和图片…";
         else if(progress.phase==="repairing")els.pdfStatus.textContent="正在自动调整分页 · 第 "+progress.pass+"/3 轮";
@@ -918,7 +938,7 @@ async function exportProject(){
 function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
-   "headerInput","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton",
+   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton",
    "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
@@ -990,6 +1010,18 @@ function init(){
   els.titleInput.oninput=function(){state.title=els.titleInput.value;save();els.paperName.textContent=state.title;renderPaper()};
   els.coverTitleInput.oninput=function(){state.coverTitle=els.coverTitleInput.value;save();renderPaper()};
   els.headerInput.oninput=function(){state.header=els.headerInput.value;save();renderPaper()};
+  function applyVisualConfig(){
+    var previous=state.testVisualConfig||{};
+    state.testVisualConfig={
+      fontPt:Math.max(9,Math.min(12,Number(els.testFontPt.value)||modeInfo().fontPt)),
+      gapPx:Math.max(0,Math.min(25,Number(els.testGapMm.value)||0))*96/25.4,
+      withCover:els.formalCoverToggle.checked,
+    };
+    save();renderPaper();
+  }
+  els.testFontPt.onchange=applyVisualConfig;
+  els.testGapMm.onchange=applyVisualConfig;
+  els.formalCoverToggle.onchange=applyVisualConfig;
   els.exportDateDisplay.textContent="导出时读取本机日期";
 
   els.templateButton.onclick=function(e){e.stopPropagation();var next=els.templatePopover.hidden;els.templatePopover.hidden=!next;els.templateButton.setAttribute("aria-expanded",String(next))};
