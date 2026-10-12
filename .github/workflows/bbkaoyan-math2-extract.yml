@@ -1,0 +1,30 @@
+name: One-time public Mathematics II extraction
+on:
+  push:
+    branches: [bbkaoyan-math2-extract]
+    paths:
+      - .github/workflows/bbkaoyan-math2-extract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scrape-public-math2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout extraction branch
+        uses: actions/checkout@v4
+      - name: Download accessible Math II papers and compile files
+        run: python3 scripts/bbkaoyan_math2_extract_once.py
+      - name: Upload math2 public corpus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bbkaoyan-math2-public-only
+          path: |
+            bbkaoyan_math2_公开试卷.zip
+            bbkaoyan_math2/失败清单.json
+          if-no-files-found: warn
+          retention-days: 3
