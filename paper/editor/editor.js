@@ -33,6 +33,9 @@ function localDate(){
 function modeInfo(){return MODES.mode(state.template,state.layout)}
 function modeLabel(){return MODES.label(state.template,state.layout)}
 function normalizeOption(v){return cleanText(typeof v==="object"&&v?(v.text||v.content||v.label||""):v)}
+// A named section has priority over an inferred question type.
+function isChoiceSection(section,type){var group=cleanText(section);return group?group.includes("选择"):cleanText(type).includes("选择")}
+function assignDefaultOptions(question){question.showOptions=isChoiceSection(question.section,question.type);return question}
 function normalizeQuestion(raw,index){
   raw=raw||{};
   var options=Array.isArray(raw.options)?raw.options.map(normalizeOption):[];
@@ -43,7 +46,7 @@ function normalizeQuestion(raw,index){
     type:raw.type|| (options.length?"选择题":"解答题"),
     section:cleanText(raw.section||""),
     gap:Math.max(0,Math.min(100,Number(raw.gap)||0)),
-    showOptions:raw.showOptions!==false,
+    showOptions:typeof raw.showOptions==="boolean"?raw.showOptions:isChoiceSection(raw.section||"",raw.type||(options.length?"选择题":"解答题")),
     breakBefore:raw.breakBefore===true,
     source:"local",
     latexEnabled:false
@@ -237,7 +240,7 @@ function renderTemplateState(){
 function newQuestion(section){
   return {
     id:"local-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),
-    content:"",options:[],type:"解答题",section:section||"",gap:0,showOptions:false,breakBefore:false,source:"local",latexEnabled:false
+    content:"",options:isChoiceSection(section,"")?["","","",""]:[],type:isChoiceSection(section,"")?"选择题":"解答题",section:section||"",gap:0,showOptions:isChoiceSection(section,""),breakBefore:false,source:"local",latexEnabled:false
   };
 }
 function uniqueSections(){
@@ -259,7 +262,7 @@ function renderSectionManager(){
     var rename=document.createElement("button");rename.type="button";rename.className="text-btn";rename.textContent="重命名";
     rename.onclick=function(){
       var next=prompt("大题名称",name);next=cleanText(next||"");if(!next||next===name)return;
-      mutateState(function(){state.questions.forEach(function(q){if(q.section===name)q.section=next})},"已重命名大题");
+      mutateState(function(){state.questions.forEach(function(q){if(q.section===name){q.section=next;assignDefaultOptions(q)}})},"已重命名大题");
     };
     var up=document.createElement("button");up.type="button";up.className="text-btn";up.textContent="↑";up.disabled=i===0;
     var down=document.createElement("button");down.type="button";down.className="text-btn";down.textContent="↓";down.disabled=i===sections.length-1;
@@ -685,10 +688,17 @@ function renderQuestionEditor(){
     var l=document.createElement("label");l.textContent=label;var input=document.createElement(kind||"input");input.value=q[key]||"";l.appendChild(input);root.appendChild(l);
     input.oninput=function(){q[key]=key==="gap"?Math.max(0,Math.min(100,Number(input.value)||0)):input.value;touch()};return input;
   }
-  inputField("所属大题","section");
+  var sectionInput=inputField("所属大题","section");
+  sectionInput.title="名称包含「选择」时默认显示选项，其他大题默认不显示";
+  sectionInput.addEventListener("input",function(){
+    assignDefaultOptions(q);
+    var checks=root.querySelectorAll(".check-row input[type=checkbox]");
+    if(checks[1])checks[1].checked=q.showOptions;
+    save();renderOrder();renderPaper();
+  });
   var typeLabel=document.createElement("label");typeLabel.textContent="题型";var select=document.createElement("select");
   QUESTION_TYPES.forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;if(q.type===t)o.selected=true;select.appendChild(o)});
-  select.onchange=function(){q.type=select.value;touch()};typeLabel.appendChild(select);root.appendChild(typeLabel);
+  select.onchange=function(){q.type=select.value;assignDefaultOptions(q);touch();renderQuestionEditor()};typeLabel.appendChild(select);root.appendChild(typeLabel);
   inputField("题干（支持 LaTeX 公式）","content","textarea");
   var gap=inputField("题后留白（毫米，0 = 模板默认）","gap");gap.type="number";gap.min="0";gap.max="100";
   var breakLabel=document.createElement("label");breakLabel.className="check-row";var breakCheck=document.createElement("input");breakCheck.type="checkbox";breakCheck.checked=q.breakBefore;
@@ -885,7 +895,7 @@ function init(){
   };
   els.batchMoveSectionButton.onclick=function(){
     var name=els.batchSectionSelect.value;if(!name){toast("先选择目标大题");return}
-    mutateState(function(){state.questions.forEach(function(q){if(selectedIds.has(q.id))q.section=name})},"已移动到 "+name);
+    mutateState(function(){state.questions.forEach(function(q){if(selectedIds.has(q.id)){q.section=name;assignDefaultOptions(q)}})},"已移动到 "+name);
   };
   els.batchClearButton.onclick=function(){selectedIds.clear();renderOrder();updateBatchBar()};
   els.titleInput.oninput=function(){state.title=els.titleInput.value;save();els.paperName.textContent=state.title;renderPaper()};
