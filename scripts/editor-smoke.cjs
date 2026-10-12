@@ -152,7 +152,9 @@ async function waitForBrowserLayout(page, timeout=120000){
     await page.locator('#workbenchBackdrop').click({position:{x:370,y:400}});
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),false);
 
-    await page.locator('#previewModeButton').click();
+    // Printing from the edit tab must show the physical preview first.
+    await page.locator('#mobileDownloadButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===3);
     await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
@@ -161,8 +163,6 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.ok(pageWidth<=390);
     await page.screenshot({path:'test-results/editor-mobile-texpage.png',fullPage:true});
 
-    await page.locator('#mobileDownloadButton').click();
-    await page.waitForFunction(()=>window.__PRINT_CALLED__===3);
     await page.locator('#editModeButton').click();
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
