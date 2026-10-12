@@ -105,7 +105,7 @@ function createMotherCover(title){
   );
   return page;
 }
-function overflow(body){return body.clientHeight>0&&body.scrollHeight>body.clientHeight+2}
+function overflow(body){return body.clientHeight>0&&(body.scrollHeight>body.clientHeight+2||(state.size==='a3'&&body.scrollWidth>body.clientWidth+2))}
 async function picture(asset,id,qid,target){if(!state.zip||!asset.id)return;var ext=(String(asset.storage_path||'').match(/\.(png|jpe?g|webp|gif|svg)$/i)||[])[0]||'.jpg',file=state.zip.file('bbkaoyan_data/assets/'+id+'/q'+qid+'/'+(asset.usage||'stem')+'_'+asset.id+ext);if(!file)return;var data=await file.async('blob'),url=URL.createObjectURL(data),img=ui('img','qimg');state.urls.push(url);img.src=url;img.alt=asset.alt_text||'试题配图';target.append(img);try{if(img.decode)await img.decode()}catch(e){img.remove()}}
 function question(q,answer){var x=ui('section','question'),h=ui('div','stem'),t=ui('div');t.append(math(q.content));h.append(ui('b','',q.n+'.'),t);x.append(h);if(q.options.length){var mx=Math.max(...q.options.map(s=>s.length)),opts=ui('div','options '+(mx<15?'four':mx<50?'two':'one'));q.options.forEach((v,i)=>{var o=ui('div','option');o.append(document.createTextNode('('+String.fromCharCode(65+i)+') '),math(v));opts.append(o)});x.append(opts)}if(answer){var b=ui('div','printans');b.append(document.createTextNode('答案：'),math(q.answer));x.append(b)}return x}
 function resetActions(disabled){['save','editor','print','downloadPdf'].forEach(k=>el(k).disabled=disabled)}
