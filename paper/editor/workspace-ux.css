@@ -1,0 +1,71 @@
+/* Everflow Paper Studio: dense navigation + local multi-paper workspace.
+ * Does not change physical paper pagination or the reverted browser PDF renderer.
+ */
+.workspace-projects{flex:0 0 auto;padding:12px 12px 10px;background:#f8faf9;border-bottom:1px solid #e0e7e5}
+.workspace-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font:600 12px/1.4 system-ui,sans-serif;color:#2f444b}
+.workspace-heading button,.workspace-mini-actions button{border:1px solid #cad6d7;background:#fff;border-radius:7px;color:#2c5559;cursor:pointer;padding:5px 8px;font:600 11px/1.4 system-ui}
+.workspace-paper-list{display:flex;gap:3px;flex-direction:column;max-height:165px;overflow:auto;overscroll-behavior:contain;margin:9px 0}
+.workspace-paper{border:1px solid transparent;border-radius:8px;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:6px;align-items:center;padding:8px 7px;text-align:left;background:transparent;color:#50616b;font:500 12px/1.3 system-ui;cursor:pointer}
+.workspace-paper:hover{background:#ecf4f3}.workspace-paper.is-active{background:#e5f0ec;border-color:#bed7cb;color:#245849}
+.workspace-paper-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-paper-icon{font-size:15px}.workspace-paper-count{white-space:nowrap;font-size:10px;color:#77868b}
+.workspace-mini-actions{display:flex;gap:7px}.workspace-mini-actions button{flex:1;padding:8px 3px;background:white}
+.workspace-help{font:10px/1.6 system-ui;margin:9px 1px 0;color:#879395}
+.texpage-navigator .navigator-head{padding:12px 14px!important;min-height:70px!important}
+.texpage-navigator .navigator-tabs{min-height:45px}
+.texpage-navigator .order-list{padding:8px 8px!important}
+.texpage-navigator .order-item{border-radius:9px!important;padding:8px 6px!important;gap:5px!important;min-height:60px!important;align-items:center!important}
+.texpage-navigator .order-copy{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+.texpage-navigator .order-copy b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden!important;white-space:normal!important;line-height:1.45!important;word-break:break-word}
+.texpage-navigator .order-copy small{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.4}
+.texpage-navigator .order-controls{align-self:center;flex:0 0 auto}
+.texpage-preview-pane .preview-toolbar-extra{display:flex;align-items:center;gap:10px;min-width:max-content;font:500 11px system-ui;color:#536a68}
+.texpage-preview-pane .preview-toolbar-extra label{display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer}
+.texpage-preview-pane .preview-toolbar-extra input{accent-color:#326b58}
+.paper-inline-solution{margin:2mm 0 2mm 2.5em!important;font-size:0.96em!important;line-height:1.55!important;padding:1.5mm 2mm!important;border-left:1pt solid #cbd7d1!important;color:#282b2a!important;white-space:pre-wrap}
+.paper-inline-solution>div{margin:0 0 1.5mm!important}
+/* Closer to the Everflow LaTeX mother-cover: calm typographic hierarchy and neutral black. */
+.browser-cover-page.everflow-refined-cover{background:#fff!important;color:#151b1c!important}
+.everflow-refined-cover .everflow-cover-kicker{position:absolute;left:25mm;right:25mm;top:36mm;text-align:center;font:500 10pt/1.5 "Everflow Termes",serif;letter-spacing:1.9pt}
+.everflow-refined-cover .everflow-cover-sub{position:absolute;left:22mm;right:22mm;top:78mm;text-align:center;font:12pt/1.5 "Everflow Song",serif}
+.everflow-refined-cover .browser-cover-title{top:111mm!important;font-size:25pt!important;font-weight:700!important;line-height:1.45!important;padding:0 5mm}
+.everflow-refined-cover .browser-cover-signature{top:147mm!important;font-family:"Everflow Kai","Everflow Song",serif!important;font-size:16pt!important;font-weight:400!important}
+.everflow-refined-cover .browser-cover-line{top:260mm!important;width:165mm!important;left:22mm!important;border-color:#777!important}
+.everflow-refined-cover .everflow-cover-note{position:absolute;top:244mm;left:22mm;right:22mm;font:9pt/1.5 "Everflow Song",serif;color:#777}
+.everflow-refined-cover .browser-cover-brand{left:22mm!important;top:265mm!important;font-size:10pt!important;line-height:1.5!important}
+.everflow-refined-cover .browser-cover-date{left:22mm!important;top:272mm!important;color:#50575a!important;font-weight:400!important;font-size:9pt!important}
+.workspace-dialog-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(14,30,32,.48);display:grid;place-items:center;padding:14px;backdrop-filter:blur(2px)}
+.workspace-dialog-backdrop[hidden]{display:none!important}
+.workspace-dialog{width:min(880px,96vw);height:min(84dvh,800px);background:#fff;box-shadow:0 16px 70px #092b2957;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.workspace-dialog header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e9eeeb;padding:16px 21px}
+.workspace-dialog header .dialog-label{font:600 9px system-ui;letter-spacing:.14em;color:#77918a}
+.workspace-dialog header h2{font:700 20px/1.25 "PingFang SC",system-ui;margin:6px 0 0;color:#253b37}
+.workspace-dialog header button{background:transparent;border:0;font-size:26px;cursor:pointer;color:#74837d}
+.workspace-dialog-content{padding:15px 21px 24px;overflow:auto;min-height:0;flex:1;color:#32423c;font:12px/1.7 system-ui}
+.workspace-description{margin:4px 0 18px;color:#7b8b83;line-height:1.8}
+.workspace-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #edf2ee;padding:12px 0}
+.workspace-action{cursor:pointer;border-radius:8px;background:white;border:1px solid #bfd0c5;padding:9px 11px;color:#345848;white-space:nowrap;font-size:11px}
+.workspace-action.primary{background:#315c51;border-color:#315c51;color:#fff}
+.workspace-graph-actions{position:sticky;top:0;z-index:1;background:white;display:flex;gap:8px;align-items:center;padding:8px 0 12px;flex-wrap:wrap}
+.workspace-graph-actions input{flex:1 1 170px;min-width:110px}
+.workspace-graph-actions input,.workspace-graph-actions select{border:1px solid #d7e2db;padding:9px;border-radius:8px;background:#fff;max-width:100%}
+.workspace-counter{font-size:12px;color:#51776c}
+.workspace-graph-list{max-height:55dvh;overflow:auto;border:1px solid #e9f0eb;border-radius:10px}
+.workspace-graph-row{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid #e6eee9;padding:11px 13px;cursor:pointer}
+.workspace-graph-row:hover{background:#f4f9f6}
+.workspace-graph-row input{margin-top:5px;accent-color:#315c51}
+.workspace-graph-content{min-width:0;display:grid;gap:5px;overflow-wrap:anywhere}
+.workspace-graph-content small{font-size:10px;color:#839189}
+@media(min-width:768px) and (max-width:1190px){
+ .texpage-preview-pane .preview-toolbar-extra{gap:7px;font-size:10px}
+ .texpage-preview-pane .preview-toolbar-extra label{gap:2px}
+}
+@media(max-width:767px){
+ .workspace-projects{padding:10px}
+ .workspace-paper-list{max-height:148px}
+ .texpage-preview-pane .preview-toolbar-extra{position:relative;z-index:2;display:flex;gap:8px;font-size:10px;grid-row:2;grid-column:1/-1;justify-content:center;background:#fff;padding:5px 9px;border-radius:8px}
+ .texpage-preview-pane .preview-toolbar{min-height:74px!important;height:74px!important;grid-template-rows:43px 29px!important}
+ .workspace-dialog{height:min(89dvh,760px)}
+ .workspace-dialog-content{padding:12px}
+ .workspace-graph-actions{gap:6px}
+}
