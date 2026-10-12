@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:1440,height:900}});
+ await page.addInitScript(()=>{window.__PRINT_CALLED__=0;window.print=()=>{window.__PRINT_CALLED__++}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/paper/test/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelector('#pageStats')?.textContent.includes('8 题'),{timeout:30000});
@@ -32,6 +33,22 @@ const assert = require('node:assert/strict');
  const data=JSON.parse(Buffer.concat(chunks).toString());
  assert.equal(data.questions.length,8);
  assert.equal(data.template,'book');
+ // Same DOM is used by both actions, but only the explicit Print button invokes window.print.
+ await page.locator('[data-mode="exam"]').click();
+ await page.locator('[data-size="a4"]').click();
+ await page.waitForFunction(()=>document.querySelector('#sheets')?.dataset.layoutReady==='true');
+ const n=await page.locator('#sheets .sheet').count();
+ const pdfPromise=page.waitForEvent('download',{timeout:90000});
+ await page.locator('#downloadPdf').click();
+ const pdf=await pdfPromise;
+ assert.ok(pdf.suggestedFilename().endsWith('.pdf'));
+ const st=await pdf.createReadStream();let size=0,header='';
+ for await(const x of st){if(!header)header=x.toString().slice(0,5);size+=x.length}
+ assert.equal(header,'%PDF-');assert.ok(size>4000,'empty PDF? '+size);
+ assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
+ assert.equal(await page.locator('#sheets .sheet').count(),n,'download must not repaginate');
+ await page.locator('#print').click();
+ assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),1);
  assert.deepEqual(errors,[],'page Javascript errors');
  await page.setViewportSize({width:390,height:844});
  await page.locator('#mobileSettings').click();
