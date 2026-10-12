@@ -76,7 +76,7 @@ function createMasterCover(){
  cover.style.setProperty("--paper-width","210mm");
  cover.style.setProperty("--paper-height","297mm");
  cover.append(
-   node("div","browser-cover-title","彼时流年若水做题本"),
+   node("div","browser-cover-title","考研数学二 · 做题本"),
    node("div","browser-cover-signature","·彼时流年若水·"),
    node("div","browser-cover-line"),
    node("div","browser-cover-brand","Everflow·彼时流年若水"),
@@ -97,8 +97,8 @@ async function init(){
    if(!window.EverflowBrowserLayout||!window.EverflowSafeMath)throw Error("模板渲染组件未就绪");
    var result=await window.EverflowBrowserLayout.render({
       host:host,records:sampleQuestions,info:cfg,template:"book",
-      title:mode==="padl"?"Book · PAD 横版":"Book · A4 密集版",
-      header:"",layoutVersion:"book-showcase-"+mode,
+      title:"考研数学二 · 做题本",
+      header:"",layoutVersion:"public-demo-"+mode,
       createItem:makeItem,renderMath:function(root){window.EverflowSafeMath.render(root)}
    });
    if(!result.pageCount)throw Error("未生成试卷页面");
