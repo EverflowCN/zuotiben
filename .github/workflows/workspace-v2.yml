@@ -1,0 +1,42 @@
+name: Everflow workspace v2 verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper/editor/local-projects.js'
+      - 'paper/editor/workspace-ui.js'
+      - 'paper/editor/workspace-zip.js'
+      - 'paper/editor/workspace-v2.css'
+      - 'paper/editor/editor.js'
+      - 'paper/editor/index.html'
+      - 'paper/editor/browser-layout.js'
+      - 'scripts/workspace-v2-smoke.cjs'
+      - '.github/workflows/workspace-v2.yml'
+permissions:
+  contents: read
+concurrency:
+  group: everflow-workspace-v2-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bash scripts/install-pdf-vendor.sh
+      - run: npm install --no-save playwright jszip
+      - run: npx playwright install --with-deps chromium
+      - name: Verify whole workspace, PDF ToC, ZIP and persistent splitter geometry
+        run: |
+          mkdir -p test-results
+          python3 -m http.server 8765 &
+          node scripts/workspace-v2-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: everflow-v2-workspace-screens
+          path: test-results/
