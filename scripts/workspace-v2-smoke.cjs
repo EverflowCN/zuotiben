@@ -26,7 +26,7 @@ const assert=require('node:assert/strict');
   await page.locator('#localPaperList .workspace-paper').first().waitFor({timeout:16000});
   assert.equal(await page.locator('#outlineTabButton').innerText(),'大纲');
   assert.equal(await page.locator('#sectionManageButton').innerText(),'目录结构');
-  assert.equal(await page.locator('#outlineNav .outline-section-chip').count(),3);
+  assert.equal(await page.locator('.outline-tree-section').count(),3);
   // Physical A4 table of contents generated AFTER cover from actual pagination.
   await page.locator('#sectionManageButton').click();
   await page.locator('#tocEnabledToggle').check();
@@ -85,7 +85,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.locator('#orderList .order-item').count(),3);
   await page.screenshot({path:'test-results/workspace-folders-desktop.png',fullPage:false});
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.locator('#outlineNav .outline-section-chip').first().waitFor({timeout:25000});
+  await page.locator('.outline-tree-section').first().waitFor({timeout:25000});
   assert.equal(await page.locator('#tocEnabledToggle').isChecked(),true);
   assert.ok((await page.evaluate(async()=>EverflowArchive.listFolders())).some(f=>f.name==='27 数学二模拟卷'));
   assert.ok(parseInt(await page.evaluate(()=>localStorage.getItem('everflow-editor-ui-v1')||'0'))>=0||true);

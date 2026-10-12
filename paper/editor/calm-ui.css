@@ -169,3 +169,39 @@ body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-menu{width:24p
 body.editor-page #navigatorPanel#navigatorPanel .workspace-mini-actions{display:flex!important;padding:8px 3px 0!important;border-top:1px solid var(--ui-line)!important;margin-top:8px!important}
 body.editor-page #navigatorPanel#navigatorPanel .workspace-mini-actions button{background:transparent!important;border:0!important;flex:1!important;min-height:30px!important;font-size:12px!important;padding:3px!important}
 @media(hover:none){body.editor-page #navigatorPanel#navigatorPanel .workspace-file-menu{opacity:1!important}}
+/* Outline chapters and questions share the same compact tree language. */
+body.editor-page #outlinePanel #outlineNav{display:none!important}
+body.editor-page #outlinePanel .order-toolbar{min-height:35px!important;padding:4px 10px!important}
+body.editor-page #outlinePanel .order-toolbar>strong{display:none!important}
+body.editor-page #outlinePanel .order-toolbar-actions{display:flex!important;justify-content:space-between!important;align-items:center!important;width:100%!important;gap:6px!important}
+body.editor-page #outlinePanel .outline-selectbar{min-height:30px!important;padding:3px 8px!important;border:0!important;background:#fafbfc!important}
+body.editor-page #outlinePanel .outline-selectbar button{min-height:24px!important;padding:2px 7px!important;border:0!important;background:transparent!important;font-size:11px!important}
+body.editor-page #outlinePanel #orderList{padding:7px 6px 16px!important}
+body.editor-page #outlinePanel .outline-tree-section{display:flex!important;align-items:center!important;gap:6px!important;min-height:32px!important;width:100%!important;background:transparent!important;border:0!important;border-radius:4px!important;padding:5px 6px!important;cursor:pointer;text-align:left;color:#43515b;font:500 13px/1.5 inherit}
+body.editor-page #outlinePanel .outline-tree-section:hover{background:#f0f4f5!important}
+body.editor-page #outlinePanel .outline-tree-chevron{width:15px!important;flex:0 0 15px!important;text-align:center!important;font-size:16px!important;color:#77838c!important}
+body.editor-page #outlinePanel .outline-tree-title{flex:1!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:13px!important;font-weight:500!important}
+body.editor-page #outlinePanel .outline-tree-section small{font-size:11px!important;color:#87929a!important;font-weight:400!important}
+body.editor-page #outlinePanel .outline-tree-children{margin-left:13px!important;padding-left:3px!important;border-left:1px solid #dfe5e9!important}
+body.editor-page #outlinePanel .outline-tree-children[hidden]{display:none!important}
+body.editor-page #outlinePanel .order-item{display:grid!important;grid-template-columns:14px 9px 20px minmax(0,1fr) auto!important;gap:3px!important;min-height:32px!important;height:32px!important;max-height:32px!important;padding:3px 4px!important;margin:0!important;border:0!important;border-radius:4px!important;background:transparent!important;box-shadow:none!important}
+body.editor-page #outlinePanel .order-item:hover{background:#f2f5f6!important}
+body.editor-page #outlinePanel .order-item.is-selected{background:#e7eff3!important;box-shadow:none!important}
+body.editor-page #outlinePanel .order-item.is-multi-selected{background:#edf3f8!important}
+body.editor-page #outlinePanel .order-copy{display:block!important;overflow:hidden!important;padding:0!important;min-width:0!important;max-width:100%!important;line-height:24px!important}
+body.editor-page #outlinePanel .order-copy b{display:block!important;-webkit-line-clamp:unset!important;font-size:12px!important;line-height:24px!important;font-weight:400!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#44525c!important;max-height:24px!important}
+body.editor-page #outlinePanel .order-copy small{display:none!important}
+body.editor-page #outlinePanel .order-copy math{font-size:1em!important;vertical-align:middle!important}
+body.editor-page #outlinePanel .order-num{font-size:11px!important;font-weight:400!important;color:#74818b!important}
+body.editor-page #outlinePanel .order-check{width:13px!important;height:13px!important;margin:0!important;min-height:0!important;opacity:0!important}
+body.editor-page #outlinePanel .drag-handle{font-size:11px!important;width:9px!important;min-width:9px!important;padding:0!important;opacity:0!important}
+body.editor-page #outlinePanel .order-item:hover .order-check,
+body.editor-page #outlinePanel .order-item:focus-within .order-check,
+body.editor-page #outlinePanel .order-item.is-multi-selected .order-check,
+body.editor-page #outlinePanel .order-item:hover .drag-handle,
+body.editor-page #outlinePanel .order-item:focus-within .drag-handle{opacity:1!important}
+body.editor-page #outlinePanel .order-controls{display:none!important}
+body.editor-page #outlinePanel .order-item:hover .order-controls,
+body.editor-page #outlinePanel .order-item:focus-within .order-controls{display:flex!important;gap:1px!important;opacity:1!important}
+body.editor-page #outlinePanel .order-controls button{width:20px!important;min-width:20px!important;height:23px!important;min-height:23px!important;background:transparent!important;border:0!important;padding:0!important;font-size:12px!important}
+@media(hover:none){body.editor-page #outlinePanel .order-check,body.editor-page #outlinePanel .drag-handle{opacity:1!important}}

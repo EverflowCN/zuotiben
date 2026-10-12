@@ -19,6 +19,15 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   await page.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded'});
   await page.locator('#orderList .order-item').first().waitFor({timeout:15000});
   assert.equal(await page.locator('#orderList .order-item').count(),4);
+  assert.equal(await page.locator('.outline-tree-section').count(),3);
+  const chapter=page.locator('.outline-tree-section').first();
+  await chapter.click();
+  assert.equal(await page.locator('#orderList .order-item').first().isVisible(),false);
+  await chapter.click();
+  assert.equal(await page.locator('#orderList .order-item').first().isVisible(),true);
+  const outlineRow=await page.locator('#orderList .order-item').first().boundingBox();
+  assert.ok(outlineRow.height<=34,'outline questions use compact tree rows');
+
   assert.equal(await page.locator('#workspaceProjects').isVisible(),false,'outline reserves the whole sidebar');
   await page.locator('#projectsTabButton').click();
   assert.equal(await page.locator('#workspaceProjects').isVisible(),true);

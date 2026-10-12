@@ -341,17 +341,20 @@ function renderOutlineNav(){
       var q=state.questions.find(function(v){return v.section===name});
       if(!q)return;
       selectedId=q.id;renderOrder();renderQuestionEditor();
-      var row=Array.from(els.orderList.children).find(function(row){return state.questions[Number(row.dataset.index)]?.id===q.id});
+      var row=els.orderList.querySelector('.order-item[data-index="'+state.questions.indexOf(q)+'"]');
       if(row)row.scrollIntoView({behavior:"smooth",block:"nearest"});
     };
     els.outlineNav.appendChild(item);
   });
 }
+var collapsedOutlineSections=new Set();
+try{collapsedOutlineSections=new Set(JSON.parse(sessionStorage.getItem("everflow-outline-folds")||"[]"))}catch(e){}
 var lastBatchCheckboxIndex=-1;
 function navigateQuestion(index,scroll){
   if(!state.questions.length)return;
   var idx=Math.max(0,Math.min(state.questions.length-1,index));
   selectedId=state.questions[idx].id;
+  collapsedOutlineSections.delete(state.questions[idx].section||"未分类");
   renderOrder();renderQuestionEditor();
   if(scroll!==false){
     var item=els.orderList.querySelector('.order-item[data-index="'+idx+'"]');
@@ -368,6 +371,25 @@ function renderOrder(){
   var oldScroll=els.orderList.scrollTop;
   renderOutlineNav();
   els.orderList.replaceChildren();
+  var groups=new Map();
+  function sectionGroup(name){
+    name=name||"未分类";if(groups.has(name))return groups.get(name);
+    var group=document.createElement("div");group.className="outline-tree-group";
+    var header=document.createElement("button");header.type="button";header.className="outline-tree-section";
+    var arrow=document.createElement("span");arrow.className="outline-tree-chevron";arrow.textContent=collapsedOutlineSections.has(name)?"›":"⌄";
+    var title=document.createElement("span");title.className="outline-tree-title";title.textContent=name;header.title=name;
+    var count=document.createElement("small");count.textContent=state.questions.filter(function(q){return (q.section||"未分类")===name}).length;
+    header.append(arrow,title,count);header.setAttribute("aria-expanded",String(!collapsedOutlineSections.has(name)));
+    header.setAttribute("aria-label","展开或折叠章节 "+name);
+    var branch=document.createElement("div");branch.className="outline-tree-children";branch.hidden=collapsedOutlineSections.has(name);
+    header.onclick=function(){
+      if(collapsedOutlineSections.has(name))collapsedOutlineSections.delete(name);else collapsedOutlineSections.add(name);
+      branch.hidden=collapsedOutlineSections.has(name);arrow.textContent=branch.hidden?"›":"⌄";header.setAttribute("aria-expanded",String(!branch.hidden));
+      try{sessionStorage.setItem("everflow-outline-folds",JSON.stringify([...collapsedOutlineSections]))}catch(e){}
+    };
+    group.append(header,branch);els.orderList.appendChild(group);groups.set(name,branch);return branch;
+  }
+  uniqueSections().forEach(sectionGroup);
   state.questions.forEach(function(q,i){
     var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=false;row.dataset.index=i;
     row.setAttribute("role","option");row.setAttribute("aria-selected",String(selectedIds.has(q.id)));
@@ -401,7 +423,7 @@ function renderOrder(){
     var ctr=document.createElement("span");ctr.className="order-controls";
     var up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.onclick=function(){move(i,i-1)};
     var dn=document.createElement("button");dn.type="button";dn.textContent="↓";dn.disabled=i===state.questions.length-1;dn.onclick=function(){move(i,i+1)};
-    ctr.append(up,dn);row.append(check,h,n,c,ctr);els.orderList.appendChild(row);
+    up.title="上移本题";dn.title="下移本题";ctr.append(up,dn);row.append(check,h,n,c,ctr);row.title="第 "+(i+1)+" 题 · "+q.type;sectionGroup(q.section).appendChild(row);
   });
   els.orderList.scrollTop=oldScroll;
   renderQuestionNav();
