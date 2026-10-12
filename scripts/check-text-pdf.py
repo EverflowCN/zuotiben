@@ -12,10 +12,10 @@ for i,(a,b) in enumerate(zip(raster,text)):
         pix=page.get_pixmap(matrix=fitz.Matrix(1,1),alpha=False)
         img=Image.frombytes('RGB',[pix.width,pix.height],pix.samples).convert('L')
         images.append(img.point(lambda v: 255 if v<180 else 0))
-    # Compare ink location allowing two PDF pixels for differing antialiasing.
+    # Compare ink location allowing three PDF pixels for CFF/TrueType hinting and antialiasing.
     ratios=[]
     for source,target in (images,images[::-1]):
-        near=target.filter(ImageFilter.MaxFilter(5))
+        near=target.filter(ImageFilter.MaxFilter(7))
         missing=ImageChops.subtract(source,near)
         ink=sum(source.histogram()[1:])
         absent=sum(missing.histogram()[1:])
