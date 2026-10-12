@@ -290,8 +290,9 @@ function fitChoices(layer){
     cells.forEach(function(cell){
       var probe=cell.cloneNode(true);
       probe.style.cssText="position:absolute;display:inline-flex;width:max-content;max-width:none;white-space:nowrap";
-      var label=probe.querySelector(".option-label");if(label)label.style.cssText="width:2.25em;flex:0 0 2.25em";
-      layer.appendChild(probe);max=Math.max(max,probe.getBoundingClientRect().width);probe.remove();
+      var label=probe.querySelector(".option-label");if(label)label.style.cssText="width:2.25em;flex:0 0 2.25em;white-space:nowrap";
+      var body=probe.querySelector(".option-body");if(body)body.style.cssText="white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;min-width:max-content!important;flex:0 0 auto";
+      layer.appendChild(probe);max=Math.max(max,probe.getBoundingClientRect().width,probe.scrollWidth);probe.remove();
     });
     var n=cells.length,short=max<=.22*width,medium=max<=.46*width;
     var cols=n===3||n===6?(short?3:medium?2:1):n===4?(short?4:medium?2:1):n>1&&medium?2:1;
