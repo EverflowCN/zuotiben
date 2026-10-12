@@ -590,67 +590,102 @@ function setNavigatorTab(name){
 function closeNavigatorDrawer(){
   document.body.classList.remove("navigator-open");
   if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=true;
+  updateNavigatorToggleState();
+}
+function updateNavigatorToggleState(){
+  var btn=els.navigatorToggleButton;
+  if(!btn)return;
+  var compact=window.matchMedia("(max-width:1179px)").matches;
+  var open=compact?document.body.classList.contains("navigator-open"):!document.body.classList.contains("navigator-collapsed");
+  btn.setAttribute("aria-expanded",String(open));
+  btn.title=open?"收起工作区与大纲":"展开工作区与大纲";
 }
 function toggleNavigator(){
   if(window.matchMedia("(max-width:1179px)").matches){
     var open=!document.body.classList.contains("navigator-open");
     document.body.classList.toggle("navigator-open",open);
     if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=!open;
-    return;
+    updateNavigatorToggleState();return;
   }
   var collapsed=!document.body.classList.contains("navigator-collapsed");
   document.body.classList.toggle("navigator-collapsed",collapsed);
   persistUiState({navigatorCollapsed:collapsed});
+  updateNavigatorToggleState();
+  requestAnimationFrame(applyPreviewZoom);
+}
+function clampPaneSize(value,min,max){return Math.max(min,Math.min(max,Number(value)||min))}
+function workbenchWidths(){
+  var w=els.workbench.getBoundingClientRect().width||window.innerWidth;
+  var tablet=window.matchMedia("(min-width:768px) and (max-width:1179px)").matches;
+  var nav=tablet?0:(document.body.classList.contains("navigator-collapsed")?0:els.navigatorPanel.getBoundingClientRect().width);
+  return {total:w,navigator:nav,tablet:tablet,gutter:tablet?6:14};
+}
+function resizePane(kind,pixels,store){
+  var dims=workbenchWidths(),value=Math.round(Number(pixels));
+  if(kind==="navigator"){
+    if(dims.tablet)return;
+    value=clampPaneSize(value,210,Math.min(470,dims.total-14-280-350));
+    document.documentElement.style.setProperty("--navigator-w",value+"px");
+    if(store!==false)persistUiState({navigatorWidth:value});
+  }else{
+    var available=dims.total-dims.gutter-dims.navigator-350;
+    value=clampPaneSize(value,dims.tablet?320:280,Math.max(dims.tablet?320:280,available));
+    document.documentElement.style.setProperty("--editor-w",value+"px");
+    if(store!==false)persistUiState({editorWidth:value});
+  }
+  requestAnimationFrame(applyPreviewZoom);
+}
+function normalizeWorkspaces(){
+  if(window.matchMedia("(max-width:767px)").matches)return;
+  var root=document.documentElement,settings={};
+  try{settings=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}")}catch(e){}
+  if(window.innerWidth>=1180)resizePane("navigator",settings.navigatorWidth||260,false);
+  resizePane("preview",settings.editorWidth||(window.innerWidth<1180?Math.round(window.innerWidth*.46):440),false);
 }
 function bindPaneResizer(el,kind){
   if(!el)return;
-  function applyWidth(value){
-    var v=Number(value),name=kind==="navigator"?"--navigator-w":"--editor-w";
-    var min=kind==="navigator"?210:280,max=kind==="navigator"?470:900;
-    var n=Math.max(min,Math.min(max,v));
-    document.documentElement.style.setProperty(name,Math.round(n)+"px");
-    persistUiState(kind==="navigator"?{navigatorWidth:Math.round(n)}:{editorWidth:Math.round(n)});
-    requestAnimationFrame(applyPreviewZoom);
-  }
-  el.title="拖动改变分栏宽度；双击还原；方向键微调";
-  el.addEventListener("dblclick",function(){applyWidth(kind==="navigator"?265:440)});
+  var named=kind==="navigator"?"工作区 / 编辑":"编辑 / 预览";
+  el.title="拖动调整「"+named+"」比例；方向键微调；双击恢复默认";
+  el.setAttribute("aria-valuemin",kind==="navigator"?"210":"280");
+  el.setAttribute("aria-valuemax",kind==="navigator"?"470":"900");
+  el.addEventListener("dblclick",function(){
+    resizePane(kind,kind==="navigator"?260:Math.min(440,window.innerWidth*.44));
+  });
   el.addEventListener("keydown",function(e){
     if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
     e.preventDefault();
-    var px=kind==="navigator"?els.navigatorPanel.getBoundingClientRect().width:els.editPane.getBoundingClientRect().width;
-    applyWidth(px+(e.key==="ArrowRight"?20:-20));
+    var rect=(kind==="navigator"?els.navigatorPanel:els.editPane).getBoundingClientRect();
+    resizePane(kind,rect.width+(e.key==="ArrowRight"?24:-24));
   });
   el.addEventListener("pointerdown",function(e){
-    if(window.matchMedia("(max-width:767px)").matches)return;
+    if(e.button!==0||window.matchMedia("(max-width:767px)").matches)return;
     if(kind==="navigator"&&window.matchMedia("(max-width:1179px)").matches)return;
-    e.preventDefault();
-    el.setPointerCapture&&el.setPointerCapture(e.pointerId);
+    e.preventDefault();e.stopPropagation();
+    var initial=e.clientX,width=(kind==="navigator"?els.navigatorPanel:els.editPane).getBoundingClientRect().width;
+    var active=true;
     el.classList.add("is-dragging");
     document.body.classList.add("is-resizing-panes");
+    try{el.setPointerCapture(e.pointerId)}catch(error){}
     function move(ev){
-      if(kind==="navigator"){
-        var box=els.workbench.getBoundingClientRect();
-        var width=Math.max(210,Math.min(470,ev.clientX-box.left));
-        document.documentElement.style.setProperty("--navigator-w",width+"px");
-        persistUiState({navigatorWidth:Math.round(width)});
-      }else{
-        var box=els.editPane.getBoundingClientRect();
-        var available=els.workbench.getBoundingClientRect().right-box.left-370;
-        var width=Math.max(280,Math.min(Math.max(280,available),ev.clientX-box.left));
-        document.documentElement.style.setProperty("--editor-w",width+"px");
-        persistUiState({editorWidth:Math.round(width)});
-        requestAnimationFrame(applyPreviewZoom);
-      }
+      if(!active)return;
+      resizePane(kind,width+ev.clientX-initial,false);
+      el.setAttribute("aria-valuenow",String(Math.round((kind==="navigator"?els.navigatorPanel:els.editPane).getBoundingClientRect().width)));
     }
-    function up(ev){
-      el.releasePointerCapture&&el.releasePointerCapture(ev.pointerId);
+    function stop(ev){
+      if(!active)return;active=false;
+      move(ev||e);
+      var final=(kind==="navigator"?els.navigatorPanel:els.editPane).getBoundingClientRect().width;
+      resizePane(kind,final,true);
       el.classList.remove("is-dragging");
       document.body.classList.remove("is-resizing-panes");
-      window.removeEventListener("pointermove",move);
-      window.removeEventListener("pointerup",up);
+      document.removeEventListener("pointermove",move);
+      document.removeEventListener("pointerup",stop);
+      document.removeEventListener("pointercancel",stop);
+      try{el.releasePointerCapture(e.pointerId)}catch(error){}
     }
-    window.addEventListener("pointermove",move);
-    window.addEventListener("pointerup",up);
+    document.addEventListener("pointermove",move);
+    document.addEventListener("pointerup",stop);
+    document.addEventListener("pointercancel",stop);
   });
 }
 function bindWorkspaceHeightResizer(){
@@ -1063,6 +1098,9 @@ function init(){
   selectedId=state.questions[0].id;syncInputs();bindDrag(els.orderList);
   bindBrowserPreviewInteractions();
   loadUiState();
+  normalizeWorkspaces();
+  updateNavigatorToggleState();
+  window.addEventListener("resize",function(){normalizeWorkspaces();updateNavigatorToggleState()});
   bindPaneResizer(els.navigatorResizer,"navigator");
   bindPaneResizer(els.previewResizer,"preview");
   bindWorkspaceHeightResizer();
