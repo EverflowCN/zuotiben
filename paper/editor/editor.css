@@ -1927,6 +1927,11 @@ body.is-resizing-panes *{
   font-synthesis:none;print-color-adjust:exact;-webkit-print-color-adjust:exact;
   page:everflow-content;
 }
+/* Override legacy SVG card sizing before applying visual zoom. Physical page
+   width must remain unchanged or measurement and validation use different widths. */
+.texpage-preview-pane .typst-preview.browser-paper-preview > section.typst-page.browser-paper-page{
+  width:var(--paper-width,210mm)!important;max-width:none!important;transition:none;
+}
 .browser-paper-columns{
   position:absolute;top:var(--paper-top);right:var(--paper-right);
   bottom:var(--paper-bottom);left:var(--paper-left);
