@@ -14,6 +14,8 @@ var P={
  printer:['M6 9V3h12v6','M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2','M6 14h12v8H6z','M18 12h.01'],
  plus:['M12 5v14','M5 12h14'],
  minus:['M5 12h14'],
+ upload:['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','m7 8 5-5 5 5','M12 3v12'],
+ search:['M21 21l-4.3-4.3','M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0'],
  network:['M6 3v12','M18 9v12','M6 15h12','M6 6h12','M9 6v3','M15 12v3','M4 3h4v4H4z','M16 17h4v4h-4z'],
  history:['M3 12a9 9 0 1 0 3-6.7','M3 3v6h6','M12 7v5l4 2'],
  folder:['M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
@@ -50,7 +52,7 @@ function apply(id,name,iconOnly){
 var icons={
  navigatorToggleButton:["menu",true],undoButton:["undo",true],redoButton:["redo",true],
  saveProjectButton:["save",false],mobileDownloadButton:["download",false],
- newLocalPaper:["plus",false],openPaperGraph:["network",false],openLocalHistory:["history",false],
+ newLocalPaper:["file",true],newLocalFolder:["folder",true],importWorkspaceZip:["upload",true],workspaceSearchButton:["search",true],openPaperGraph:["network",false],openLocalHistory:["history",false],
  addQuestionButton:["plus",false],sectionManageButton:["list",false],
  focusStemButton:["text",false],focusOptionsButton:["list",false],
  previewPrevPageButton:["left",true],previewNextPageButton:["right",true],

@@ -22,6 +22,17 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   assert.equal(await page.locator('#workspaceProjects').isVisible(),false,'outline reserves the whole sidebar');
   await page.locator('#projectsTabButton').click();
   assert.equal(await page.locator('#workspaceProjects').isVisible(),true);
+  await page.locator('.workspace-file-row').first().waitFor();
+  const fileRow=await page.locator('.workspace-file-row').first().boundingBox();
+  assert.ok(fileRow.height<=34,'file tree uses one compact row per paper');
+  assert.equal(await page.locator('.workspace-file-row select').count(),0,'move controls belong in the row menu');
+  await page.locator('#workspaceSearchButton').click();
+  await page.locator('#workspaceSearchInput').fill('不存在的试卷');
+  await page.waitForFunction(()=>document.querySelectorAll('.workspace-file-row').length===0);
+  await page.locator('#workspaceSearchInput').fill('');
+  await page.waitForFunction(()=>document.querySelectorAll('.workspace-file-row').length>0);
+  await page.locator('#workspaceSearchButton').click();
+
   assert.equal(await page.locator('#outlinePanel').isVisible(),false);
   await page.locator('#settingsTabButton').click();
   assert.equal(await page.locator('#workspaceProjects').isVisible(),false);

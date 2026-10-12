@@ -78,7 +78,9 @@ const assert=require('node:assert/strict');
   assert.equal(result.papers.filter(p=>p.folderId===folderId).length,2);
   assert.ok(result.papers.some(p=>p.title==='目录文件夹综合测试'));
   // Move existing root paper to folder, current editing stays intact.
-  await page.locator('.workspace-file-row.is-active select.workspace-file-move').selectOption(folderId);
+  await page.locator('.workspace-file-row.is-active .workspace-file-menu').click();
+  await page.locator('#workspaceDialog .workspace-file-move').selectOption(folderId);
+  await page.getByRole('button',{name:'移动试卷',exact:true}).click();
   await page.waitForFunction(async folder=> (await EverflowArchive.list()).every(p=>p.folderId===folder),folderId);
   assert.equal(await page.locator('#orderList .order-item').count(),3);
   await page.screenshot({path:'test-results/workspace-folders-desktop.png',fullPage:false});

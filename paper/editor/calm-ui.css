@@ -135,3 +135,37 @@ body.editor-page #previewPane#previewPane{container-type:inline-size;container-n
  body.editor-page #previewPane#previewPane .preview-toolbar-right{margin-left:auto!important}
 }
 @media(max-width:767px){body.editor-page #questionEditor .question-metadata{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px!important}}
+/* Compact file tree, inspired by conventional TeX editors. */
+body.editor-page #navigatorPanel#navigatorPanel .workspace-heading{display:none!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-projects{padding:8px 6px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-project-toolbar{display:flex!important;flex:0 0 auto!important;align-items:center!important;gap:3px!important;padding:0 5px 7px!important;margin:0 0 4px!important;border-bottom:1px solid var(--ui-line)!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-project-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;border:0!important;border-radius:5px!important;background:transparent!important;padding:6px!important;color:#52616a!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-project-toolbar button:hover{background:#eaf0f2!important}
+body.editor-page #navigatorPanel#navigatorPanel #workspaceSearchButton{margin-left:auto!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-project-toolbar svg{width:17px!important;height:17px!important;flex:none!important}
+body.editor-page #navigatorPanel#navigatorPanel #workspaceSearchInput{width:calc(100% - 10px)!important;margin:0 5px 6px!important;min-height:32px!important;padding:6px 9px!important;font-size:12px!important;border:1px solid var(--ui-line)!important;border-radius:5px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row{display:grid!important;grid-template-columns:minmax(0,1fr) 24px!important;min-height:32px!important;height:32px!important;padding:0 3px!important;margin:0!important;border:0!important;border-radius:4px!important;gap:0!important;background:transparent!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row.is-active{background:#eaf1f3!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row:hover{background:#f2f5f6!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row .workspace-paper{display:flex!important;align-items:center!important;gap:7px!important;height:32px!important;min-height:32px!important;border:0!important;box-shadow:none!important;border-radius:0!important;background:transparent!important;padding:0 5px!important;font-size:13px!important;font-weight:400!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-paper-name{flex:1!important;min-width:0!important;font-size:13px!important;font-weight:400!important;white-space:nowrap!important;text-overflow:ellipsis!important;overflow:hidden!important;line-height:1.4!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-paper-icon{width:17px!important;display:flex!important;flex:0 0 17px!important;align-items:center!important;color:#75838b!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-paper-count{display:none!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-menu{height:25px!important;width:24px!important;min-width:24px!important;background:transparent!important;border:0!important;border-radius:4px!important;font-size:18px!important;color:#71818b!important;cursor:pointer;opacity:0}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row:hover .workspace-file-menu,
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row:focus-within .workspace-file-menu,
+body.editor-page #navigatorPanel#navigatorPanel .workspace-file-row.is-active .workspace-file-menu{opacity:1}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-root{display:flex!important;align-items:center!important;gap:7px!important;background:transparent!important;border:0!important;border-radius:0!important;min-height:30px!important;padding:5px 7px!important;color:#44525c!important;font-size:12px!important;font-weight:600!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-root .workspace-folder-count{font-size:11px!important;font-weight:400!important;color:#7f8b94!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-root-chevron{width:14px!important;flex:0 0 14px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-head{min-height:32px!important;gap:0!important;margin:0!important;border-radius:4px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-name{padding:4px 3px!important;min-height:32px!important;font-size:13px!important;font-weight:400!important;background:transparent!important;border:0!important;border-radius:4px!important;gap:7px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-head:has(.is-selected){background:#edf2f4!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-icon{display:flex!important;align-items:center!important;width:17px!important;flex:0 0 17px!important;color:#74818b!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-tree-icon{width:16px!important;height:16px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-exp{border:0!important;background:transparent!important;min-width:20px!important;width:20px!important;height:26px!important;padding:0!important;color:#75828b!important;font-size:13px!important;cursor:pointer}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-children{padding-left:13px!important;margin-left:9px!important;border:0!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-folder-menu{width:24px!important;height:25px!important;font-size:18px!important;border:0!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-mini-actions{display:flex!important;padding:8px 3px 0!important;border-top:1px solid var(--ui-line)!important;margin-top:8px!important}
+body.editor-page #navigatorPanel#navigatorPanel .workspace-mini-actions button{background:transparent!important;border:0!important;flex:1!important;min-height:30px!important;font-size:12px!important;padding:3px!important}
+@media(hover:none){body.editor-page #navigatorPanel#navigatorPanel .workspace-file-menu{opacity:1!important}}

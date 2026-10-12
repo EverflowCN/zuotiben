@@ -32,6 +32,14 @@ async function saveActive(checkpoint){
  let snapshot=api()?.snapshot();if(!snapshot)return;
  await db.savePaper(snapshot,{checkpoint:!!checkpoint,label:checkpoint?"切换前自动备份":"本地保存"});
 }
+function treeIcon(name){
+ const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+ for(const [k,v] of Object.entries({viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.7","stroke-linecap":"round","stroke-linejoin":"round","aria-hidden":"true"}))svg.setAttribute(k,v);
+ svg.classList.add("workspace-tree-icon");
+ const paths=name==="folder"?["M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"]:["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M8 13h8","M8 17h6"];
+ for(const d of paths){const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("d",d);svg.appendChild(path)}
+ return svg;
+}
 let chosenFolder="";
 let collapsedFolders=new Set();
 try{chosenFolder=localStorage.getItem("everflow-workspace-folder-v2")||"";collapsedFolders=new Set(JSON.parse(localStorage.getItem("everflow-workspace-collapsed-v2")||"[]"))}catch(e){}
@@ -40,6 +48,7 @@ async function renderFolders(){
  const [papers,folders]=await Promise.all([db.list(),db.listFolders()]);
  if(chosenFolder&&!folders.some(f=>f.id===chosenFolder))chosenFolder="";
  const active=db.activeId(),frag=document.createDocumentFragment();
+ const keyword=($("workspaceSearchInput")?.value||"").trim().toLowerCase();
  function choose(id){
    chosenFolder=id||"";
    try{localStorage.setItem("everflow-workspace-folder-v2",chosenFolder)}catch(e){}
@@ -48,7 +57,7 @@ async function renderFolders(){
  function paperRow(p){
    const row=make("div","workspace-file-row"+(p.id===active?" is-active":""));
    const open=button("","", "workspace-paper"+(p.id===active?" is-active":""));
-   const ico=make("span","workspace-paper-icon","▤");
+   const ico=make("span","workspace-paper-icon");ico.appendChild(treeIcon("file"));
    const name=make("span","workspace-paper-name",p.title);
    const count=make("small","workspace-paper-count",p.count+"题");
    open.title=p.title+" · "+date(p.modified);
@@ -58,27 +67,26 @@ async function renderFolders(){
      try{await saveActive(true);await db.openPaper(p.id);location.reload()}
      catch(e){toast("切换失败："+e.message)}
    };
-   const move=make("select","workspace-file-move");
-   move.setAttribute("aria-label","移动 "+p.title+" 到文件夹");
-   move.title="移动试卷到文件夹";
-   move.add(new Option("移动…","_"));
-   move.add(new Option("根目录",""));
-   folders.forEach(f=>move.add(new Option(f.name,f.id)));
-   move.value="_";
-   move.onchange=async()=>{
-     if(move.value==="_")return;
-     try{
-       await db.movePaper(p.id,move.value);
-       await renderFolders();
-       toast("已移动到"+(folders.find(f=>f.id===move.value)?.name||"根目录"));
-     }catch(e){toast("移动失败："+e.message)}
-   };
-   row.append(open,move);return row;
+   const actions=button("⋯",()=>{
+     const box=dialog("移动试卷 · "+p.title);
+     box.append(make("p","workspace-description","选择目标文件夹。移动后题目与历史版本保持不变。"));
+     const move=make("select","workspace-file-move workspace-input");
+     move.setAttribute("aria-label","移动 "+p.title+" 到文件夹");
+     move.add(new Option("根目录",""));folders.forEach(f=>move.add(new Option(f.name,f.id)));
+     move.value=p.folderId||"";box.append(move);
+     const bar=make("div","workspace-dialog-actions");
+     bar.append(button("取消",close),button("移动试卷",async()=>{
+       try{await db.movePaper(p.id,move.value);await renderFolders();close();toast("试卷已移动")}
+       catch(e){toast("移动失败："+e.message)}
+     },"workspace-action primary"));box.append(bar);
+   },"workspace-file-menu");
+   actions.title="移动试卷";actions.setAttribute("aria-label","管理试卷 "+p.title);
+   row.append(open,actions);return row;
  }
  function folderBlock(f,own){
    const box=make("div","workspace-folder-block");
    const head=make("div","workspace-folder-head");
-   const collapsed=collapsedFolders.has(f.id);
+   const collapsed=!keyword&&collapsedFolders.has(f.id);
    const arrow=button(collapsed?"▸":"▾",()=>{
       if(collapsedFolders.has(f.id))collapsedFolders.delete(f.id);else collapsedFolders.add(f.id);
       try{localStorage.setItem("everflow-workspace-collapsed-v2",JSON.stringify([...collapsedFolders]))}catch(e){}
@@ -86,7 +94,8 @@ async function renderFolders(){
    },"workspace-folder-exp");
    arrow.setAttribute("aria-label",collapsed?"展开文件夹 "+f.name:"折叠文件夹 "+f.name);
    const folderButton=button("","", "workspace-folder-name"+(chosenFolder===f.id?" is-selected":""));
-   folderButton.append(make("span","workspace-folder-icon","▣"),make("span","workspace-folder-label",f.name),make("small","workspace-folder-count",own.length+"份"));
+   const folderIcon=make("span","workspace-folder-icon");folderIcon.appendChild(treeIcon("folder"));
+   folderButton.append(folderIcon,make("span","workspace-folder-label",f.name),make("small","workspace-folder-count",own.length+"份"));
    folderButton.onclick=()=>choose(f.id);
    const actions=button("⋯",()=>{
       const modal=dialog("文件夹 · "+f.name);
@@ -111,11 +120,14 @@ async function renderFolders(){
  }
  const root=papers.filter(p=>!p.folderId||!folders.some(f=>f.id===p.folderId));
  const rootHead=button("","", "workspace-folder-root"+(!chosenFolder?" is-selected":""));
- rootHead.append(make("span","workspace-folder-icon","▤"),make("span","workspace-folder-label","未分类试卷"),make("small","workspace-folder-count",root.length+"份"));
+ rootHead.append(make("span","workspace-root-chevron","⌄"),make("span","workspace-folder-label","文件目录"),make("small","workspace-folder-count",papers.length+"份"));
  rootHead.onclick=()=>choose("");
  frag.append(rootHead);
- root.forEach(p=>frag.append(paperRow(p)));
- folders.forEach(f=>frag.append(folderBlock(f,papers.filter(p=>p.folderId===f.id))));
+ folders.forEach(f=>{
+   const own=papers.filter(p=>p.folderId===f.id&&(!keyword||f.name.toLowerCase().includes(keyword)||p.title.toLowerCase().includes(keyword)));
+   if(!keyword||own.length||f.name.toLowerCase().includes(keyword))frag.append(folderBlock(f,own));
+ });
+ root.filter(p=>!keyword||p.title.toLowerCase().includes(keyword)).forEach(p=>frag.append(paperRow(p)));
  target.replaceChildren(frag);
  if(!papers.length)target.append(make("p","workspace-description","还没有试卷，点击新建或导入 ZIP。"));
 }
@@ -204,6 +216,11 @@ async function graphModal(){
 }
 async function initialize(){
  if(!api())return;
+ const searchButton=$("workspaceSearchButton"),searchInput=$("workspaceSearchInput");
+ if(searchButton&&searchInput){
+   searchButton.onclick=()=>{searchInput.hidden=!searchInput.hidden;searchButton.setAttribute("aria-expanded",String(!searchInput.hidden));if(!searchInput.hidden)searchInput.focus();else{searchInput.value="";renderFolders()}};
+   searchInput.oninput=()=>renderFolders();
+ }
  $("workspaceDialogClose").onclick=close;
  $("workspaceDialog").onclick=e=>{if(e.target===$("workspaceDialog"))close()};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("workspaceDialog").hidden)close()});

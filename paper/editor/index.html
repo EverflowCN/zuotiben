@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="./workspace-v2.css?v=20261013-complete3">
 <link rel="stylesheet" href="./interaction-v3.css?v=20261013-splitfix-final2">
 <link rel="stylesheet" href="./pane-autofit.css?v=20261013-autofit1">
-<link rel="stylesheet" href="./calm-ui.css?v=20261013-balanced1">
+<link rel="stylesheet" href="./calm-ui.css?v=20261013-filetree1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -88,13 +88,15 @@
     </div>
 
     <div class="workspace-projects" id="workspaceProjects">
-      <div class="workspace-heading"><b>项目文件</b><span class="workspace-subtitle">本机整理</span></div>
+      <div class="workspace-heading"><b>文件目录</b><span class="workspace-subtitle">本机整理</span></div>
       <div class="workspace-project-toolbar" role="toolbar" aria-label="项目管理">
-        <button id="newLocalPaper" type="button" title="新建试卷">＋ 试卷</button>
-        <button id="newLocalFolder" type="button" title="创建项目文件夹">＋ 文件夹</button>
-        <button id="importWorkspaceZip" type="button" title="批量导入 ZIP 中的试卷">⇧ 导入 ZIP</button>
+        <button id="newLocalPaper" type="button" title="新建试卷" aria-label="新建试卷">新建试卷</button>
+        <button id="newLocalFolder" type="button" title="创建文件夹" aria-label="创建文件夹">创建文件夹</button>
+        <button id="importWorkspaceZip" type="button" title="导入 ZIP" aria-label="导入 ZIP">导入 ZIP</button>
+        <button id="workspaceSearchButton" type="button" title="搜索试卷和文件夹" aria-label="搜索试卷和文件夹" aria-expanded="false">搜索</button>
         <input id="workspaceZipInput" type="file" accept=".zip,application/zip" hidden>
       </div>
+      <input id="workspaceSearchInput" type="search" placeholder="搜索试卷或文件夹" aria-label="搜索试卷或文件夹" hidden>
       <div id="localPaperList" class="workspace-paper-list" role="tree" aria-label="本机文件夹及试卷列表"></div>
       <div class="workspace-mini-actions">
         <button id="openPaperGraph" type="button">题目图谱</button>
@@ -302,9 +304,9 @@
 <script src="./preview-pdf.js?v=20261013-local2"></script>
 <script src="./local-projects.js?v=20261013-complete3"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="./editor.js?v=20261013-balanced1"></script>
-<script src="./workspace-ui.js?v=20261013-complete3"></script>
+<script src="./editor.js?v=20261013-filetree1"></script>
+<script src="./workspace-ui.js?v=20261013-filetree1"></script>
 <script src="./workspace-zip.js?v=20261013-complete3"></script>
-<script src="./lucide-ui.js?v=20261013-4"></script>
+<script src="./lucide-ui.js?v=20261013-filetree1"></script>
 </body>
 </html>

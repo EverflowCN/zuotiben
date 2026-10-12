@@ -623,6 +623,7 @@ function setNavigatorTab(name){
   var split=document.getElementById("splitProjectOutlineToggle");
   var combined=!!(split&&split.checked&&!settings);
   document.body.dataset.navigatorTab=name;
+  try{sessionStorage.setItem("everflow-navigator-tab",name)}catch(e){}
   document.body.classList.toggle("project-outline-split",combined);
   if(els.outlineTabButton)els.outlineTabButton.setAttribute("aria-selected",String(!settings&&!projects));
   if(els.settingsTabButton)els.settingsTabButton.setAttribute("aria-selected",String(settings));
@@ -1195,7 +1196,8 @@ function init(){
   if(projectTab)projectTab.onclick=function(){setNavigatorTab("projects")};
   var splitToggle=document.getElementById("splitProjectOutlineToggle");
   if(splitToggle)splitToggle.onchange=function(){setNavigatorTab("outline")};
-  setNavigatorTab("outline");
+  var savedTab="outline";try{savedTab=sessionStorage.getItem("everflow-navigator-tab")||"outline"}catch(e){}
+  setNavigatorTab(savedTab);
   if(els.outlineTabButton)els.outlineTabButton.onclick=function(){setNavigatorTab("outline")};
   if(els.settingsTabButton)els.settingsTabButton.onclick=function(){setNavigatorTab("settings")};
   if(els.navigatorToggleButton)els.navigatorToggleButton.onclick=toggleNavigator;
