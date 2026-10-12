@@ -177,3 +177,17 @@ body[data-paper-size="a3"] .sheet.everflow-test-cover{
  #sidebar .upload{padding:9px 5px!important;font-size:10px!important}
  .setting-group{padding:9px!important}
 }
+
+/* Type metrics from the same fixed Exam/Book .cls settings used in formal editor:
+ * Exam 9.03374pt / 14.09265pt leading; Book 10.53937pt / 16.44145pt. */
+body[data-paper-mode="exam"] .sheet:not(.everflow-test-cover) .question{
+ line-height:1.56!important;
+}
+body[data-paper-mode="exam"] .sheet .section{
+ font-size:9.03374pt!important;line-height:1.56!important;font-weight:700!important;
+ text-align:left!important;margin:3.2mm 0 2.6mm!important;
+}
+body[data-paper-mode="book"] .sheet .section{
+ font-size:12.045pt!important;line-height:1.56!important;font-weight:400!important;
+ text-align:center!important;margin:3mm 0 3mm!important;
+}
