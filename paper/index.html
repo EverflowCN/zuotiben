@@ -5,23 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="description" content="Everflow Paper Studio · 免费本地组卷。导入 Markdown / JSON，编辑试卷与做题本，并在浏览器内导出 PDF。">
   <meta name="theme-color" content="#f7f6f2">
-  <title>Paper Studio · 在线试卷排版 | 研库</title>
+  <title>彼时流年若水做题本 · 免费开源本地组卷 | Everflow</title>
   <link rel="stylesheet" href="./styles.css?v=20260921-fandol1">
   <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
+  <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
 </head>
 <body class="paper-home">
 <header class="ps-header">
   <div class="ps-shell ps-header-inner">
     <a class="ps-brand" href="../" aria-label="返回研库首页">
       <span class="ps-brand-mark" aria-hidden="true">E</span>
-      <span class="ps-brand-copy"><b>Everflow</b><small>PAPER STUDIO · 研库</small></span>
+      <span class="ps-brand-copy"><b>彼时流年若水做题本</b><small>EVERFLOW · 免费开源的本地做题工具</small></span>
     </a>
     <nav class="ps-header-links" aria-label="页面导航">
       <span class="ps-signal ps-status-hide">浏览器本地处理</span>
       <a href="#workbench">开始使用</a>
-      <a href="./test/" title="独立测试环境，本地导入试卷">做题本 Test</a>
+      <a href="./test/" title="独立测试环境，本地导入试卷">模板体验</a>
+      <a href="./checkin/" title="本机学习打卡和连续天数">学习打卡</a>
       <button id="themeToggle" type="button" aria-label="切换深色或浅色主题">◐ 主题</button>
-      <a href="../" class="ps-header-cta">← 返回研库</a>
+      <a href="../" class="ps-header-cta" title="GOTO 研库">GOTO 研库 ↗</a>
     </nav>
   </div>
 </header>
@@ -29,20 +31,20 @@
   <section class="ps-shell ps-hero">
     <div>
       <div class="ps-eyebrow">EVERFLOW · PAPER STUDIO</div>
-      <h1>你的题目，<br><em>排成一份试卷。</em></h1>
-      <p class="ps-lead">从题目到试卷，不必反复调整格式。导入自己的题目，选择试卷或做题本版式，在浏览器中编辑、预览，直接生成 PDF。</p>
+      <h1>彼时流年若水<br><em>做题本 · 错题本。</em></h1>
+      <p class="ps-lead">永久免费、开源的本地题目整理工具。把多套试题整理为做题本、错题本或标准考试卷，支持跨卷选题、自动分类和排版预览，不强制上传云端。</p>
       <div class="ps-actions">
         <button class="ps-button primary" id="startBlankButton" type="button">＋ 新建试卷 <span aria-hidden="true">↗</span></button>
         <button class="ps-button secondary" id="continueButton" type="button" hidden>继续上次编辑 →</button>
         <button class="ps-button secondary" id="openProjectButton" type="button">打开已有项目</button>
       </div>
-      <div class="ps-smallnote"><span>无须登录</span><span>本地自动保存</span><span>PDF 直接下载</span></div>
+      <div class="ps-smallnote"><span>永久免费</span><span>项目开源</span><span>本机历史版本</span><span>PDF 直接下载</span></div>
     </div>
-    <div class="ps-document-frame" aria-label="试卷排版风格示意，不代表真实渲染结果">
+    <div class="ps-document-frame" aria-label="按照彼时流年若水模板呈现的 A4 试卷视觉示意；实际排版以编辑器为准">
       <div class="ps-document-top"><span><i></i>试卷排版预览 · 示意</span><b>A4 · 210 × 297 mm</b></div>
       <div class="ps-paper-demo" aria-hidden="true">
         <div class="ps-watermark">Everflow</div>
-        <div class="ps-sheet-kicker">EVERFLOW · 彼时流年若水</div>
+        <div class="ps-sheet-kicker">彼时流年若水 · 做题本</div>
         <div class="ps-sheet-title">考研数学二 · 模拟试卷</div>
         <div class="ps-sheet-sub">考试时间：180 分钟　　满分：150 分</div>
         <div class="ps-sheet-rule"></div>
@@ -78,12 +80,17 @@
         <div class="ps-microcopy">仅支持上述结构化文本格式。暂不直接识别 PDF、Word、ZIP 或扫描图片；数学公式可以使用 LaTeX 语法。</div>
       </article>
       <article class="ps-task-card">
-        <h3>还没有整理好的题目？</h3>
+        <h3>没有整理好的题目？</h3>
         <p>先生成一份规范题目文件，也可以直接从内置示例进入编辑器体验。</p>
         <div class="ps-helper-list">
-          <div class="ps-helper-row"><span class="ps-helper-number">01</span><div class="ps-helper-text"><strong>用 AI 整理</strong><small>复制转录规则，粘贴给 AI 并提供原始题目。</small></div><button id="copyPromptButton" type="button">复制提示词</button></div>
+          <div class="ps-helper-row"><span class="ps-helper-number">01</span><div class="ps-helper-text"><strong>用 AI 整理</strong><small>复制转录规则，粘贴给 AI 并提供原始题目。</small></div><button id="copyPromptButton" type="button">选择 AI ↗</button></div>
           <div class="ps-helper-row"><span class="ps-helper-number">02</span><div class="ps-helper-text"><strong>查看导入示例</strong><small>下载标准 Markdown 示例，按格式补充题目。</small></div><button id="downloadTemplateButton" type="button">下载示例</button></div>
           <div class="ps-helper-row"><span class="ps-helper-number">03</span><div class="ps-helper-text"><strong>了解格式与限制</strong><small>查看题干、选项和公式的导入约定。</small></div><button id="howButton" type="button">格式说明</button></div>
+        </div>
+        <div class="paste-workspace">
+          <label for="pasteMarkdown"><strong>直接粘贴 Markdown</strong><small>把豆包或 DeepSeek 返回的完整 Markdown 粘贴到这里，一键转为可编辑试卷。</small></label>
+          <textarea id="pasteMarkdown" rows="5" placeholder="# 数学二试卷\n\n## 一、选择题\n\n### 1\n题干……\nA. ……\nB. ……"></textarea>
+          <button class="ps-button secondary" id="pasteImportButton" type="button">一键转换并进入编辑器 →</button>
         </div>
       </article>
     </div>
@@ -105,11 +112,20 @@
       <p><b>数学公式：</b>行内用 <code>$...$</code>，独立公式用 <code>$$...$$</code>。复杂公式导入后请核对预览。</p>
       <p><b>JSON：</b><code>{"title":"试卷名","questions":[{"content":"题干","options":["选项A","选项B"]}]}</code>。</p>
       <p><b>.everflow：</b>由编辑器“保存项目”导出，可重新导入修改。</p>
-      <div class="warning-box">编辑预览与“浏览器打印”使用同一套实测分页；“精确 PDF”继续使用浏览器端 Typst WASM。两种方式都不是直接运行原始 XeLaTeX.cls，复杂 TikZ、跨页公式及特殊模板宏仍请核对成品。</div>
+      <div class="warning-box">试卷、做题本的排版以当前浏览器预览及最终 PDF 为准。对于复杂公式、插图和跨页题目，请逐题核对；清理浏览器数据可能删除本机试卷和历史版本。</div>
     </div>
   </section>
 </div>
+<div id="aiPromptModal" class="ai-modal-backdrop" hidden>
+  <section class="ai-modal" role="dialog" aria-modal="true" aria-labelledby="aiPromptTitle">
+    <div class="ai-modal-top"><div><small>AI TRANSCRIPTION</small><h2 id="aiPromptTitle">选择转录平台</h2></div><button type="button" id="aiPromptClose" aria-label="关闭">×</button></div>
+    <p>只会复制规范化题目提示词，不会发送题目或登录数据。到豆包或 DeepSeek 粘贴提示词，再将生成的 Markdown 粘回网页转换。</p>
+    <div class="ai-platforms"><button type="button" class="ai-copy" data-ai="豆包">复制豆包提示词</button><button type="button" class="ai-copy" data-ai="DeepSeek">复制 DeepSeek 提示词</button></div>
+    <div class="ai-modal-tip">转换规则：选择题保留 A—D 选项；答案与解析可单独记录，但默认不在 PDF 中显示。</div>
+  </section>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="./app.js?v=20261009-v2"></script>
+<script src="./editor/local-projects.js?v=20261013-workspace2"></script>
+<script src="./app.js?v=20261013-workspace2"></script>
 </body>
 </html>
