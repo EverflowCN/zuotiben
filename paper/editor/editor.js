@@ -347,13 +347,46 @@ function renderOutlineNav(){
     els.outlineNav.appendChild(item);
   });
 }
+var lastBatchCheckboxIndex=-1;
+function navigateQuestion(index,scroll){
+  if(!state.questions.length)return;
+  var idx=Math.max(0,Math.min(state.questions.length-1,index));
+  selectedId=state.questions[idx].id;
+  renderOrder();renderQuestionEditor();
+  if(scroll!==false){
+    var item=els.orderList.querySelector('.order-item[data-index="'+idx+'"]');
+    if(item)item.scrollIntoView({block:"nearest",behavior:"auto"});
+  }
+}
+function renderQuestionNav(){
+  var idx=state.questions.findIndex(function(q){return q.id===selectedId});
+  if(els.questionNavCounter)els.questionNavCounter.textContent=(Math.max(idx,0)+1)+" / "+state.questions.length;
+  if(els.prevQuestionButton)els.prevQuestionButton.disabled=idx<=0;
+  if(els.nextQuestionButton)els.nextQuestionButton.disabled=idx<0||idx>=state.questions.length-1;
+}
 function renderOrder(){
+  var oldScroll=els.orderList.scrollTop;
   renderOutlineNav();
   els.orderList.replaceChildren();
   state.questions.forEach(function(q,i){
-    var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=true;row.dataset.index=i;
-    var check=document.createElement("input");check.type="checkbox";check.className="order-check";check.checked=selectedIds.has(q.id);check.setAttribute("aria-label","选择第 "+(i+1)+" 题");check.onclick=function(e){e.stopPropagation();if(check.checked)selectedIds.add(q.id);else selectedIds.delete(q.id);renderOrder();updateBatchBar()};
-    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
+    var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=false;row.dataset.index=i;
+    row.setAttribute("role","option");row.setAttribute("aria-selected",String(selectedIds.has(q.id)));
+    var check=document.createElement("input");check.type="checkbox";check.className="order-check";check.checked=selectedIds.has(q.id);check.setAttribute("aria-label","选择第 "+(i+1)+" 题");check.onclick=function(e){
+      e.stopPropagation();
+      if(e.shiftKey&&lastBatchCheckboxIndex>=0){
+        var left=Math.min(lastBatchCheckboxIndex,i),right=Math.max(lastBatchCheckboxIndex,i);
+        for(var j=left;j<=right;j++){
+          if(check.checked)selectedIds.add(state.questions[j].id);
+          else selectedIds.delete(state.questions[j].id);
+        }
+      }else{
+        if(check.checked)selectedIds.add(q.id);else selectedIds.delete(q.id);
+      }
+      lastBatchCheckboxIndex=i;
+      renderOrder();updateBatchBar();
+    };
+    var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";h.draggable=true;
+    h.title="拖动此处调整题目顺序";h.setAttribute("aria-label","拖动第 "+(i+1)+" 题排序");
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";c.tabIndex=0;c.setAttribute("role","button");
     var b=document.createElement("b");
@@ -362,13 +395,18 @@ function renderOrder(){
     // rather than raw backslash commands where Temml can render it safely.
     if(window.EverflowSafeMath)window.EverflowSafeMath.render(b);
     var s=document.createElement("small");s.textContent=(q.section?q.section+" · ":"")+q.type+(q.showOptions&&q.options.length?" · "+q.options.length+" 个选项":"");
-    c.append(b,s);c.onclick=function(){selectedId=q.id;renderOrder();renderQuestionEditor()};
+    c.append(b,s);c.onclick=function(){navigateQuestion(i,false)};
+    row.onclick=function(ev){if(ev.target.closest("button,input,select,.drag-handle"))return;navigateQuestion(i,false)};
     c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click()}};
     var ctr=document.createElement("span");ctr.className="order-controls";
     var up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.onclick=function(){move(i,i-1)};
     var dn=document.createElement("button");dn.type="button";dn.textContent="↓";dn.disabled=i===state.questions.length-1;dn.onclick=function(){move(i,i+1)};
     ctr.append(up,dn);row.append(check,h,n,c,ctr);els.orderList.appendChild(row);
   });
+  els.orderList.scrollTop=oldScroll;
+  renderQuestionNav();
+  if(els.outlineSelectionSummary)els.outlineSelectionSummary.textContent=selectedIds.size?
+    "已选 "+selectedIds.size+" / "+state.questions.length+" 题":"点击题干查看 · 方框勾选";
 }
 function measureChoiceWidth(text,fontPt){
   try{
@@ -880,6 +918,7 @@ function renderQuestionEditor(){
   var q=state.questions.find(function(x){return x.id===selectedId});if(!q)return;
   var idx=state.questions.indexOf(q),h=document.createElement("div");h.className="question-editor-head";
   if(els.activeQuestionLabel)els.activeQuestionLabel.textContent="第 "+(idx+1)+" 题 · "+(q.type||"题目");
+  renderQuestionNav();
   var title=document.createElement("h3");title.textContent="第 "+(idx+1)+" 题";
   var actions=document.createElement("div");
   var insert=document.createElement("button");insert.type="button";insert.className="text-btn";insert.textContent="后插题";insert.onclick=function(){mutateState(function(){var nq=newQuestion(q.section);state.questions.splice(idx+1,0,nq);selectedId=nq.id},"已插入新题")};
@@ -1092,7 +1131,7 @@ function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
    "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton",
-   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton"
+   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton","prevQuestionButton","nextQuestionButton","questionNavPickerButton","questionNavCounter","questionNavPopover","questionNavMenu","selectAllQuestionsButton","selectChapterButton","clearQuestionSelectionButton","outlineSelectionSummary","editorGuideButton","editorGuideDialog","closeEditorGuideButton","finishEditorGuideButton","hideEditorGuideHint"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
   selectedId=state.questions[0].id;syncInputs();bindDrag(els.orderList);
@@ -1114,6 +1153,62 @@ function init(){
   if(els.settingsTabButton)els.settingsTabButton.onclick=function(){setNavigatorTab("settings")};
   if(els.navigatorToggleButton)els.navigatorToggleButton.onclick=toggleNavigator;
   if(els.workbenchBackdrop)els.workbenchBackdrop.onclick=closeNavigatorDrawer;
+  if(els.prevQuestionButton)els.prevQuestionButton.onclick=function(){navigateQuestion(state.questions.findIndex(function(q){return q.id===selectedId})-1)};
+  if(els.nextQuestionButton)els.nextQuestionButton.onclick=function(){navigateQuestion(state.questions.findIndex(function(q){return q.id===selectedId})+1)};
+  if(els.questionNavPickerButton)els.questionNavPickerButton.onclick=function(){
+    var menu=els.questionNavPopover;
+    menu.hidden=!menu.hidden;
+    els.questionNavPickerButton.setAttribute("aria-expanded",String(!menu.hidden));
+    if(menu.hidden)return;
+    els.questionNavMenu.replaceChildren();
+    var previousSection="";
+    state.questions.forEach(function(q,i){
+      if(q.section!==previousSection){
+        previousSection=q.section;
+        var group=document.createElement("div");group.className="question-nav-group";
+        group.textContent=q.section||"未分类";els.questionNavMenu.appendChild(group);
+      }
+      var button=document.createElement("button");button.type="button";
+      button.className="question-nav-option"+(q.id===selectedId?" is-active":"");
+      button.textContent="第 "+(i+1)+" 题 · "+clip(q.content,45);
+      button.onclick=function(){menu.hidden=true;els.questionNavPickerButton.setAttribute("aria-expanded","false");navigateQuestion(i)};
+      els.questionNavMenu.appendChild(button);
+      if(q.id===selectedId)requestAnimationFrame(function(){button.scrollIntoView({block:"nearest"})});
+    });
+  };
+  document.addEventListener("pointerdown",function(e){
+    if(els.questionNavPopover&&!els.questionNavPopover.hidden&&!e.target.closest(".editor-question-nav")){
+      els.questionNavPopover.hidden=true;els.questionNavPickerButton.setAttribute("aria-expanded","false");
+    }
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.altKey&&(e.key==="ArrowDown"||e.key==="ArrowUp")&&!e.ctrlKey&&!e.metaKey){
+      if(e.target.closest("input,textarea,select,[contenteditable]"))return;
+      e.preventDefault();navigateQuestion(state.questions.findIndex(function(q){return q.id===selectedId})+(e.key==="ArrowDown"?1:-1));
+    }
+  });
+  if(els.selectAllQuestionsButton)els.selectAllQuestionsButton.onclick=function(){
+    state.questions.forEach(function(q){selectedIds.add(q.id)});
+    renderOrder();updateBatchBar();
+  };
+  if(els.selectChapterButton)els.selectChapterButton.onclick=function(){
+    var current=state.questions.find(function(q){return q.id===selectedId});
+    if(!current)return;
+    state.questions.forEach(function(q){if(q.section===current.section)selectedIds.add(q.id)});
+    renderOrder();updateBatchBar();
+  };
+  if(els.clearQuestionSelectionButton)els.clearQuestionSelectionButton.onclick=function(){
+    selectedIds.clear();lastBatchCheckboxIndex=-1;renderOrder();updateBatchBar();
+  };
+  function closeGuide(){
+    els.editorGuideDialog.hidden=true;
+    if(els.hideEditorGuideHint?.checked)try{localStorage.setItem("everflow-guide-completed-v1","1")}catch(e){}
+  }
+  if(els.editorGuideButton)els.editorGuideButton.onclick=function(){els.editorGuideDialog.hidden=false;els.closeEditorGuideButton.focus()};
+  if(els.closeEditorGuideButton)els.closeEditorGuideButton.onclick=closeGuide;
+  if(els.finishEditorGuideButton)els.finishEditorGuideButton.onclick=closeGuide;
+  if(els.editorGuideDialog)els.editorGuideDialog.onclick=function(e){if(e.target===els.editorGuideDialog)closeGuide()};
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!els.editorGuideDialog.hidden)closeGuide()});
   if(els.focusStemButton)els.focusStemButton.onclick=function(){var x=els.questionEditor.querySelector("textarea");if(x){x.focus();x.scrollIntoView({block:"center"})}};
   if(els.focusOptionsButton)els.focusOptionsButton.onclick=function(){var x=els.questionEditor.querySelector(".option-editor input");if(x){x.focus();x.scrollIntoView({block:"center"})}};
   if(els.previewPrevPageButton)els.previewPrevPageButton.onclick=function(){scrollPreviewPage(Math.max(1,currentPreviewPage-1))};
