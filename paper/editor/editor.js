@@ -766,18 +766,40 @@ function previewBaseWidth(){
 }
 function applyPreviewZoom(){
   if(!els.typstPreview)return;
-  var width;
-  if(window.matchMedia("(max-width:767px)").matches){
-    width=Math.max(260,els.typstPreview.clientWidth-12);
-  }else if(previewFit){
-    width=Math.max(320,els.typstPreview.clientWidth-40);
-  }else{
-    width=Math.round(previewBaseWidth()*previewZoom);
-  }
-  els.typstPreview.style.setProperty("--preview-page-width",width+"px");
+  // In fit mode use the preview scrollport's ACTUAL inner content width,
+  // not the browser viewport or the width before its sibling was resized.
+  var computed=getComputedStyle(els.typstPreview);
+  var pad=parseFloat(computed.paddingLeft)||0;
+  pad+=(parseFloat(computed.paddingRight)||0);
+  var usable=Math.max(170,els.typstPreview.clientWidth-pad-14);
+  var width=previewFit?usable:Math.round(previewBaseWidth()*previewZoom);
+  els.typstPreview.style.setProperty("--preview-page-width",Math.round(width)+"px");
   var physicalWidth=(Number(modeInfo().widthMm)||210)*(96/25.4);
   els.typstPreview.style.setProperty("--browser-preview-scale",String(Math.max(.08,Math.min(2.2,width/physicalWidth))));
   if(els.previewZoomLabel)els.previewZoomLabel.textContent=previewFit?"适宽":Math.round(previewZoom*100)+"%";
+}
+function initResponsivePanes(){
+  var panes=[els.navigatorPanel,els.editPane,els.previewPane].filter(Boolean);
+  var pending=0;
+  function adapt(){
+    pending=0;
+    panes.forEach(function(el){
+      var width=el.getBoundingClientRect().width;
+      var size=width<310?"narrow":width<490?"compact":width<720?"medium":"wide";
+      if(el.dataset.paneSize!==size)el.dataset.paneSize=size;
+    });
+    applyPreviewZoom();
+  }
+  function request(){
+    if(!pending)pending=requestAnimationFrame(adapt);
+  }
+  if(typeof ResizeObserver==="function"){
+    var observer=new ResizeObserver(request);
+    panes.forEach(function(el){observer.observe(el)});
+    if(els.typstPreview)observer.observe(els.typstPreview);
+  }
+  window.addEventListener("resize",request,{passive:true});
+  request();
 }
 function setPreviewZoom(next){
   previewFit=false;
@@ -1140,6 +1162,7 @@ function init(){
   bindBrowserPreviewInteractions();
   loadUiState();
   normalizeWorkspaces();
+  initResponsivePanes();
   updateNavigatorToggleState();
   window.addEventListener("resize",function(){normalizeWorkspaces();updateNavigatorToggleState()});
   bindPaneResizer(els.navigatorResizer,"navigator");
