@@ -1,12 +1,11 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <!-- Use /paper/ assets and navigation while keeping zuotiben.top/ as the canonical homepage. -->
   <base href="/paper/">
+  <link rel="canonical" href="https://zuotiben.top/">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="description" content="Everflow Paper Studio · 免费本地组卷。导入 Markdown / JSON，编辑试卷与做题本，并在浏览器内导出 PDF。">
-  <link rel="canonical" href="https://zuotiben.top/">
   <meta name="theme-color" content="#f7f6f2">
   <title>彼时流年若水做题本 · 免费开源本地组卷 | Everflow</title>
   <link rel="stylesheet" href="./styles.css?v=20260921-fandol1">
@@ -14,7 +13,7 @@
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
   <link rel="stylesheet" href="./quick-flow.css?v=20261013-quick1">
-  <link rel="stylesheet" href="./book-showcase.css?v=20261013-books1">
+  <link rel="stylesheet" href="./book-showcase.css?v=20261013-template-real2">
 </head>
 <body class="paper-home">
 <header class="ps-header">
@@ -46,54 +45,26 @@
       </div>
       <div class="ps-smallnote"><span>永久免费</span><span>项目开源</span><span>本机历史版本</span><span>PDF 直接下载</span></div>
     </div>
-    <div class="ps-document-frame ps-book-showcase" aria-label="Everflow 做题本立体翻阅展示">
-      <div class="ps-document-top"><span><i></i> EVERFLOW · 版式作品展示</span><b>A4 · 母版比例</b></div>
-      <div class="ps-books-stage" id="psBooksStage" aria-roledescription="封面与试卷展示轮播" aria-label="通过左右箭头切换模板封面和试题示例">
-        <button class="ps-book-card is-centered" type="button" data-book-index="0" aria-label="查看数学二试卷封面" aria-current="true">
-          <div class="ps-book-spine" aria-hidden="true"></div>
-          <div class="ps-book-face ps-book-face--cover">
-            <div class="ps-book-topline">EVERFLOW · 彼时流年若水</div>
-            <div class="ps-paper-demo ps-master-cover">
-              <div class="ps-master-title">考研数学二 · 模拟试卷</div>
-              <div class="ps-master-signature">·彼时流年若水·</div>
-              <div class="ps-master-rule" aria-hidden="true"></div>
-              <div class="ps-master-brand">Everflow·彼时流年若水</div>
-              <div class="ps-master-date" id="psCoverDate">&gt; &gt; &gt; 更新时间：—</div>
-            </div>
-          </div>
-        </button>
-        <button class="ps-book-card is-next" type="button" data-book-index="1" aria-label="查看数学二试题排版示例" aria-current="false">
-          <div class="ps-book-spine" aria-hidden="true"></div>
-          <div class="ps-book-face ps-book-face--questions">
-            <header><small>Everflow · 数学二</small><b>数学二 · 模拟试题</b><span>考试时间 180 分钟　满分 150 分</span></header>
-            <section><h4>一、选择题</h4><p>1．设函数 <i>f</i>(<i>x</i>) = <i>x</i>² + 2<i>x</i>，则 <i>f</i>′(1) = （　）。</p><div class="ps-book-opts"><span>(A) 2</span><span>(B) 3</span><span>(C) 4</span><span>(D) 5</span></div>
-              <p>2．求下列函数的极限：</p><div class="ps-book-formula">lim<sub>x→0</sub> sin 3<i>x</i> / <i>x</i></div>
-              <p>3．设矩阵 <i>A</i> 满足下列条件，求其行列式。</p><div class="ps-book-formula">A = [ 1 &nbsp; 2 ; &nbsp; 3 &nbsp; 4 ]</div>
-              <p>4．设 <i>F</i>(<i>x</i>) 为连续函数，计算定积分。</p></section>
-            <footer>彼时流年若水 · 第 1 页 / 共 6 页</footer>
-          </div>
-        </button>
-        <button class="ps-book-card is-prev" type="button" data-book-index="2" aria-label="查看做题本单题留空示例" aria-current="false">
-          <div class="ps-book-spine" aria-hidden="true"></div>
-          <div class="ps-book-face ps-book-face--practice">
-            <header><small>彼时流年若水 · 做题本</small><b>数学二 · 单题留空</b><span>Everflow · Book / Pad</span></header>
-            <section><h4>二、解答题</h4><p>5．设函数 <i>y</i> = <i>f</i>(<i>x</i>) 连续可导，求导数并写出基本步骤。</p>
-            <div class="ps-write-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></section>
-            <footer>彼时流年若水 · 第 1 页</footer>
-          </div>
-        </button>
+    <div class="ps-document-frame ps-book-showcase ps-book-showcase--template" aria-label="Everflow 原模板做题本实际排版展示">
+      <div class="ps-document-top"><span><i></i> EVERFLOW · 原模板做题本</span><b id="psBookModeBadge">Book · A4 紧凑版</b></div>
+      <div class="ps-books-stage" id="psBooksStage" aria-label="使用实际浏览器分页引擎生成的 A4 紧凑版和 PAD 做题本展示">
+        <div class="ps-book-card is-centered" role="button" tabindex="0" data-book-index="0" aria-label="显示 A4 紧凑做题本" aria-current="true">
+          <iframe title="Everflow 原模板 Book compact A4 实际分页效果" class="ps-book-template-frame" src="./showcase-preview.html?mode=compact" scrolling="no" loading="eager" tabindex="-1"></iframe>
+        </div>
+        <div class="ps-book-card is-next" role="button" tabindex="-1" data-book-index="1" aria-label="显示 PAD 竖版一题一页做题本" aria-current="false">
+          <iframe title="Everflow 原模板 Book PAD 竖版 200×250mm 实际分页效果" class="ps-book-template-frame" src="./showcase-preview.html?mode=padp" scrolling="no" loading="eager" tabindex="-1"></iframe>
+        </div>
       </div>
       <div class="ps-books-control">
-        <button id="psBookPrevious" type="button" aria-label="查看上一种展示版式" title="上一个">‹</button>
-        <div class="ps-books-caption"><strong id="psBookLabel">ExamA4 · 数学二母版封面</strong><span>浏览封面、试卷及做题本展示</span></div>
-        <button id="psBookNext" type="button" aria-label="查看下一种展示版式" title="下一个">›</button>
+        <button id="psBookPrevious" type="button" aria-label="上一种模板" title="上一种">‹</button>
+        <div class="ps-books-caption"><strong id="psBookLabel">Book · A4 紧凑做题本</strong><span>来自 Everflow 原模板的实测版式</span></div>
+        <button id="psBookNext" type="button" aria-label="下一种模板" title="下一种">›</button>
       </div>
-      <div class="ps-books-dots" role="group" aria-label="直接选择展示模板">
-        <button data-book-dot="0" type="button" aria-label="显示试卷封面" aria-current="true"></button>
-        <button data-book-dot="1" type="button" aria-label="显示标准试卷" aria-current="false"></button>
-        <button data-book-dot="2" type="button" aria-label="显示留空做题本" aria-current="false"></button>
+      <div class="ps-books-dots" role="group" aria-label="选择 Book 模板">
+        <button data-book-dot="0" type="button" aria-label="Book A4 紧凑版" aria-current="true"></button>
+        <button data-book-dot="1" type="button" aria-label="Book PAD 竖版" aria-current="false"></button>
       </div>
-      <p class="ps-books-note">动态 HTML 版式展示 · 实际纸张布局以编辑器预览和 PDF 为准</p>
+      <p class="ps-books-note">Book compact：210×297 mm · Book padp：200×250 mm；两者使用正式编辑器相同的排版引擎，首页缩放不改变纸张尺寸。</p>
     </div>
   </section>
 
@@ -241,6 +212,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./editor/local-projects.js?v=20261013-workspace2"></script>
 <script src="./app.js?v=20261013-quick1"></script>
-<script src="./book-showcase.js?v=20261013-books1"></script>
+<script src="./book-showcase.js?v=20261013-template-real2"></script>
 </body>
 </html>
