@@ -18,18 +18,7 @@ const assert=require('node:assert/strict');
   assert.ok(rule.includes('## 一、选择题'));
   assert.ok(rule.includes('LaTeX'));
   assert.ok(rule.includes('Markdown'));
-  await page.evaluate(async text=>navigator.clipboard.writeText(text),`\`\`\`markdown\n# AI转录数学二
-
-## 一、选择题
-
-### 1
-求 $\lim_{x\to0}\frac{\sin 3x}{x}$ 的值。
-A. 0
-B. 1
-C. 3
-D. 不存在
-答案：C
-解析：等价无穷小。\n\`\`\``);
+  await page.evaluate(async text=>navigator.clipboard.writeText(text),"```markdown\n# AI转录数学二\n\n## 一、选择题\n\n### 1\n求 $\\lim_{x\\to0}\\frac{\\sin 3x}{x}$ 的值。\nA. 0\nB. 1\nC. 3\nD. 不存在\n答案：C\n解析：等价无穷小。\n```");
   await page.locator('#quickPasteClipboardButton').click();
   await page.waitForURL(/\/paper\/editor\/?$/, {timeout:25000});
   await page.waitForSelector('#orderList .order-item',{timeout:15000});
