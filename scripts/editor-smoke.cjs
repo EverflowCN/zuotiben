@@ -160,7 +160,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     const pageWidth=await page.locator('#typstPreview > section.typst-page').first().evaluate(el=>el.getBoundingClientRect().width);
-    assert.ok(pageWidth<=390);
+    console.log('MOBILE PAGE WIDTH',pageWidth,await page.locator('#typstPreview').evaluate(el=>({width:el.clientWidth,zoom:getComputedStyle(el).getPropertyValue('--browser-preview-scale'),screen:innerWidth,fit:getComputedStyle(el.querySelector('.browser-paper-page')).zoom})));
+    assert.ok(pageWidth<=390,'mobile page should fit: '+pageWidth);
     await page.screenshot({path:'test-results/editor-mobile-texpage.png',fullPage:true});
 
     await page.locator('#editModeButton').click();
