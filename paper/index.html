@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
-  <link rel="stylesheet" href="./quick-flow.css?v=20261013-home-clean2">
+  <link rel="stylesheet" href="./quick-flow.css?v=20261013-import-panel3">
   <link rel="stylesheet" href="./book-showcase.css?v=20261013-display-v6">
 </head>
 <body class="paper-home">
@@ -160,15 +160,15 @@
       
     </div>
     <details class="ps-flow-import" id="manualImport">
-      <summary><span class="ps-flow-import-icon" aria-hidden="true">↳</span><span><strong>已有 Markdown？直接粘贴导入</strong><small>无需重复上传或重新整理，展开后粘贴即可转换</small></span><span class="ps-flow-import-chevron" aria-hidden="true">⌄</span></summary>
+      <summary><span class="ps-flow-import-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"/></svg></span><span><strong>已有 Markdown？直接粘贴导入</strong><small>无需重复上传或重新整理，展开后粘贴即可转换</small></span><span class="ps-flow-import-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary>
       <div class="ps-flow-import-body">
-        <label for="pasteMarkdown">将整理好的 Markdown 文本粘贴在这里，完成后进入正式编辑器。</label>
-        <textarea id="pasteMarkdown" rows="5" spellcheck="false" placeholder="# 考研数学二&#10;&#10;## 一、选择题&#10;&#10;### 1&#10;设函数 $f(x)$ …&#10;A. …&#10;B. …"></textarea>
-        <div class="ps-flow-import-actions">
+        <div class="ps-import-editor-head"><label for="pasteMarkdown">粘贴完整试题</label><span>Markdown · 保留 LaTeX 公式</span></div>
+        <textarea id="pasteMarkdown" rows="10" spellcheck="false" aria-describedby="markdownImportHint" placeholder="# 考研数学二&#10;&#10;## 一、选择题&#10;&#10;### 1&#10;设函数 $f(x)$ …&#10;A. …&#10;B. …"></textarea>
+        <div class="ps-import-footer"><p id="markdownImportHint">粘贴 → 转换 → 预览核对<br><span>题目、选项、答案与解析一起导入，进入编辑器后继续调整。</span></p><div class="ps-flow-import-actions">
           <button class="ps-flow-action ps-flow-action-main" id="pasteImportButton" type="button">转换并进入编辑器 →</button>
           <button class="ps-flow-action ps-flow-action-outline" id="downloadTemplateButton" type="button">下载示例</button>
           <button class="ps-flow-action ps-flow-action-outline" id="howButton" type="button">格式说明</button>
-        </div>
+        </div></div>
       </div>
     </details>
     <p class="ps-flow-disclaimer">提示：AI 转录可能遗漏小问、插图或识别错误的公式，请对照原稿核查；文档上传到豆包等第三方 AI 时，请遵守其隐私规则。Everflow 不会代替你上传原始文件。</p>

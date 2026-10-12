@@ -968,7 +968,7 @@ function renderQuestionEditor(){
   var typeLabel=document.createElement("label");typeLabel.textContent="题型";var select=document.createElement("select");
   QUESTION_TYPES.forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;if(q.type===t)o.selected=true;select.appendChild(o)});
   select.onchange=function(){q.type=select.value;assignDefaultOptions(q);touch();renderQuestionEditor()};typeLabel.appendChild(select);root.appendChild(typeLabel);
-  inputField("题干（支持 LaTeX 公式）","content","textarea");
+  var stemField=inputField("题干（支持 LaTeX 公式）","content","textarea");
   inputField("答案（默认隐藏）","answer","textarea");
   inputField("解析（默认隐藏）","explanation","textarea");
   var gap=inputField("题后留白（毫米，0 = 模板默认）","gap");gap.type="number";gap.min="0";gap.max="100";
@@ -987,6 +987,10 @@ function renderQuestionEditor(){
   });
   var add=document.createElement("button");add.type="button";add.className="text-btn add-option";add.textContent="＋ 添加选项";add.disabled=q.options.length>=8;
   add.onclick=function(){q.options.push("");q.showOptions=true;touch();renderQuestionEditor()};root.appendChild(add);
+  // Keep choices next to their stem; answer and explanation follow below.
+  var answerLabel=stemField.parentElement.nextElementSibling;
+  root.querySelectorAll(".option-editor").forEach(function(row){root.insertBefore(row,answerLabel)});
+  root.insertBefore(add,answerLabel);
 }
 function bindBrowserPreviewInteractions(){
   if(!els.typstPreview)return;

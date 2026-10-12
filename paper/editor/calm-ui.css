@@ -1,0 +1,95 @@
+/* Editor chrome only. Physical paper, equations and export geometry are untouched. */
+body.editor-page{--ui-size:13px;--ui-small:12px;--ui-line:#e4e7ea;--ui-muted:#66717b;--ui-tint:#f3f5f6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:var(--ui-size);color:#27313a}
+body.editor-page .texpage-topbar{height:56px!important;min-height:56px!important;padding:0 16px!important;gap:12px!important;background:#fff!important;border-bottom:1px solid var(--ui-line)!important;box-shadow:none!important}
+body.editor-page .texpage-topbar .brand{font-size:15px!important;gap:9px!important}
+body.editor-page .texpage-topbar .brand small,body.editor-page .local-pill{display:none!important}
+body.editor-page .texpage-topbar .brand-mark{width:30px!important;height:30px!important;border-radius:7px!important;font-size:19px!important;background:#33464a!important}
+body.editor-page .editor-top-actions{gap:8px!important;min-width:0;overflow:visible!important}
+body.editor-page .texpage-topbar button{height:32px!important;min-height:32px!important;font-size:12px!important;border-radius:6px!important;box-shadow:none!important}
+body.editor-page .texpage-topbar #templateButton{max-width:190px!important;background:#f4f6f7!important;padding:0 10px!important}
+body.editor-page #templateButtonLabel{font-size:12px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.editor-page .save-state{font-size:12px!important;color:var(--ui-muted)!important}
+body.editor-page .texpage-workbench{height:calc(100dvh - 56px)!important;background:#fff!important}
+body.editor-page .pane-resizer{background:#f0f2f3!important}
+body.editor-page .pane-resizer::before{background:#bdc5ca!important;height:32px!important;width:2px!important}
+body.editor-page .pane-resizer:hover{background:#dfe9e9!important}
+body.editor-page .navigator-head{height:56px!important;min-height:56px!important;padding:8px 14px!important}
+body.editor-page .navigator-title span{font-size:11px!important;letter-spacing:0!important;color:var(--ui-muted)!important}
+body.editor-page .navigator-title strong{font-size:13px!important;margin-top:3px!important;font-weight:600!important}
+body.editor-page .workspace-projects{background:#fff!important;padding:12px!important;border-color:var(--ui-line)!important}
+body.editor-page .workspace-heading b,body.editor-page .order-toolbar strong{font-size:13px!important;font-weight:600!important}
+body.editor-page .workspace-subtitle,body.editor-page .workspace-help{display:none!important}
+body.editor-page .workspace-project-toolbar{grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;margin:10px 0!important}
+body.editor-page .workspace-project-toolbar button{min-height:32px!important;font-size:12px!important;padding:5px!important;border-radius:6px!important;background:#fff!important;border-color:var(--ui-line)!important;white-space:nowrap}
+body.editor-page .workspace-paper-name{font-size:12px!important;font-weight:500!important}
+body.editor-page .workspace-paper-row,body.editor-page .workspace-folder-row{min-height:34px!important;border-radius:6px!important}
+body.editor-page .workspace-mini-actions button{font-size:12px!important;min-height:30px!important;border-radius:6px!important}
+body.editor-page .navigator-tabs{padding:5px 10px!important;gap:6px!important;min-height:40px!important}
+body.editor-page .navigator-tabs button{height:30px!important;min-height:30px!important;border-radius:6px!important;font-size:13px!important}
+body.editor-page .navigator-tabs button[aria-selected="true"]{background:#edf2f3!important}
+body.editor-page .order-toolbar{min-height:42px!important;padding:7px 12px!important}
+body.editor-page .order-toolbar-actions .text-btn,body.editor-page .outline-selectbar button{font-size:12px!important;min-height:28px!important;font-weight:500!important;border-radius:5px!important}
+body.editor-page .outline-selectbar{padding:5px 10px!important;background:#fff!important;border-color:var(--ui-line)!important}
+body.editor-page #outlineSelectionSummary{display:none!important}
+body.editor-page .outline-nav{padding:5px 10px!important}
+body.editor-page .outline-nav button{font-size:12px!important;border-radius:5px!important;background:#f5f7f8!important}
+body.editor-page .texpage-navigator .order-item{border-radius:6px!important;margin-bottom:3px!important;box-shadow:none!important;min-height:58px!important}
+body.editor-page .texpage-navigator .order-item.is-selected{background:#edf3f4!important;border-color:#bbced1!important;box-shadow:none!important}
+body.editor-page .texpage-navigator .order-copy b{font-size:12px!important;font-weight:500!important;line-height:1.55!important}
+body.editor-page .texpage-navigator .order-copy small{font-size:11px!important;line-height:1.4!important;color:var(--ui-muted)!important}
+body.editor-page .texpage-navigator .order-num{font-size:12px!important;font-weight:500!important}
+body.editor-page .editor-tabbar{height:42px!important;flex-basis:42px!important;padding:0 12px!important;background:#fff!important}
+body.editor-page .editor-tab strong{font-size:13px!important;font-weight:600!important}
+body.editor-page .editor-tab .tab-dot,body.editor-page .local-state{display:none!important}
+body.editor-page .question-nav-picker{font-size:12px!important;background:#fff!important;border-radius:6px!important}
+body.editor-page .question-nav-arrow{border-radius:6px!important;background:#fff!important}
+body.editor-page .editor-commandbar{min-height:36px!important;padding:4px 12px!important;background:#fafbfc!important}
+body.editor-page .editor-commandbar>div:first-child{display:none!important}
+body.editor-page .editor-command-actions{margin-left:auto!important}
+body.editor-page .editor-command-actions .text-btn{font-size:12px!important;min-height:28px!important;padding:0 8px!important;border:0!important;background:transparent!important}
+body.editor-page .texpage-question-editor{padding:16px 18px 45px!important}
+body.editor-page .texpage-question-editor .question-editor-head{position:static!important;margin:0 0 16px!important;padding:0!important;border:0!important;min-height:30px!important;gap:8px}
+body.editor-page .question-editor-head h3{display:none!important}
+body.editor-page .question-editor-head>div{display:flex;gap:4px;margin-left:auto}
+body.editor-page .question-editor .text-btn{font-size:12px!important;min-height:28px!important;padding:3px 7px!important;line-height:1.5!important;font-weight:500!important}
+body.editor-page .texpage-question-editor label{font-size:13px!important;font-weight:500!important;line-height:1.65!important;margin-bottom:16px!important;color:#45515b!important}
+body.editor-page .texpage-question-editor input:not([type="checkbox"]),body.editor-page .texpage-question-editor select{font-family:inherit!important;font-size:13px!important;min-height:36px!important;border-radius:6px!important;border-color:var(--ui-line)!important;padding:7px 10px!important}
+body.editor-page .texpage-question-editor textarea{font-family:ui-monospace,"Cascadia Code",Consolas,"Microsoft YaHei",monospace!important;font-size:13px!important;line-height:1.8!important;min-height:150px!important;border-radius:6px!important;border-color:var(--ui-line)!important;padding:11px 12px!important}
+body.editor-page .texpage-question-editor label:has(textarea){display:block!important}
+body.editor-page .texpage-question-editor .option-editor{gap:8px!important;min-height:36px!important;margin-bottom:8px!important}
+body.editor-page .texpage-question-editor .option-editor b{font-size:13px!important;font-weight:500!important;width:22px!important}
+body.editor-page .texpage-question-editor .add-option{margin:0 0 20px!important}
+body.editor-page .check-row{display:flex!important;align-items:center!important;gap:6px!important}
+body.editor-page .check-row input{width:15px!important;height:15px!important;min-height:0!important;margin:0!important}
+body.editor-page .preview-toolbar{height:auto!important;min-height:74px!important;flex:0 0 auto!important;padding:8px 12px!important;gap:7px!important;background:#fff!important;border-color:var(--ui-line)!important}
+body.editor-page .preview-toolbar-left strong{font-size:12px!important;font-weight:600!important}
+body.editor-page .preview-chip,body.editor-page .preview-status-dot{display:none!important}
+body.editor-page .preview-toolbar button,body.editor-page .preview-toolbar label,body.editor-page .page-indicator{font-size:12px!important;min-height:30px!important;border-radius:6px!important;font-weight:500!important}
+body.editor-page .preview-toolbar button{height:30px!important}
+body.editor-page .pdf-status{font-size:11px!important;padding:6px 12px!important;line-height:1.6!important;background:#fafbfc!important}
+body.editor-page .texpage-preview-pane,body.editor-page .texpage-preview-pane .typst-preview{background:#eef0f2!important}
+body.editor-page .editor-more-menu{position:relative;flex:0 0 auto}
+body.editor-page .editor-more-menu>summary{display:flex;align-items:center;justify-content:center;list-style:none;cursor:pointer;width:34px;height:32px;font-size:20px;font-weight:700;line-height:1;border:1px solid var(--ui-line);border-radius:6px;color:#45515b;background:#fff}
+.editor-more-menu>summary::-webkit-details-marker{display:none}
+body.editor-page .editor-more-popover{position:absolute;right:0;top:40px;width:200px;z-index:200;background:#fff;border:1px solid var(--ui-line);box-shadow:0 8px 24px #18283222;border-radius:9px;padding:8px;display:grid;gap:4px}
+body.editor-page .editor-more-popover>span{font-size:11px;color:var(--ui-muted);padding:5px 8px}
+body.editor-page .editor-more-popover button{display:flex!important;width:100%!important;justify-content:flex-start!important;position:static!important;min-width:0!important;padding:7px 9px!important;background:#fff!important;border:0!important;font-size:12px!important}
+body.editor-page .editor-more-popover button:hover{background:#f0f4f5!important}
+body.editor-page .editor-more-popover #editorGuideButton span{display:inline!important}
+@media(min-width:768px){body.editor-page .texpage-navigator{top:56px!important}body.editor-page .workbench-backdrop{inset:56px 0 0!important}}
+@media(max-width:1000px){body.editor-page .save-state{display:none!important}}
+@media(max-width:767px){
+ body.editor-page .texpage-topbar{height:88px!important;min-height:88px!important;grid-template-rows:30px 36px!important;padding:6px 10px!important}
+ body.editor-page .editor-top-actions{display:flex!important;justify-content:space-between!important;gap:5px!important;overflow:visible!important}
+ body.editor-page .texpage-topbar #templateButton{max-width:135px!important;padding:0 7px!important}
+ body.editor-page .texpage-topbar #templateButtonLabel{font-size:11px!important}
+ body.editor-page .texpage-topbar .mobile-mode-switch button{font-size:12px!important;min-width:40px!important}
+ body.editor-page .texpage-topbar #mobileDownloadButton{padding:0 8px!important}
+ body.editor-page .texpage-workbench{height:calc(100dvh - 88px)!important}
+ body.editor-page .texpage-navigator{top:88px!important}
+ body.editor-page .workbench-backdrop{inset:88px 0 0!important}
+ body.editor-page .template-popover{top:88px!important}
+ body.editor-page .editor-more-popover{right:0!important}
+ body.editor-page .texpage-question-editor input:not([type="checkbox"]),body.editor-page .texpage-question-editor select,body.editor-page .texpage-question-editor textarea{font-size:16px!important}
+ body.editor-page .texpage-question-editor{padding:14px!important}
+}
