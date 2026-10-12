@@ -786,12 +786,48 @@ async function createLatestPdf(){
   }
 }
 async function downloadPdf(){
+  if(pdfExporting)return;
+  pdfExporting=true;
+  var button=els.printButton,mobileButton=els.mobileDownloadButton;
+  if(button){button.disabled=true;button.setAttribute("aria-busy","true")}
+  if(mobileButton){mobileButton.disabled=true;mobileButton.setAttribute("aria-busy","true")}
   try{
-    var today=localDate();var blob=(pdfBlob&&pdfRevision===revision&&pdfExportDate===today)?pdfBlob:await createLatestPdf();if(!blob)return;
-    var name=(state.coverTitle||state.title||"Everflow")+"";
+    // Never trigger window.print for direct PDF download.
+    // Screen zoom and device viewport are NOT part of the PDF page geometry.
+    if(!wantsLiveTypst())await setMode(true);
+    var current=revision;
+    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
+      if(!typstPreviewing)await refreshTypstPreview();
+      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,20000);
+    }
+    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"||
+      els.typstPreview.dataset.revision!==String(revision)||
+      els.typstPreview.dataset.layoutReady!=="true"){
+      throw new Error("当前预览没有通过分页校验，请先处理错误，不能下载 PDF");
+    }
+    if(!window.EverflowPreviewPdf)throw new Error("直接下载模块未加载，请刷新页面");
+    if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
+    els.pdfStatus.textContent="正在准备 PDF · 逐页按照当前预览生成，无需系统打印…";
+    var blob=await window.EverflowPreviewPdf.exportPreview({
+      host:els.typstPreview,
+      isStale:function(){return current!==revision||svgRevision!==current||els.typstPreview.dataset.layoutReady!=="true"},
+      onProgress:function(done,total){els.pdfStatus.textContent="正在直接生成 PDF · "+done+" / "+total+" 页；未调用系统打印"}
+    });
+    if(current!==revision)throw new Error("导出过程中题目有变化，请重新下载");
+    var name=state.coverTitle||state.title||"Everflow";
     var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf",preferNative:false});
-    if(result.method!=="cancelled")toast("PDF 已交给浏览器保存");
-  }catch(err){console.error(err);els.pdfStatus.textContent="PDF 生成或保存失败："+(err.message||"未知错误")}
+    if(result.method!=="cancelled"){
+      els.pdfStatus.textContent="PDF 直接下载完成 · 与当前预览使用同一组分页页面（高清图像型 PDF）。";
+      toast("PDF 已直接生成并保存");
+    }
+  }catch(err){
+    console.error(err);
+    els.pdfStatus.textContent="直接下载失败："+(err&&err.message||"未知错误")+"。预览未更改，可再次尝试。";
+  }finally{
+    pdfExporting=false;
+    if(button){button.disabled=false;button.removeAttribute("aria-busy")}
+    if(mobileButton){mobileButton.disabled=false;mobileButton.removeAttribute("aria-busy")}
+  }
 }
 async function browserPrint(){
   if(browserPrintBusy)return;
@@ -872,9 +908,9 @@ function init(){
   updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
-  // All visible PDF actions use the exact same validated physical pages as preview.
-  // The legacy React PDF renderer is not called from the UI: it paginates independently.
-  els.printButton.onclick=browserPrint;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=browserPrint;els.saveProjectButton.onclick=exportProject;
+  // Download: locally rasterize exactly the validated preview pages into a PDF.
+  // Print: separately invoke the system print dialog using the same physical preview DOM.
+  els.printButton.onclick=downloadPdf;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
     var current=state.questions.find(function(q){return q.id===selectedId});
