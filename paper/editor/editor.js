@@ -785,6 +785,9 @@ async function browserPrint(){
   browserPrintBusy=true;
   if(els.browserPrintButton){els.browserPrintButton.disabled=true;els.browserPrintButton.setAttribute("aria-busy","true")}
   try{
+    // The mobile edit tab hides the preview host; measurement must run in a visible host.
+    // Switch to preview before any validation, otherwise hidden DOM has zero-sized boxes.
+    if(!wantsLiveTypst())await setMode(true);
     if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
       if(!typstPreviewing)await refreshTypstPreview();
       if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,12000);
