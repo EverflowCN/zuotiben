@@ -67,7 +67,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
 
     // Defaults: choice section displays options, other sections hide by default.
-    const sectionField=page.locator('#questionEditor label').filter({hasText:'所属大题'}).locator('input');
+    const sectionField=page.locator('#questionEditor label').filter({hasText:'所属大纲章节'}).locator('input');
     const optionToggle=page.locator('#questionEditor label').filter({hasText:'显示选项'}).locator('input[type=checkbox]');
     assert.equal(await optionToggle.isChecked(),true);
     await sectionField.fill('二、计算题');
