@@ -84,7 +84,7 @@ async function capture(node,geom,pixelRatio){
 async function exportPreview(options){
   var source=options.host;
   if(!source||source.dataset.layoutReady!=="true")throw new Error("预览尚未成功分页，禁止下载");
-  var pages=Array.from(source.querySelectorAll(":scope > section.browser-paper-page"));
+  var pages=Array.from(source.querySelectorAll(":scope > section.browser-paper-page, :scope > article.sheet"));
   if(!pages.length)throw new Error("没有可导出的纸张");
   if(pages.length>500)throw new Error("页数超过浏览器本地导出限制，请拆分工程");
   await libraries();
