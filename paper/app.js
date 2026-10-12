@@ -150,6 +150,11 @@ function initTheme(){
 function init(){
   ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton","dropZone"].forEach(function(id){els[id]=byId(id)});
   initTheme();
+  var coverDate=byId("psCoverDate");
+  if(coverDate){
+    var today=new Date();
+    coverDate.textContent="> > > 更新时间："+today.getFullYear()+" 年 "+(today.getMonth()+1)+" 月 "+today.getDate()+" 日";
+  }
   els.startBlankButton.onclick=function(){
     // Previous drafts are now backed up to the local project archive before creating a new paper.
     var questions=[
