@@ -338,19 +338,40 @@ async function render(options){
       }
       var fragment=document.createDocumentFragment();
       var coverCount=options.createCover?1:0;
+      var tocSections=[];
+      pagination.pages.forEach(function(page,pageIndex){
+        page.columns.forEach(function(column){
+          column.fragments.forEach(function(fragment){
+            var record=fragment.item&&fragment.item.record;
+            // Heading is attached to its first question in the measured layout.
+            if(record&&record.sectionHeading&&fragment.offsetMm<.01&&!tocSections.some(function(s){return s.heading===record.sectionHeading})){
+              tocSections.push({heading:record.sectionHeading,bodyPage:pageIndex+1});
+            }
+          });
+        });
+      });
+      var tocCount=options.createToc&&tocSections.length?Math.ceil(tocSections.length/22):0;
       if(options.createCover)fragment.appendChild(options.createCover());
+      if(tocCount){
+        for(var ti=0;ti<tocCount;ti++){
+          var entries=tocSections.slice(ti*22,(ti+1)*22).map(function(section){
+            return {heading:section.heading,page:section.bodyPage+coverCount+tocCount};
+          });
+          fragment.appendChild(options.createToc(entries,coverCount+ti+1,coverCount+tocCount+pagination.pages.length));
+        }
+      }
       var totalLogical=pagination.pages.reduce(function(sum,page){return sum+page.columns.filter(function(column){return column.fragments.length}).length},0);
       var logicalOffset=0;
       pagination.pages.forEach(function(page,index){
         var rendered=renderPage(page,index+1,pagination.pages.length,options,geo,logicalOffset,totalLogical);
-        rendered.dataset.page=String(index+1+coverCount);
+        rendered.dataset.page=String(index+1+coverCount+tocCount);
         fragment.appendChild(rendered);
         logicalOffset+=page.columns.filter(function(column){return column.fragments.length}).length;
       });
       options.host.replaceChildren(fragment);await nextFrame();assertActive(signal);
       var issues=validate(options.host);
       if(!issues.length){
-        result={status:"ready",pageCount:pagination.pages.length,coverPageCount:options.createCover?1:0,repairPass:pass,scales:scales,overflowQuestionIds:[]};break;
+        result={status:"ready",pageCount:pagination.pages.length,coverPageCount:coverCount,tocPageCount:tocCount,totalPageCount:pagination.pages.length+coverCount+tocCount,repairPass:pass,scales:scales,overflowQuestionIds:[]};break;
       }
       issues.forEach(function(issue){
         if(!issue.questionId)return;
