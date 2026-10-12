@@ -99,7 +99,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.notEqual(await page.locator('#previewZoomLabel').innerText(),'适宽');
     await page.locator('#previewFitButton').click();
     assert.equal(await page.locator('#previewZoomLabel').innerText(),'适宽');
-    assert.equal(await page.locator("#browserPrintButton").isVisible(),true);
+    await page.locator('#browserPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
     await page.screenshot({path:'test-results/editor-desktop-texpage.png',fullPage:true});
 
     // Navigator collapse on wide desktop.
@@ -115,8 +116,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     // Download must return an actual PDF without ever opening the print dialog.
     assert.equal(await page.locator('#printButton').isVisible(),true);
     await waitForBrowserLayout(page);
-    const viewRevision=await page.locator("#typstPreview").getAttribute("data-revision");
-    assert.ok(viewRevision!==null);
+    const previewMarkup=await page.locator('#typstPreview').innerHTML();
     const expectedPages=await page.locator('#typstPreview > section.browser-paper-page').count();
     assert.ok(expectedPages>=2);
     const beforeDownloadPrintCalls=await page.evaluate(()=>window.__PRINT_CALLED__);
@@ -128,17 +128,21 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(pdfBytes.subarray(0,5).toString(),'%PDF-');
     assert.ok(pdfBytes.byteLength>5000,'PDF has suspiciously few bytes');
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),beforeDownloadPrintCalls,'Direct download unexpectedly called system print');
-    assert.equal(await page.locator('#typstPreview').getAttribute('data-revision'),viewRevision,'Download changed preview revision');
-    assert.equal(await page.locator('#typstPreview > section.everflow-vector-page').count(),expectedPages);
-    assert.ok(await page.locator('#typstPreview canvas.everflow-vector-canvas').count()===expectedPages);
-    const pdfHeader=pdfBytes.toString('latin1',0,1024);
-    assert.ok(pdfHeader.startsWith('%PDF-'));
-    fs.copyFileSync('test-results/editor-direct.pdf','test-results/editor.pdf');
+    assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Direct download changed preview DOM');
     console.log('DIRECT PDF',pdfBytes.byteLength,'preview pages',expectedPages);
 
-    // The print button remains a separate action; it operates on the same vector Blob.
-    assert.equal(await page.locator('#browserPrintButton').isVisible(),true);
-    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
+    // Printing is a separate explicit action.
+    await page.locator('#browserPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
+    assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Printing changed the existing preview pages');
+
+    // Chromium print-to-PDF cross-check uses those same physical DOM pages.
+    if(browserName==='chromium'){
+      await page.evaluate(()=>document.body.classList.add('browser-print-active'));
+      await page.pdf({path:'test-results/editor.pdf',printBackground:true,preferCSSPageSize:true});
+      await page.evaluate(()=>document.body.classList.remove('browser-print-active'));
+      assert.equal(fs.readFileSync('test-results/editor.pdf').subarray(0,5).toString(),'%PDF-');
+    }
 
     // Tablet: navigator becomes drawer; editor and preview stay split.
     await page.setViewportSize({width:834,height:1112});
@@ -178,13 +182,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     await page.locator('#mobileDownloadButton').click();
     const mobilePdf=await mobilePdfPromise;
     await mobilePdf.saveAs('test-results/editor-mobile-direct.pdf');
-    const mobileBytes=fs.readFileSync('test-results/editor-mobile-direct.pdf');
-    assert.equal(mobileBytes.subarray(0,5).toString(),'%PDF-');
-    assert.deepEqual(mobileBytes,pdfBytes,'Mobile must download the EXACT cached PDF bytes seen on desktop');
+    assert.equal(fs.readFileSync('test-results/editor-mobile-direct.pdf').subarray(0,5).toString(),'%PDF-');
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),mobilePrintCalls);
-    await waitForBrowserLayout(page);
-    // Cached vector PDFs may download directly from the mobile editor without switching tabs.
-    await page.locator('#previewModeButton').click();
     await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
@@ -198,7 +197,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
     assert.deepEqual(errors,[]);
-    console.log('PASS ['+browserName+']: vector PDF shared with PDF.js preview, direct download, responsive layout');
+    console.log('PASS ['+browserName+']: responsive editor, browser pagination/print, and print-to-PDF sourced from the exact preview DOM');
   }finally{
     await browser.close();
   }
