@@ -158,8 +158,11 @@ async function restoreHistory(entry){
    if(entry.packKey){
      const stored=await archive.getPack(entry.packKey);
      if(stored?.data){
+       // defer-loaded JSZip may not be ready when IndexedDB resolves on cold startup.
+       if(!window.JSZip&&document.readyState!=='complete')
+         await new Promise(resolve=>window.addEventListener('load',resolve,{once:true}));
        if(window.JSZip)state.zip=await JSZip.loadAsync(stored.data);
-       else msg('ZIP 预览需要联网加载解包模块。题目文本和模板设置已恢复。');
+       else msg('当前无法加载 ZIP 解包模块；题目文本已恢复，配图可在网络正常后刷新页面。');
      }else msg('原始 ZIP 未保存在本机；试题文本仍可预览，相关图片需重新导入 ZIP。');
    }
    state.current=JSON.parse(JSON.stringify(entry.meta));
