@@ -33,7 +33,8 @@ async function saveActive(checkpoint){
  await db.savePaper(snapshot,{checkpoint:!!checkpoint,label:checkpoint?"切换前自动备份":"本地保存"});
 }
 let chosenFolder="";
-try{chosenFolder=localStorage.getItem("everflow-workspace-folder-v2")||""}catch(e){}
+let collapsedFolders=new Set();
+try{chosenFolder=localStorage.getItem("everflow-workspace-folder-v2")||"";collapsedFolders=new Set(JSON.parse(localStorage.getItem("everflow-workspace-collapsed-v2")||"[]"))}catch(e){}
 async function renderFolders(){
  const target=$("localPaperList");if(!target)return;
  const [papers,folders]=await Promise.all([db.list(),db.listFolders()]);
@@ -77,6 +78,13 @@ async function renderFolders(){
  function folderBlock(f,own){
    const box=make("div","workspace-folder-block");
    const head=make("div","workspace-folder-head");
+   const collapsed=collapsedFolders.has(f.id);
+   const arrow=button(collapsed?"▸":"▾",()=>{
+      if(collapsedFolders.has(f.id))collapsedFolders.delete(f.id);else collapsedFolders.add(f.id);
+      try{localStorage.setItem("everflow-workspace-collapsed-v2",JSON.stringify([...collapsedFolders]))}catch(e){}
+      renderFolders();
+   },"workspace-folder-exp");
+   arrow.setAttribute("aria-label",collapsed?"展开文件夹 "+f.name:"折叠文件夹 "+f.name);
    const folderButton=button("","", "workspace-folder-name"+(chosenFolder===f.id?" is-selected":""));
    folderButton.append(make("span","workspace-folder-icon","▣"),make("span","workspace-folder-label",f.name),make("small","workspace-folder-count",own.length+"份"));
    folderButton.onclick=()=>choose(f.id);
@@ -94,7 +102,8 @@ async function renderFolders(){
       modal.append(bar);
    },"workspace-folder-menu");
    actions.setAttribute("aria-label","管理文件夹 "+f.name);
-   head.append(folderButton,actions);box.append(head);
+   head.append(arrow,folderButton,actions);box.append(head);
+   if(collapsed)return box;
    const children=make("div","workspace-folder-children");
    own.forEach(p=>children.append(paperRow(p)));
    if(!own.length)children.append(make("span","workspace-folder-empty","空文件夹 · 新建试卷或移动到这里"));
