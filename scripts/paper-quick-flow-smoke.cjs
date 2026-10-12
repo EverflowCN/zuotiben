@@ -10,6 +10,18 @@ const assert=require('node:assert/strict');
   await page.goto(origin+'/paper/',{waitUntil:'domcontentloaded'});
   await page.locator('.ps-flow-card').first().waitFor();
   assert.equal(await page.locator('.ps-flow-card').count(),4);
+  assert.equal(await page.locator('#workbench').count(),0,'removed workbench should not exist');
+  assert.equal(await page.locator('.ps-task-grid').count(),0,'redundant two-card import panel should not exist');
+  assert.equal(await page.locator('h2:has-text("从这里开始制作")').count(),0);
+  assert.equal(await page.locator('#manualImport').count(),1,'manual paste import must remain accessible');
+  assert.equal(await page.locator('#manualImport').evaluate(el=>el.open),false,'secondary import should be collapsed');
+  assert.equal(await page.locator('#fileInput').count(),1,'import file picker remains for hero button');
+  assert.equal(await page.locator('h2#quickFlowTitle').innerText(),'一份文档，快速变成自己的做题本。');
+  await page.locator('#manualImport summary').click();
+  assert.equal(await page.locator('#pasteMarkdown').isVisible(),true);
+  assert.equal(await page.locator('#pasteImportButton').isVisible(),true);
+  await page.locator('#manualImport summary').click();
+
   assert.equal(new URL(await page.locator('.ps-flow-card a[href*=doubao]').getAttribute('href')).hostname,'www.doubao.com');
   assert.ok((await page.locator('.ps-flow-tip').innerText()).includes('A4'));
   assert.ok((await page.locator('.ps-flow-tip').innerText()).includes('A3'));
