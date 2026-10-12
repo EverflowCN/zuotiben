@@ -205,3 +205,36 @@ body.editor-page #outlinePanel .order-item:hover .order-controls,
 body.editor-page #outlinePanel .order-item:focus-within .order-controls{display:flex!important;gap:1px!important;opacity:1!important}
 body.editor-page #outlinePanel .order-controls button{width:20px!important;min-width:20px!important;height:23px!important;min-height:23px!important;background:transparent!important;border:0!important;padding:0!important;font-size:12px!important}
 @media(hover:none){body.editor-page #outlinePanel .order-check,body.editor-page #outlinePanel .drag-handle{opacity:1!important}}
+/* Optical alignment: icon boxes and numerals use a common center, not text baselines. */
+body.editor-page .ef-icon{display:block!important;width:16px!important;height:16px!important;flex:0 0 16px!important;margin:0!important;vertical-align:middle!important}
+body.editor-page .ef-icon-button,body.editor-page .question-nav-arrow,body.editor-page .question-nav-picker,body.editor-page .viewer-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;gap:5px!important}
+body.editor-page #questionNavCounter,body.editor-page #previewPageIndicator,body.editor-page #questionCount{display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;font-variant-numeric:tabular-nums!important}
+body.editor-page #questionCount{height:27px!important;min-width:27px!important;padding:0 6px!important}
+body.editor-page #outlinePanel .outline-tree-chevron,body.editor-page #outlinePanel .order-num{display:grid!important;place-items:center!important;height:24px!important;line-height:1!important;font-variant-numeric:tabular-nums!important}
+body.editor-page #outlinePanel .outline-tree-section small{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:24px!important;min-width:22px!important;line-height:1!important;font-variant-numeric:tabular-nums!important}
+body.editor-page .workspace-folder-count{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:24px!important;line-height:1!important;font-variant-numeric:tabular-nums!important}
+body.editor-page .workspace-dialog.is-graph-dialog{width:min(1260px,96vw)!important}
+body.editor-page .workspace-graph-view-switch{display:inline-flex;gap:3px;background:#f0f3f5;padding:3px;border-radius:7px;margin:0 0 10px}
+body.editor-page .workspace-graph-view-switch button{min-height:30px;padding:5px 12px;border:0;border-radius:5px;background:transparent;font-size:12px;color:#52616b;cursor:pointer}
+body.editor-page .workspace-graph-view-switch button[aria-pressed="true"]{background:#fff;color:#283b48;box-shadow:0 1px 4px #25374616}
+body.editor-page .workspace-matrix[hidden],body.editor-page .workspace-graph-list[hidden],body.editor-page .workspace-matrix-legend[hidden],body.editor-page .workspace-matrix-detail[hidden]{display:none!important}
+body.editor-page .workspace-matrix{overflow:auto;max-height:42vh;padding:0 0 5px;background:#fafbfc;border:1px solid #e0e6eb;border-radius:9px;overscroll-behavior:contain}
+body.editor-page .workspace-matrix-sheet{width:max-content;min-width:100%;padding:7px}
+body.editor-page .workspace-matrix-header,body.editor-page .workspace-matrix-row{display:grid;grid-template-columns:156px repeat(var(--matrix-columns),28px);gap:3px;align-items:center;min-height:29px}
+body.editor-page .workspace-matrix-header{position:sticky;top:0;z-index:3;background:#fafbfc}
+body.editor-page .workspace-matrix-label{position:sticky;left:0;z-index:2;background:#fafbfc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#53626c;padding:5px 8px;height:29px;box-sizing:border-box}
+body.editor-page .workspace-matrix-number{display:grid;place-items:center;height:27px;font:500 11px/1 system-ui;font-variant-numeric:tabular-nums;color:#74818b}
+body.editor-page .workspace-matrix-cell{display:grid;place-items:center;padding:0!important;width:28px;min-width:28px;height:27px;border:1px solid #c0d2df;border-radius:5px;background:#ecf3f8;color:#456c85;font:500 10px/1 system-ui;cursor:pointer}
+body.editor-page .workspace-matrix-cell[data-kind="填"]{border-color:#cec7df;background:#f1eef7;color:#75628c}
+body.editor-page .workspace-matrix-cell[data-kind="解"]{border-color:#dfd0b8;background:#f7f2e9;color:#8b754d}
+body.editor-page .workspace-matrix-cell[aria-checked="true"]{background:#365b78;color:#fff;border-color:#365b78;font-size:15px;font-weight:700}
+body.editor-page .workspace-matrix-cell:focus-visible{outline:2px solid #386784;outline-offset:2px;z-index:4}
+body.editor-page .workspace-matrix-cell:hover{box-shadow:inset 0 0 0 1px currentColor}
+body.editor-page .workspace-matrix-empty{width:28px;height:27px;background:#f1f3f5;border:1px dashed #e5e9ec;border-radius:5px;box-sizing:border-box}
+body.editor-page .workspace-matrix-legend{margin:9px 0;font-size:11px;color:#687985;line-height:1.8}
+body.editor-page .workspace-matrix-detail{border:1px solid #dfe6eb;background:#fafcfd;border-radius:8px;padding:12px;margin-top:10px;max-height:160px;overflow:auto}
+body.editor-page .workspace-matrix-detail strong{display:block;font-size:12px;margin-bottom:7px;color:#435766}
+body.editor-page .workspace-matrix-detail .workspace-graph-math{font-size:13px;line-height:1.8;white-space:pre-wrap}
+body.editor-page .workspace-graph-actions{gap:8px!important;align-items:center!important}
+body.editor-page .workspace-counter{font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+@media(max-width:767px){body.editor-page .workspace-matrix-header,body.editor-page .workspace-matrix-row{grid-template-columns:110px repeat(var(--matrix-columns),28px)}body.editor-page .workspace-dialog.is-graph-dialog{width:100%!important}}

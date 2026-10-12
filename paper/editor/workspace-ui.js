@@ -21,7 +21,7 @@ function button(label,onClick,style){
 }
 function toast(msg){const host=$("toast");if(host){host.textContent=msg;host.classList.add("show");setTimeout(()=>host.classList.remove("show"),2500)}}
 function dialog(title){
- const host=$("workspaceDialog");
+ const host=$("workspaceDialog");host.querySelector(".workspace-dialog").classList.remove("is-graph-dialog");
  $("workspaceDialogTitle").textContent=title;
  $("workspaceDialogContent").replaceChildren();
  host.hidden=false;
@@ -159,6 +159,7 @@ function classify(q){
 }
 async function graphModal(){
  const box=dialog("题目图谱 · 跨试卷选题");
+ $("workspaceDialog").querySelector(".workspace-dialog").classList.add("is-graph-dialog");
  box.append(make("p","workspace-description","从本机保存的所有试卷里勾选题目，自动分类为选择题、填空题或解答题。不会上传内容。"));
  const all=[];
  try{
@@ -192,27 +193,64 @@ async function graphModal(){
   }catch(e){toast("选题失败："+e.message)}
  },"workspace-action primary");
  actions.append(search,destination,count,apply);box.append(actions);
- const list=make("div","workspace-graph-list");box.append(list);
+ const switcher=make("div","workspace-graph-view-switch");switcher.setAttribute("role","group");switcher.setAttribute("aria-label","图谱显示方式");
+ let view="list";try{view=localStorage.getItem("everflow-graph-view")||"list"}catch(e){}
+ const listButton=button("列表",()=>setView("list")),matrixButton=button("矩阵图谱",()=>setView("matrix"));
+ listButton.dataset.graphView="list";matrixButton.dataset.graphView="matrix";switcher.append(listButton,matrixButton);box.insertBefore(switcher,actions);
+ const list=make("div","workspace-graph-list"),matrix=make("div","workspace-matrix");box.append(list,matrix);
+ const legend=make("div","workspace-matrix-legend","选：选择题　填：填空题　解：解答题　✓：已选 · 点击格子选题，方向键移动");box.append(legend);
+ const detail=make("section","workspace-matrix-detail");detail.hidden=true;box.append(detail);
+ function showDetail(e){
+   detail.replaceChildren(make("strong","",e.paper.title+" · 第 "+(e.index+1)+" 题 · "+(e.question.type||"题目")));
+   const content=make("div","workspace-graph-math",e.question.content||"（空题）");if(window.EverflowSafeMath)window.EverflowSafeMath.render(content);detail.append(content);detail.hidden=false;
+ }
+ function toggle(e){if(chosen.has(e.key))chosen.delete(e.key);else chosen.add(e.key);count.textContent="已选 "+chosen.size+" 题"}
+ function setView(value){view=value;try{localStorage.setItem("everflow-graph-view",value)}catch(e){}draw()}
  const draw=()=>{
-  const keyword=search.value.trim().toLowerCase(),frag=document.createDocumentFragment();
-  for(const e of all){
-   if(keyword&&!((e.paper.title||"")+" "+(e.question.section||"")+" "+(e.question.content||"")).toLowerCase().includes(keyword))continue;
-   const label=make("label","workspace-graph-row"),input=make("input"),content=make("span","workspace-graph-content");
-   input.type="checkbox";input.checked=chosen.has(e.key);
-   input.onchange=()=>{
-     if(input.checked)chosen.add(e.key);else chosen.delete(e.key);
-     count.textContent="已选 "+chosen.size+" 题";
-   };
-   content.append(make("small","",e.paper.title+" · 第 "+(e.index+1)+" 题 · "+(e.question.section||"待分类")));
-   const formula=make("span","workspace-graph-math",clip(e.question.content,170)||"（空题）");
-   if(window.EverflowSafeMath)window.EverflowSafeMath.render(formula);
-   content.append(formula);
-   label.append(input,content);frag.append(label);
-  }
-  list.replaceChildren(frag);
+   listButton.setAttribute("aria-pressed",String(view==="list"));matrixButton.setAttribute("aria-pressed",String(view==="matrix"));
+   list.hidden=view!=="list";matrix.hidden=view!=="matrix";legend.hidden=view!=="matrix";detail.hidden=true;
+   const keyword=search.value.trim().toLowerCase();
+   const filtered=all.filter(e=>!keyword||((e.paper.title||"")+" "+(e.question.section||"")+" "+(e.question.content||"")).toLowerCase().includes(keyword));
+   list.replaceChildren();matrix.replaceChildren();
+   if(view==="list"){
+     const frag=document.createDocumentFragment();
+     for(const e of filtered){
+       const label=make("label","workspace-graph-row"),input=make("input"),content=make("span","workspace-graph-content");
+       input.type="checkbox";input.checked=chosen.has(e.key);input.setAttribute("aria-label",e.paper.title+" 第 "+(e.index+1)+" 题");
+       input.onchange=()=>toggle(e);
+       content.append(make("small","",e.paper.title+" · 第 "+(e.index+1)+" 题 · "+(e.question.section||"待分类")));
+       const formula=make("span","workspace-graph-math",clip(e.question.content,170)||"（空题）");
+       if(window.EverflowSafeMath)window.EverflowSafeMath.render(formula);content.append(formula);label.append(input,content);frag.append(label);
+     }
+     list.append(frag);
+   }else{
+     const papers=new Map();for(const e of filtered){if(!papers.has(e.paper.id))papers.set(e.paper.id,{paper:e.paper,entries:[]});papers.get(e.paper.id).entries.push(e)}
+     const cols=filtered.reduce((max,e)=>Math.max(max,e.index+1),0);
+     const sheet=make("div","workspace-matrix-sheet");sheet.style.setProperty("--matrix-columns",String(cols));
+     const header=make("div","workspace-matrix-header");header.append(make("strong","workspace-matrix-label","试卷 / 题号"));
+     for(let i=1;i<=cols;i++)header.append(make("span","workspace-matrix-number",i));sheet.append(header);
+     for(const {paper,entries} of papers.values()){
+       const row=make("div","workspace-matrix-row"),label=make("span","workspace-matrix-label",paper.title);label.title=paper.title;row.append(label);
+       const positions=new Map(entries.map(e=>[e.index,e]));
+       for(let i=0;i<cols;i++){
+         const e=positions.get(i);if(!e){row.append(make("span","workspace-matrix-empty"));continue}
+         const kind=classify(e.question).type;const short=kind==="选择题"?"选":kind==="填空题"?"填":"解";
+         const cell=button(chosen.has(e.key)?"✓":short,()=>{toggle(e);cell.textContent=chosen.has(e.key)?"✓":short;cell.setAttribute("aria-checked",String(chosen.has(e.key)));showDetail(e)},"workspace-matrix-cell");
+         cell.dataset.kind=short;cell.dataset.index=i;cell.dataset.paper=paper.id;cell.setAttribute("role","checkbox");cell.setAttribute("aria-checked",String(chosen.has(e.key)));cell.setAttribute("aria-label",paper.title+" · 第 "+(i+1)+" 题 · "+kind);cell.title=paper.title+" · 第 "+(i+1)+" 题 · "+kind+"\n"+clip(e.question.content,130);
+         cell.onfocus=()=>showDetail(e);
+         cell.onkeydown=event=>{
+           if(event.key===" "||event.key==="Enter"){event.preventDefault();cell.click();return}
+           const rowNodes=[...sheet.querySelectorAll(".workspace-matrix-row")],r=rowNodes.indexOf(row),cells=[...row.querySelectorAll(".workspace-matrix-cell")],c=cells.indexOf(cell);let target;
+           if(event.key==="ArrowLeft")target=cells[c-1];if(event.key==="ArrowRight")target=cells[c+1];
+           if(event.key==="ArrowUp"||event.key==="ArrowDown"){const dest=rowNodes[r+(event.key==="ArrowUp"?-1:1)];if(dest)target=dest.querySelector('[data-index="'+i+'"]')||dest.querySelector(".workspace-matrix-cell")}
+           if(target){event.preventDefault();target.focus()}
+         };row.append(cell);
+       }sheet.append(row);
+     }matrix.append(sheet);
+   }
+   if(!filtered.length)(view==="list"?list:matrix).append(make("p","workspace-description",all.length?"没有匹配的题目":"本机没有题目，请先导入或新建试卷。"));
  };
  search.oninput=draw;draw();
- if(!all.length)list.textContent="本机没有题目，请先导入或新建试卷。";
 }
 async function initialize(){
  if(!api())return;

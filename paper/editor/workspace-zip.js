@@ -7,7 +7,6 @@
 "use strict";
 const db=window.EverflowArchive,$=id=>document.getElementById(id);
 if(!db||!$("workspaceZipInput"))return;
-const maxZip=25*1024*1024,maxText=40*1024*1024,maxPaper=3*1024*1024;
 const text=v=>String(v==null?"":v).replace(/\r\n?/g,"\n").trim();
 const make=(tag,cls,value)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(value!==undefined)x.textContent=value;return x};
 function notice(value){
@@ -95,7 +94,7 @@ function showImportDialog(items,filename,invalid){
   try{
    let location=folder.value;
    if(location==="_new")location=(await db.createFolder(custom.value)).id;
-   const saved=await db.saveBatch(items,location);
+   const saved=await db.saveBatch(items,location,(done,total)=>{action.textContent="正在保存 "+done+" / "+total+" 份试卷…"});
    localStorage.setItem("everflow-workspace-folder-v2",location);
    // Refresh the local file-tree via the event interface, not a hard reload:
    // current unsaved question editing remains intact.
@@ -110,21 +109,19 @@ function showImportDialog(items,filename,invalid){
 async function handleZip(file){
  if(!file)return;
  const trigger=$("importWorkspaceZip");
- if(file.size>maxZip){notice("ZIP 最大支持 25 MB，请拆分后重试");return}
  if(!window.JSZip){notice("ZIP 解包组件不可用，请刷新后检查网络连接");return}
- trigger.disabled=true;const original=trigger.textContent;trigger.textContent="正在解包…";
+ trigger.disabled=true;const original=[...trigger.childNodes].map(n=>n.cloneNode(true));
+ $("workspaceDialogTitle").textContent="读取 ZIP";const progress=make("p","workspace-description","正在解包，请稍候…");$("workspaceDialogContent").replaceChildren(progress);$("workspaceDialog").hidden=false;
  try{
   const zip=await JSZip.loadAsync(file);
   const files=Object.values(zip.files).filter(x=>!x.dir&&!x.name.startsWith("__MACOSX/"));
-  if(files.length>500)throw Error("ZIP 中文件超过 500 个，为避免卡顿已停止解析");
   const candidates=files.filter(x=>/\.(md|markdown|json|everflow)$/i.test(x.name)&&!/(?:^|\/)papers\.json$/i.test(x.name));
   if(!candidates.length)throw Error("ZIP 内需要 .md、.json 或 .everflow 试卷文件");
-  if(candidates.length>120)throw Error("每次最多导入 120 份文件");
-  let total=0,invalid=0;const papers=[];
+  let processed=0,invalid=0;const papers=[];
   for(const entry of candidates){
-   const source=await entry.async("string");total+=source.length;
-   if(total>maxText)throw Error("解压文本累计超过 40 MB，已终止解析");
-   if(source.length>maxPaper){invalid++;continue}
+   const source=await entry.async("string");
+   processed++;progress.textContent="正在读取 "+processed+" / "+candidates.length+"："+entry.name;
+   if(processed%5===0)await new Promise(resolve=>setTimeout(resolve,0));
    let parsed;
    try{
     parsed=/\.(md|markdown)$/i.test(entry.name)?parseMarkdown(source,safeFilename(entry.name)):
@@ -135,7 +132,7 @@ async function handleZip(file){
   if(!papers.length)throw Error("文件中没有能够转换的试题。请确保是 Everflow Markdown、JSON 或 .everflow 工程格式");
   showImportDialog(papers,file.name.replace(/\.zip$/i,""),invalid);
  }catch(e){notice("ZIP 无法导入："+e.message)}
- finally{trigger.disabled=false;trigger.textContent=original;$("workspaceZipInput").value=""}
+ finally{trigger.disabled=false;trigger.replaceChildren(...original);$("workspaceZipInput").value=""}
 }
 function initialize(){
  $("importWorkspaceZip").onclick=()=>$("workspaceZipInput").click();

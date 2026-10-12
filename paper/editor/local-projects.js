@@ -152,17 +152,18 @@ async function deleteFolder(id){
  }
  await del("folders",id);
 }
-async function saveBatch(papers,folderId){
+async function saveBatch(papers,folderId,onProgress){
  folderId=normalizeFolderId(folderId);
  if(folderId&&!(await get("folders",folderId)))throw new Error("目标文件夹不存在");
  if(!Array.isArray(papers)||!papers.length)throw new Error("未找到可导入的试卷");
- if(papers.length>100)throw new Error("单次最多导入 100 份试卷");
  var result=[];
  for(var p of papers){
   if(!p||!Array.isArray(p.questions)||!p.questions.length)continue;
   var data=serialize(p);
   // A newly imported paper is always a new entity, never a replacement.
   result.push(await savePaper(data,{id:uid(),folderId:folderId,checkpoint:false,activate:false}));
+  if(onProgress)onProgress(result.length,papers.length);
+  if(result.length%10===0)await new Promise(resolve=>setTimeout(resolve,0));
  }
  if(!result.length)throw new Error("ZIP 中没有可导入的有效题目");
  return result;
