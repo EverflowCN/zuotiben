@@ -151,16 +151,15 @@ function semanticLines(text){
   return window.EverflowQuestionText.semanticLines(text);
 }
 function renderMath(root){
-  if(!(window.temml&&typeof window.temml.renderMathInElement==="function"))return;
-  try{
-    window.temml.renderMathInElement(root,{
-      delimiters:[
-        {left:"$$",right:"$$",display:true},{left:"\\[",right:"\\]",display:true},
-        {left:"\\(",right:"\\)",display:false},{left:"$",right:"$",display:false}
-      ],
-      throwOnError:false,strict:false,trust:false,maxExpand:1000,maxSize:50
-    });
-  }catch(e){}
+  // One defensive math renderer for both editor and the physical-page paginator.
+  // The archived source stays unmodified, including its original LaTeX.
+  // In particular, do not let Temml auto-render output "ParseError" into the PDF.
+  if(window.EverflowSafeMath){
+    window.EverflowSafeMath.render(root);
+    return;
+  }
+  // Fail closed until the local formula renderer is loaded; never print parser errors.
+  if(!window.temml)return;
 }
 function classifySemanticLine(line){
   var m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
