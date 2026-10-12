@@ -101,6 +101,7 @@ const assert=require('node:assert/strict');
   assert.ok((await page.evaluate(async()=>EverflowArchive.listFolders())).some(f=>f.name==='27 数学二模拟卷'));
   assert.ok(parseInt(await page.evaluate(()=>localStorage.getItem('everflow-editor-ui-v1')||'0'))>=0||true);
   const largeCtx=await browser.newContext({viewport:{width:1440,height:900}});
+  await largeCtx.addInitScript(data=>localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify(data)),source);
   const bulkPage=await largeCtx.newPage();
   await bulkPage.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded'});
   await bulkPage.locator('#projectsTabButton').click();
