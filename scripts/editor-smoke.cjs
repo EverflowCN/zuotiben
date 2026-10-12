@@ -205,6 +205,19 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    assert.equal(await page.locator('#mobileTextDownloadButton').isVisible(),true,'mobile text PDF entry unavailable');
+    const mobileTextBefore=await page.locator('#typstPreview').innerHTML();
+    const mobileTextPromise=page.waitForEvent('download',{timeout:120000});
+    await page.locator('#mobileTextDownloadButton').click();
+    const mobileText=await mobileTextPromise;
+    await mobileText.saveAs('test-results/editor-mobile-text-'+browserName+'.pdf');
+    const mobileTextBytes=fs.readFileSync('test-results/editor-mobile-text-'+browserName+'.pdf');
+    assert.equal(mobileTextBytes.subarray(0,5).toString(),'%PDF-');
+    const {PDFDocument: MobilePdf}=require('../paper/editor/vendor/pdf-lib.min.js');
+    assert.equal((await MobilePdf.load(mobileTextBytes)).getPages().length,expectedPages,'mobile text export changes page count');
+    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),mobilePrintCalls);
+    assert.equal(await page.locator('#typstPreview').innerHTML(),mobileTextBefore,'mobile text export modified preview');
+    console.log('MOBILE TEXT PDF',mobileTextBytes.length,'pages',expectedPages);
     const pageWidth=await page.locator('#typstPreview > section.typst-page').first().evaluate(el=>el.getBoundingClientRect().width);
     console.log('MOBILE PAGE WIDTH',pageWidth,await page.locator('#typstPreview').evaluate(el=>({width:el.clientWidth,zoom:getComputedStyle(el).getPropertyValue('--browser-preview-scale'),screen:innerWidth,fit:getComputedStyle(el.querySelector('.browser-paper-page')).zoom})));
     assert.ok(pageWidth<=390,'mobile page should fit: '+pageWidth);
@@ -214,7 +227,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
     assert.deepEqual(errors,[]);
-    console.log('PASS ['+browserName+']: responsive editor, browser pagination/print, and print-to-PDF sourced from the exact preview DOM');
+    console.log('PASS ['+browserName+']: responsive editor and two direct PDF downloads share preview pages without printing');
   }finally{
     await browser.close();
   }
