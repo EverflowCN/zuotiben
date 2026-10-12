@@ -1,0 +1,94 @@
+/* Paper Studio · interactive book showcase
+ * Pure HTML/CSS books. No screenshot textures or opaque image conversion.
+ */
+.ps-book-showcase{overflow:hidden!important;padding:18px 16px 16px!important}
+.ps-book-showcase .ps-document-top{margin-bottom:6px;position:relative;z-index:2}
+.ps-books-stage{position:relative;display:block;isolation:isolate;max-width:100%;height:clamp(365px,34vw,470px);
+  perspective:1120px;touch-action:pan-y;overflow:hidden;border-radius:14px;
+  background:radial-gradient(ellipse at 50% 62%,#e2eee5a0,transparent 68%)}
+.ps-books-stage:after{content:"";position:absolute;left:15%;right:15%;bottom:5%;height:14px;z-index:0;
+  background:#30503d26;filter:blur(17px);border-radius:50%;pointer-events:none}
+.ps-book-card{
+  appearance:none;position:absolute;top:50%;left:50%;margin:0;padding:0;display:block;
+  width:clamp(205px,54%,282px);aspect-ratio:210/297;border:0!important;border-radius:0 5px 5px 0;
+  transform-origin:center center;background:#fff;box-shadow:0 8px 24px #1f3c2928;
+  transition:transform .52s cubic-bezier(.22,.72,.2,1),filter .45s ease,opacity .45s ease,box-shadow .45s ease;
+  overflow:visible;cursor:pointer;transform-style:preserve-3d;outline-offset:7px;color:#1d2722;
+}
+.ps-book-card.is-centered{
+  transform:translate(-50%,-50%) rotateY(-4deg) scale(1);
+  filter:brightness(1);opacity:1;z-index:7;box-shadow:5px 15px 29px #15302040,10px 2px 0 #e8efe8
+}
+.ps-book-card.is-prev{
+  transform:translate(calc(-50% - 48%),-49%) rotateY(-16deg) scale(.75);
+  filter:brightness(.98) saturate(.72);opacity:.5;z-index:3
+}
+.ps-book-card.is-next{
+  transform:translate(calc(-50% + 48%),-49%) rotateY(16deg) scale(.75);
+  filter:brightness(.98) saturate(.72);opacity:.5;z-index:3
+}
+.ps-book-card.is-centered:hover{transform:translate(-50%,-51%) rotateY(-1deg) scale(1.015)}
+.ps-book-card.is-prev:hover,.ps-book-card.is-next:hover{filter:brightness(1);opacity:.83}
+.ps-book-spine{position:absolute;top:0;bottom:0;left:0;width:10px;z-index:10;border-radius:2px 0 0 2px;
+  background:linear-gradient(90deg,#253b31 0%,#2e5242 57%,#769580 92%,#dfebe0 100%);
+  box-shadow:inset -1px 0 2px #0002}
+.ps-book-face{box-sizing:border-box;position:relative;display:block;width:100%;height:100%;
+  background:#fff;overflow:hidden;border:1px solid #d8dfd9;border-left:0;border-radius:0 5px 5px 0;
+  box-shadow:inset -2px 0 4px #55675b12;text-align:left}
+.ps-book-face .ps-paper-demo.ps-master-cover{
+  width:100%!important;max-width:none!important;max-height:none!important;
+  height:100%!important;aspect-ratio:auto!important;border:0!important;box-shadow:none!important;
+  border-radius:0!important;container-type:inline-size
+}
+.ps-book-topline{position:absolute;z-index:2;top:10px;left:17px;right:9px;letter-spacing:.055em;font-size:7px;color:#a5b5a9}
+.ps-book-face--questions,.ps-book-face--practice{padding:24px 20px 25px 25px;
+  font-family:"Everflow Cover Song","Songti SC",SimSun,serif;color:#272a28}
+.ps-book-face--questions header,.ps-book-face--practice header{display:flex;flex-direction:column;align-items:center;gap:6px;
+  border-bottom:1px solid #afb8b0;padding:1px 0 15px;text-align:center}
+.ps-book-face header small{font-size:7px;color:#7b9283}
+.ps-book-face header b{font-size:13px;letter-spacing:.055em}
+.ps-book-face header span{font-size:7px;color:#9ba79e}
+.ps-book-face section{padding-top:12px}
+.ps-book-face h4{margin:0 0 12px;font-size:10px}
+.ps-book-face p{font-size:8.2px;line-height:1.7;margin:0 0 8px}
+.ps-book-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px 3px;margin:7px 0 13px;font-size:7.5px}
+.ps-book-formula{text-align:center;font-size:11px;color:#3e5548;margin:8px 0 13px}
+.ps-book-face footer{position:absolute;bottom:17px;left:25px;right:18px;border-top:1px solid #e9eeea;
+  padding-top:6px;text-align:center;font-size:7px;color:#93a298}
+.ps-book-face--practice .ps-write-lines{display:flex;flex-direction:column;margin-top:23px;gap:24px}
+.ps-book-face--practice .ps-write-lines i{width:100%;height:1px;background:#d5dfd7}
+.ps-books-control{display:flex;align-items:center;justify-content:space-between;gap:11px;margin-top:2px}
+.ps-books-control>button{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;
+  border:1px solid var(--ps-line);border-radius:9px;background:var(--ps-panel);color:var(--ps-accent);
+  font-size:23px;line-height:1;cursor:pointer}
+.ps-books-control>button:hover{background:var(--ps-accent-2)}
+.ps-books-caption{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.ps-books-caption strong{font-size:12px;color:var(--ps-ink);font-weight:760;line-height:1.4}
+.ps-books-caption span{font-size:10px;color:var(--ps-muted)}
+.ps-books-dots{display:flex;justify-content:center;gap:8px;margin:13px 0 9px}
+.ps-books-dots button{width:19px;height:6px;border:0;border-radius:5px;background:#b2cbb9;opacity:.6;
+  padding:0;transition:width .2s ease,background .2s ease;cursor:pointer}
+.ps-books-dots button[aria-current=true]{width:37px;opacity:1;background:var(--ps-accent)}
+.ps-books-note{font-size:10px;line-height:1.5;color:var(--ps-muted);text-align:center;margin:0}
+body.paper-home.dark .ps-book-card{background:#fff;color:#171c17}
+body.paper-home.dark .ps-books-stage{background:radial-gradient(ellipse at 50% 60%,#27403577,transparent 70%)}
+@media(min-width:761px) and (max-width:1040px){
+  .ps-books-stage{height:355px}
+  .ps-book-card{width:clamp(185px,58%,235px)}
+  .ps-book-showcase{padding:13px!important}
+}
+@media(max-width:760px){
+  .ps-book-showcase{max-width:530px;padding:13px!important}
+  .ps-books-stage{height:390px}
+  .ps-book-card{width:clamp(210px,55%,265px)}
+}
+@media(max-width:420px){
+  .ps-books-stage{height:350px}
+  .ps-book-card{width:205px}
+  .ps-book-card.is-prev{transform:translate(calc(-50% - 47%),-49%) rotateY(-16deg) scale(.74)}
+  .ps-book-card.is-next{transform:translate(calc(-50% + 47%),-49%) rotateY(16deg) scale(.74)}
+  .ps-books-caption strong{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ps-book-card,.ps-books-dots button{transition:none!important}
+}
