@@ -76,7 +76,8 @@ body.editor-page .editor-more-popover>span{font-size:11px;color:var(--ui-muted);
 body.editor-page .editor-more-popover button{display:flex!important;width:100%!important;justify-content:flex-start!important;position:static!important;min-width:0!important;padding:7px 9px!important;background:#fff!important;border:0!important;font-size:12px!important}
 body.editor-page .editor-more-popover button:hover{background:#f0f4f5!important}
 body.editor-page .editor-more-popover #editorGuideButton span{display:inline!important}
-@media(min-width:768px){body.editor-page .texpage-navigator{top:56px!important}body.editor-page .workbench-backdrop{inset:56px 0 0!important}}
+@media(min-width:1180px){body.editor-page .texpage-navigator{top:0!important}}
+@media(min-width:768px) and (max-width:1179px){body.editor-page .texpage-navigator{top:56px!important}body.editor-page .workbench-backdrop{inset:56px 0 0!important}}
 @media(max-width:1000px){body.editor-page .save-state{display:none!important}}
 @media(max-width:767px){
  body.editor-page .texpage-topbar{height:88px!important;min-height:88px!important;grid-template-rows:30px 36px!important;padding:6px 10px!important}

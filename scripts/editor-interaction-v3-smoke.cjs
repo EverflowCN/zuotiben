@@ -81,6 +81,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   assert.equal(await page.locator('#navigatorPanel').isVisible(),true);
   assert.equal(await page.locator('#mobileDownloadButton').isVisible(),false);
   assert.equal(await page.locator('#printButton').isVisible(),true);
+  await page.locator('#editorMoreMenu summary').click();
+  assert.equal(await page.locator('#saveProjectButton').isVisible(),true);
   await page.locator('#editorGuideButton').click();
   assert.equal(await page.locator('#editorGuideDialog').isVisible(),true);
   assert.equal(await page.locator('.editor-guide-body article').count(),4);
