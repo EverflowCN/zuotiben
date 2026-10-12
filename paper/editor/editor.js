@@ -2,6 +2,7 @@
 "use strict";
 
 var STORAGE_KEY="zuotiben-local-paper-v1";
+var answerMode={answers:false,explanations:false};
 var UI_STORAGE_KEY="zuotiben-editor-ui-v2";
 var MODES=window.EverflowTemplateModes;
 var SAVE=window.EverflowSaveManager;
@@ -49,6 +50,8 @@ function normalizeQuestion(raw,index){
     showOptions:typeof raw.showOptions==="boolean"?raw.showOptions:isChoiceSection(raw.section||"",raw.type||(options.length?"选择题":"解答题")),
     breakBefore:raw.breakBefore===true,
     source:"local",
+    answer:cleanText(raw.answer||raw.correct_answer||raw.correctAnswer||""),
+    explanation:cleanText(raw.explanation||raw.answer_explanation||raw.analysis||""),
     latexEnabled:false
   };
 }
@@ -305,7 +308,7 @@ function renderOrder(){
     var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";c.tabIndex=0;c.setAttribute("role","button");
-    var b=document.createElement("b");b.textContent=clip(q.content,42)||"未命名题目";
+    var b=document.createElement("b");b.textContent=clip(q.content,32)||"未命名题目";
     var s=document.createElement("small");s.textContent=(q.section?q.section+" · ":"")+q.type+(q.showOptions&&q.options.length?" · "+q.options.length+" 个选项":"");
     c.append(b,s);c.onclick=function(){selectedId=q.id;renderOrder();renderQuestionEditor()};
     c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click()}};
@@ -355,6 +358,7 @@ function layoutRecords(snapshotState){
     }
     records.push(Object.assign({},q,{
       id:q.id,number:index+1,sectionHeading:sectionHeading,
+      printAnswer:answerMode.answers,printExplanation:answerMode.explanations,
       gapMm:info.onePerPage?0:(q.gap>0?q.gap:MODES.questionGapMm(snapshotState.template,snapshotState.layout)),
       breakBefore:q.breakBefore===true||(snapshotState.template==="book"&&info.sectionForceNewPage&&sectionChanged&&index>0)
     }));
@@ -382,6 +386,12 @@ function createLayoutItem(record){
     question.appendChild(opts);
   }
   item.appendChild(question);
+  if((record.printAnswer&&record.answer)||(record.printExplanation&&record.explanation)){
+    var solution=document.createElement("div");solution.className="paper-inline-solution";
+    if(record.printAnswer&&record.answer){var a=document.createElement("div");a.textContent="【答案】";textWithBreaks(a,record.answer);solution.appendChild(a)}
+    if(record.printExplanation&&record.explanation){var b=document.createElement("div");b.textContent="【解析】";textWithBreaks(b,record.explanation);solution.appendChild(b)}
+    item.appendChild(solution);
+  }
   var answerSpace=document.createElement("div");answerSpace.className="question-answer-space";answerSpace.style.height=Math.max(0,Number(record.gapMm)||0)+"mm";
   var handle=document.createElement("button");handle.type="button";handle.className="browser-gap-handle";handle.dataset.gapHandle=record.id;handle.dataset.gapMm=String(record.gapMm||0);handle.setAttribute("aria-label","调整第 "+record.number+" 题题后留白");
   var handleText=document.createElement("span");handleText.textContent=roundGapLabel(record.gapMm);handle.appendChild(handleText);answerSpace.appendChild(handle);item.appendChild(answerSpace);
@@ -389,14 +399,19 @@ function createLayoutItem(record){
 }
 function roundGapLabel(value){return (Math.round((Number(value)||0)*10)/10)+" mm"}
 function createBrowserCover(snapshotState){
-  var cover=document.createElement("section");cover.className="typst-page browser-paper-page browser-cover-page";cover.dataset.page="1";
+  var cover=document.createElement("section");cover.className="typst-page browser-paper-page browser-cover-page everflow-refined-cover";cover.dataset.page="1";
   cover.style.setProperty("--paper-width","210mm");cover.style.setProperty("--paper-height","297mm");
   var title=document.createElement("div");title.className="browser-cover-title";title.textContent=snapshotState.coverTitle||snapshotState.title;
   var signature=document.createElement("div");signature.className="browser-cover-signature";signature.textContent="·彼时流年若水·";
   var line=document.createElement("div");line.className="browser-cover-line";
-  var brand=document.createElement("div");brand.className="browser-cover-brand";brand.textContent="Everflow·彼时流年若水";
+  var brand=document.createElement("div");brand.className="browser-cover-brand";brand.textContent="彼时流年若水 · 做题本";
+  var kicker=document.createElement("div");kicker.className="everflow-cover-kicker";kicker.textContent="EVERFLOW  ·  PAPER STUDIO";
+  var sub=document.createElement("div");sub.className="everflow-cover-sub";
+  sub.textContent=snapshotState.template==="book"?"做题本 · 错题本 · 自由组卷":"考研自编试卷 · 本地排版";
+  var note=document.createElement("div");note.className="everflow-cover-note";
+  note.textContent="免费、开放的本地试卷排版工具";
   var date=document.createElement("div");date.className="browser-cover-date";date.textContent="> > > 更新时间："+localDate();
-  cover.append(title,signature,line,brand,date);return cover;
+  cover.append(kicker,sub,title,signature,line,note,brand,date);return cover;
 }
 function renderPaper(){
   renderTemplateState();
@@ -700,6 +715,8 @@ function renderQuestionEditor(){
   QUESTION_TYPES.forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;if(q.type===t)o.selected=true;select.appendChild(o)});
   select.onchange=function(){q.type=select.value;assignDefaultOptions(q);touch();renderQuestionEditor()};typeLabel.appendChild(select);root.appendChild(typeLabel);
   inputField("题干（支持 LaTeX 公式）","content","textarea");
+  inputField("答案（默认隐藏）","answer","textarea");
+  inputField("解析（默认隐藏）","explanation","textarea");
   var gap=inputField("题后留白（毫米，0 = 模板默认）","gap");gap.type="number";gap.min="0";gap.max="100";
   var breakLabel=document.createElement("label");breakLabel.className="check-row";var breakCheck=document.createElement("input");breakCheck.type="checkbox";breakCheck.checked=q.breakBefore;
   breakCheck.onchange=function(){q.breakBefore=breakCheck.checked;touch()};breakLabel.append(breakCheck,document.createTextNode(" 本题前强制分页"));root.appendChild(breakLabel);
@@ -908,6 +925,24 @@ function init(){
   updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
+  window.EverflowEditor={
+    snapshot:snapshot,
+    insertQuestions:function(items){
+      mutateState(function(){
+        items.forEach(function(q,i){
+          var nq=normalizeQuestion(q,state.questions.length+i);
+          nq.id="map-"+Date.now().toString(36)+"-"+i;
+          state.questions.push(nq);
+        });
+        selectedId=state.questions[state.questions.length-1]?.id||selectedId;
+      },"已从题目图谱加入 "+items.length+" 道题");
+    },
+    showSolutions:function(a,b){
+      answerMode.answers=!!a;answerMode.explanations=!!b;
+      save(false);renderPaper();
+    },
+    reload:function(){location.reload()}
+  };
   // Download: locally rasterize exactly the validated preview pages into a PDF.
   // Print: separately invoke the system print dialog using the same physical preview DOM.
   els.printButton.onclick=downloadPdf;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
