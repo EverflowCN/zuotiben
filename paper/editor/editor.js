@@ -908,7 +908,7 @@ async function refreshTypstPreview(){
     els.typstPreview.dataset.layoutReady="true";
     els.typstPreview.dataset.revision=String(current);
     var adjusted=Object.keys(result.scales||{}).length;
-    els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(result.tocPageCount?" · "+result.tocPageCount+" 页目录":"")+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览、下载及打印使用同一分页结果。";
+    els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(result.tocPageCount?" · "+result.tocPageCount+" 页目录":"")+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览与两种 PDF 下载采用同一分页结果。";
   }catch(e){
     if(!suspendTypstPreview&&!(e&&e.name==="AbortError")){
       console.error(e);
@@ -1170,7 +1170,7 @@ async function exportProject(){
 function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
-   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","textPdfButton","mobileTextDownloadButton","browserPrintButton",
+   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","textPdfButton","mobileTextDownloadButton",
    "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton","prevQuestionButton","nextQuestionButton","questionNavPickerButton","questionNavCounter","questionNavPopover","questionNavMenu","selectAllQuestionsButton","selectChapterButton","clearQuestionSelectionButton","outlineSelectionSummary","editorGuideButton","editorGuideDialog","closeEditorGuideButton","finishEditorGuideButton","hideEditorGuideHint"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
