@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="./workspace-v2.css?v=20261013-complete3">
 <link rel="stylesheet" href="./interaction-v3.css?v=20261013-splitfix-final2">
 <link rel="stylesheet" href="./pane-autofit.css?v=20261013-autofit1">
-<link rel="stylesheet" href="./calm-ui.css?v=20261013-unified2">
+<link rel="stylesheet" href="./calm-ui.css?v=20261013-balanced1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -55,6 +55,7 @@
       <summary title="项目备份与操作指南" aria-label="更多操作">···</summary>
       <div class="editor-more-popover">
         <span>项目与帮助</span>
+        <label class="split-project-toggle"><input id="splitProjectOutlineToggle" type="checkbox"> 项目与大纲分栏</label>
         <button class="ghost-btn" id="saveProjectButton" type="button">导出项目备份</button>
     <button class="editor-help-trigger" id="editorGuideButton" type="button" aria-haspopup="dialog" aria-label="打开排版与选题操作指南" title="功能引导与快捷操作">
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-1 .6-1.2 1-1.2 2.1M12 17h.01"/></svg><span>操作指南</span>
@@ -80,6 +81,12 @@
       <b id="questionCount">0</b>
     </div>
 
+    <div class="navigator-tabs" role="tablist" aria-label="项目面板">
+      <button id="projectsTabButton" type="button" role="tab" aria-selected="false">项目</button>
+      <button id="outlineTabButton" type="button" role="tab" aria-selected="true">大纲</button>
+      <button id="settingsTabButton" type="button" role="tab" aria-selected="false">设置</button>
+    </div>
+
     <div class="workspace-projects" id="workspaceProjects">
       <div class="workspace-heading"><b>项目文件</b><span class="workspace-subtitle">本机整理</span></div>
       <div class="workspace-project-toolbar" role="toolbar" aria-label="项目管理">
@@ -96,10 +103,7 @@
       <p class="workspace-help">文件夹、项目和历史保存在本机。切换前自动存档，建议定期导出工程。</p>
     </div>
     <div class="workspace-height-resizer" id="workspaceHeightResizer" role="separator" tabindex="0" aria-label="拖动调整项目文件夹与大纲面板高度" aria-orientation="horizontal" aria-valuemin="100" aria-valuemax="500" aria-valuenow="230"><span></span></div>
-    <div class="navigator-tabs" role="tablist" aria-label="项目面板">
-      <button id="outlineTabButton" type="button" role="tab" aria-selected="true">大纲</button>
-      <button id="settingsTabButton" type="button" role="tab" aria-selected="false">设置</button>
-    </div>
+
 
     <section class="navigator-panel is-active" id="outlinePanel" role="tabpanel">
       <div class="order-toolbar">
@@ -298,7 +302,7 @@
 <script src="./preview-pdf.js?v=20261013-local2"></script>
 <script src="./local-projects.js?v=20261013-complete3"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="./editor.js?v=20261013-unified2"></script>
+<script src="./editor.js?v=20261013-balanced1"></script>
 <script src="./workspace-ui.js?v=20261013-complete3"></script>
 <script src="./workspace-zip.js?v=20261013-complete3"></script>
 <script src="./lucide-ui.js?v=20261013-4"></script>

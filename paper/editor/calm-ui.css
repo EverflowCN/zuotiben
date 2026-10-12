@@ -94,3 +94,44 @@ body.editor-page .editor-more-popover #editorGuideButton span{display:inline!imp
  body.editor-page .texpage-question-editor input:not([type="checkbox"]),body.editor-page .texpage-question-editor select,body.editor-page .texpage-question-editor textarea{font-size:16px!important}
  body.editor-page .texpage-question-editor{padding:14px!important}
 }
+/* Balanced working space: one task per navigator tab, compact question form. */
+body.editor-page #navigatorPanel .navigator-tabs{flex:0 0 42px!important;margin:0!important;display:flex!important}
+body.editor-page #navigatorPanel .navigator-tabs button{flex:1!important;min-width:0!important}
+body.editor-page[data-navigator-tab] #workspaceProjects,
+body.editor-page[data-navigator-tab] #workspaceHeightResizer{display:none!important}
+body.editor-page[data-navigator-tab="projects"] #workspaceProjects{display:flex!important;flex:1 1 auto!important;height:auto!important;max-height:none!important;min-height:0!important}
+body.editor-page.project-outline-split:not([data-navigator-tab="settings"]) #workspaceProjects{display:flex!important;flex:0 0 var(--workspace-h)!important;height:var(--workspace-h)!important;max-height:calc(100% - 245px)!important}
+body.editor-page.project-outline-split:not([data-navigator-tab="settings"]) #workspaceHeightResizer{display:flex!important}
+body.editor-page #navigatorPanel #settingsPanel#settingsPanel{padding-top:4px!important}
+body.editor-page #settingsPanel#settingsPanel .paper-settings{padding:12px!important}
+body.editor-page #settingsPanel#settingsPanel .paper-settings label{font-size:12px!important;line-height:1.6!important}
+body.editor-page #settingsPanel#settingsPanel input:not([type="checkbox"]){height:34px!important;min-height:34px!important;font-size:13px!important;padding:6px 8px!important;border-radius:6px!important}
+body.editor-page #settingsPanel#settingsPanel input[type="checkbox"],body.editor-page .split-project-toggle input[type="checkbox"]{display:inline-block!important;width:15px!important;height:15px!important;min-height:15px!important;max-width:15px!important;flex:0 0 15px!important;margin:0 7px 0 0!important;padding:0!important;border-radius:3px!important;vertical-align:middle!important}
+body.editor-page #settingsPanel#settingsPanel .toc-switch,body.editor-page #settingsPanel#settingsPanel .template-override-check{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:4px!important;font-weight:500!important}
+body.editor-page #settingsPanel#settingsPanel .toc-switch small{flex:0 0 100%;margin-left:22px!important}
+body.editor-page .split-project-toggle{display:flex;align-items:center;font-size:12px;padding:8px;color:#45515b;cursor:pointer}
+body.editor-page #questionEditor .question-metadata{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px!important}
+body.editor-page #questionEditor label{margin-bottom:12px!important}
+body.editor-page #questionEditor textarea{min-height:88px!important;max-height:240px!important;height:auto;line-height:1.65!important;resize:vertical!important}
+body.editor-page #questionEditor textarea[data-field="answer"],body.editor-page #questionEditor textarea[data-field="explanation"]{min-height:64px!important}
+body.editor-page #questionEditor .question-editor-head{margin-bottom:8px!important;min-height:28px!important}
+body.editor-page #questionEditor .option-editor{margin-bottom:6px!important;padding:0!important;min-height:34px!important}
+body.editor-page #questionEditor .option-editor input{margin:0!important;min-height:34px!important;height:34px!important}
+body.editor-page #questionEditor .add-option{margin-bottom:14px!important}
+body.editor-page #previewPane#previewPane .preview-toolbar{display:flex!important;flex-wrap:nowrap!important;height:46px!important;min-height:46px!important;flex-basis:46px!important;padding:7px 10px!important;gap:8px!important;align-items:center!important}
+body.editor-page #previewPane#previewPane .preview-toolbar-left{display:none!important}
+body.editor-page #previewPane#previewPane .preview-toolbar-center{display:flex!important;flex:1 1 auto!important;min-width:0!important;max-width:none!important;gap:3px!important;overflow:visible!important;justify-content:flex-start!important}
+body.editor-page #previewPane#previewPane .preview-toolbar-extra{display:flex!important;flex:0 0 auto!important;gap:8px!important;margin:0!important;white-space:nowrap!important}
+body.editor-page #previewPane#previewPane .preview-toolbar-right{display:flex!important;flex:0 0 auto!important;gap:5px!important;margin:0!important}
+body.editor-page #previewPane#previewPane #previewZoomLabel{display:none!important}
+body.editor-page #previewPane#previewPane .page-indicator{min-width:42px!important;width:auto!important;padding:0 3px!important}
+body.editor-page #previewPane#previewPane .viewer-btn{min-width:26px!important;padding:0 5px!important}
+body.editor-page #previewPane#previewPane #printButton,body.editor-page #previewPane#previewPane #browserPrintButton{padding:0 8px!important;font-size:12px!important}
+body.editor-page #previewPane#previewPane{container-type:inline-size;container-name:preview-controls}
+@container preview-controls (max-width:520px){
+ body.editor-page #previewPane#previewPane .preview-toolbar{height:auto!important;min-height:46px!important;flex-basis:auto!important;flex-wrap:wrap!important;gap:6px!important}
+ body.editor-page #previewPane#previewPane .preview-toolbar-center{flex:1 1 210px!important}
+ body.editor-page #previewPane#previewPane .preview-toolbar-extra{flex:0 0 auto!important}
+ body.editor-page #previewPane#previewPane .preview-toolbar-right{margin-left:auto!important}
+}
+@media(max-width:767px){body.editor-page #questionEditor .question-metadata{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px!important}}

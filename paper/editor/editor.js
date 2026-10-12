@@ -619,12 +619,19 @@ function persistUiState(extra){
   }catch(e){}
 }
 function setNavigatorTab(name){
-  var settings=name==="settings";
-  if(els.outlineTabButton)els.outlineTabButton.setAttribute("aria-selected",String(!settings));
+  var settings=name==="settings", projects=name==="projects";
+  var split=document.getElementById("splitProjectOutlineToggle");
+  var combined=!!(split&&split.checked&&!settings);
+  document.body.dataset.navigatorTab=name;
+  document.body.classList.toggle("project-outline-split",combined);
+  if(els.outlineTabButton)els.outlineTabButton.setAttribute("aria-selected",String(!settings&&!projects));
   if(els.settingsTabButton)els.settingsTabButton.setAttribute("aria-selected",String(settings));
-  if(els.outlinePanel)els.outlinePanel.hidden=settings;
+  var projectTab=document.getElementById("projectsTabButton");
+  if(projectTab)projectTab.setAttribute("aria-selected",String(projects));
+  if(els.outlinePanel)els.outlinePanel.hidden=settings||(projects&&!combined);
   if(els.settingsPanel)els.settingsPanel.hidden=!settings;
 }
+
 function closeNavigatorDrawer(){
   document.body.classList.remove("navigator-open");
   if(els.workbenchBackdrop)els.workbenchBackdrop.hidden=true;
@@ -937,6 +944,10 @@ async function setMode(preview){
     els.pdfStatus.textContent="手机编辑模式：切到“预览”查看 ExamA4 浏览器分页。";
   }
 }
+function fitField(input){
+  input.style.height="auto";
+  input.style.height=Math.min(240,Math.max(input.dataset.field==="content"?88:64,input.scrollHeight+2))+"px";
+}
 function renderQuestionEditor(){
   var root=els.questionEditor;root.replaceChildren();
   var q=state.questions.find(function(x){return x.id===selectedId});if(!q)return;
@@ -955,7 +966,8 @@ function renderQuestionEditor(){
   function touch(){save();renderPaper();renderOrder()}
   function inputField(label,key,kind){
     var l=document.createElement("label");l.textContent=label;var input=document.createElement(kind||"input");input.value=q[key]||"";l.appendChild(input);root.appendChild(l);
-    input.oninput=function(){q[key]=key==="gap"?Math.max(0,Math.min(100,Number(input.value)||0)):input.value;touch()};return input;
+    if(kind==="textarea"){input.dataset.field=key;requestAnimationFrame(function(){fitField(input)})}
+    input.oninput=function(){if(kind==="textarea")fitField(input);q[key]=key==="gap"?Math.max(0,Math.min(100,Number(input.value)||0)):input.value;touch()};return input;
   }
   var sectionInput=inputField("所属大纲章节","section");
   sectionInput.title="名称包含「选择」时默认显示选项，其他大题默认不显示";
@@ -965,9 +977,10 @@ function renderQuestionEditor(){
     if(checks[1])checks[1].checked=q.showOptions;
     save();renderOrder();renderPaper();
   });
+  var metadata=document.createElement("div");metadata.className="question-metadata";root.appendChild(metadata);metadata.appendChild(sectionInput.parentElement);
   var typeLabel=document.createElement("label");typeLabel.textContent="题型";var select=document.createElement("select");
   QUESTION_TYPES.forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;if(q.type===t)o.selected=true;select.appendChild(o)});
-  select.onchange=function(){q.type=select.value;assignDefaultOptions(q);touch();renderQuestionEditor()};typeLabel.appendChild(select);root.appendChild(typeLabel);
+  select.onchange=function(){q.type=select.value;assignDefaultOptions(q);touch();renderQuestionEditor()};typeLabel.appendChild(select);metadata.appendChild(typeLabel);
   var stemField=inputField("题干（支持 LaTeX 公式）","content","textarea");
   inputField("答案（默认隐藏）","answer","textarea");
   inputField("解析（默认隐藏）","explanation","textarea");
@@ -1178,6 +1191,11 @@ function init(){
   }
   if(els.tocEnabledToggle)els.tocEnabledToggle.onchange=toggleToc;
   if(els.tocEnabledSettings)els.tocEnabledSettings.onchange=toggleToc;
+  var projectTab=document.getElementById("projectsTabButton");
+  if(projectTab)projectTab.onclick=function(){setNavigatorTab("projects")};
+  var splitToggle=document.getElementById("splitProjectOutlineToggle");
+  if(splitToggle)splitToggle.onchange=function(){setNavigatorTab("outline")};
+  setNavigatorTab("outline");
   if(els.outlineTabButton)els.outlineTabButton.onclick=function(){setNavigatorTab("outline")};
   if(els.settingsTabButton)els.settingsTabButton.onclick=function(){setNavigatorTab("settings")};
   if(els.navigatorToggleButton)els.navigatorToggleButton.onclick=toggleNavigator;
