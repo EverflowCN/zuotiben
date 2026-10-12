@@ -130,6 +130,23 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),beforeDownloadPrintCalls,'Direct download unexpectedly called system print');
     assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Direct download changed preview DOM');
     console.log('DIRECT PDF',pdfBytes.byteLength,'preview pages',expectedPages);
+    // Native-text export must work without a print dialog on Chromium,
+    // Firefox and WebKit and preserve the same DOM/paper geometry.
+    assert.equal(await page.locator('#textPdfButton').isVisible(),true);
+    const beforeTextMarkup=await page.locator('#typstPreview').innerHTML();
+    const textDownloadPromise=page.waitForEvent('download',{timeout:120000});
+    await page.locator('#textPdfButton').click();
+    const textDownload=await textDownloadPromise;
+    await textDownload.saveAs('test-results/editor-text-'+browserName+'.pdf');
+    const textBytes=fs.readFileSync('test-results/editor-text-'+browserName+'.pdf');
+    assert.equal(textBytes.subarray(0,5).toString(),'%PDF-');
+    assert.ok(textBytes.byteLength>3000,'Text PDF suspiciously empty');
+    const {PDFDocument}=require('../paper/editor/vendor/pdf-lib.min.js');
+    const parsed=await PDFDocument.load(textBytes);
+    assert.equal(parsed.getPages().length,expectedPages,'Text PDF altered page count');
+    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),beforeDownloadPrintCalls,'Text PDF used window.print');
+    assert.equal(await page.locator('#typstPreview').innerHTML(),beforeTextMarkup,'Text export changed preview');
+    console.log('DIRECT TEXT PDF',textBytes.byteLength,'preview pages',expectedPages);
 
     // The editor exposes only direct download.
     assert.equal(await page.locator('#browserPrintButton').count(),0);
