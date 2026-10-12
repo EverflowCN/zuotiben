@@ -1,5 +1,6 @@
 // Everflow editor state -> safe Typst content.
 // All visual/layout rules live in everflow-template.typ.
+import "./question-text.js?v=20261012-layout4";
 
 function typstString(value){
   return '"' + String(value==null?"":value)
@@ -21,19 +22,13 @@ function normalizeTemplateMacros(text){
 }
 
 function semanticLines(text){
-  let src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
-  src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
-  src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\))\s*)/gi,"$1\n");
-  src=(" "+src)
-    .replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n")
-    .slice(1);
-  return src.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  return globalThis.EverflowQuestionText.semanticLines(text);
 }
 
 function classifyLine(line){
   let m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
   if(m)return {kind:"circled",label:m[1],body:m[2]};
-  m=String(line||"").match(/^((?:I{1,3}|IV|V|VI{0,3})[.、．])\s*(.*)$/);
+  m=String(line||"").match(/^((?:VIII|VII|VI|IV|IX|III|II|I|V|X)[.、．])\s*([\s\S]*)$/);
   if(m)return {kind:"roman",label:m[1],body:m[2]};
   m=String(line||"").match(/^((?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\)))\s*(.*)$/i);
   if(m)return {kind:"subq",label:m[1],body:m[2]};
@@ -59,7 +54,7 @@ function inlineParts(text,book){
 }
 
 function questionBody(text,book){
-  const src=normalizeTemplateMacros(text);
+  const src=String(text||"");
   const displayRe=/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g;
   const nodes=[];
   let last=0,m,previousKind="plain";

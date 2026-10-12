@@ -79,9 +79,18 @@ function safeBreaks(root,pxPerMm){
   });
   root.querySelectorAll(".semantic-row,.options,.option,.paper-section-heading,.question-line,.question-answer-space,p").forEach(function(element){
     var box=element.getBoundingClientRect();if(box.height){candidates.push(box.top,box.bottom)}
+    if(element.classList.contains("question-answer-space")){
+      for(var point=box.top+10*pxPerMm;point<box.bottom;point+=10*pxPerMm)candidates.push(point);
+    }
   });
+  var question=root.querySelector(".question-line"),keepUntil=base.top;
+  if(question){
+    var questionBox=question.getBoundingClientRect();
+    var leading=parseFloat(getComputedStyle(root).lineHeight)||16;
+    keepUntil=questionBox.top+Math.min(questionBox.height,3*leading);
+  }
   return Array.from(new Set(candidates.filter(function(point){
-    return point>base.top+1&&point<base.bottom-1&&!rects.some(function(rect){return rect.top<point-.15&&rect.bottom>point+.15});
+    return point>=keepUntil-.15&&point>base.top+1&&point<base.bottom-1&&!rects.some(function(rect){return rect.top<point-.15&&rect.bottom>point+.15});
   }).map(function(point){return roundMm((point-base.top)/pxPerMm)}))).sort(function(a,b){return a-b});
 }
 
@@ -274,6 +283,21 @@ function createMeasurementLayer(options,geo){
   document.body.appendChild(layer);return layer;
 }
 
+function fitChoices(layer){
+  layer.querySelectorAll(".options").forEach(function(options){
+    var cells=Array.from(options.children),width=options.getBoundingClientRect().width,max=0;
+    cells.forEach(function(cell){
+      var probe=cell.cloneNode(true);
+      probe.style.cssText="position:absolute;display:inline-flex;width:max-content;max-width:none;white-space:nowrap";
+      var label=probe.querySelector(".option-label");if(label)label.style.cssText="width:2.25em;flex:0 0 2.25em";
+      layer.appendChild(probe);max=Math.max(max,probe.getBoundingClientRect().width);probe.remove();
+    });
+    var n=cells.length,short=max<=.22*width,medium=max<=.46*width;
+    var cols=n===3||n===6?(short?3:medium?2:1):n===4?(short?4:medium?2:1):n>1&&medium?2:1;
+    options.className="options cols-"+cols;
+  });
+}
+
 function installPrintRule(info){
   var style=document.getElementById("everflow-browser-print-page");
   if(!style){style=document.createElement("style");style.id="everflow-browser-print-page";document.head.appendChild(style)}
@@ -284,7 +308,7 @@ async function render(options){
   var signal=options.signal,geo=geometry(options.info,options.template),layer=createMeasurementLayer(options,geo),scales={},pass=0,result=null;
   try{
     if(options.renderMath)options.renderMath(layer);
-    await waitForResources(layer,signal);installPrintRule(options.info);
+    await waitForResources(layer,signal);fitChoices(layer);await nextFrame();installPrintRule(options.info);
     for(pass=0;pass<MAX_REPAIR_PASSES;pass++){
       assertActive(signal);if(options.onProgress)options.onProgress({phase:pass?"repairing":"measuring",pass:pass+1,total:MAX_REPAIR_PASSES});
       var measured=measureNodes(layer,options.records,geo,scales);

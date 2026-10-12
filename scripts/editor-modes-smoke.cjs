@@ -40,7 +40,7 @@ function near(actual,expected,t=.035){
         title:'物理版式验证',coverTitle:'物理版式验证',template:'exam',layout:'a4',
         questions:[
           {id:'q1',section:'一、选择题',content:'设 $f(x)=x^2$，求导数。',options:['$x$','$2x$','$x^2$','$2$'],showOptions:true},
-          {id:'q2',section:'二、解答题',content:'求 $\\int_0^1 x^2\\,dx$。',options:[],showOptions:false}
+          {id:'q2',section:'二、解答题',content:'设矩阵\n$$\\begin{bmatrix}1&2\\\\\n3&4\\end{bmatrix}$$\n(1) 求行列式；\nⅠ 说明条件\nⅡ 给出结论。',options:[],showOptions:false}
         ]
       }));
     });
@@ -49,6 +49,8 @@ function near(actual,expected,t=.035){
 
     const initialRatio=await ratio(page,1);
     near(initialRatio,210/297);
+    assert.ok(await page.locator('.browser-paper-column [data-question-id="q2"] math[display="block"]').count());
+    assert.ok(await page.locator('.browser-paper-column [data-question-id="q2"] .semantic-row.roman').count()>=2);
     console.log('PASS MODE A4 试卷 a4 ratio',initialRatio,'chip',await page.locator('#pageSizeChip').innerText());
 
     const cases=[

@@ -1,4 +1,4 @@
-import { buildTypstSource } from "./typst-template.js?v=20260921-mother6";
+import { buildTypstSource } from "./typst-template.js?v=20261012-layout4";
 
 let $typst = null;
 let TypstSnippet = null;

@@ -125,11 +125,7 @@ function normalizeTemplateMacros(text){
     .replace(/\\quad\b/g,"\u2003");
 }
 function semanticLines(text){
-  var src=normalizeTemplateMacros(text).replace(/\r\n?/g,"\n");
-  src=src.replace(/([^\n])\s+(?=(?:①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩))/g,"$1\n");
-  src=src.replace(/([^\n])\s+(?=(?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\))\s*)/gi,"$1\n");
-  src=(" "+src).replace(/([^\nA-Za-z0-9/])\s+(?=(?:I{1,3}|IV|V|VI{0,3})[.、．]\s*)/g,"$1\n").slice(1);
-  return src.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
+  return window.EverflowQuestionText.semanticLines(text);
 }
 function renderMath(root){
   if(!(window.temml&&typeof window.temml.renderMathInElement==="function"))return;
@@ -146,7 +142,7 @@ function renderMath(root){
 function classifySemanticLine(line){
   var m=String(line||"").match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
   if(m)return {kind:"circled",label:m[1],body:m[2]};
-  m=String(line||"").match(/^((?:I{1,3}|IV|V|VI{0,3})[.、．])\s*(.*)$/);
+  m=String(line||"").match(/^((?:VIII|VII|VI|IV|IX|III|II|I|V|X)[.、．])\s*([\s\S]*)$/);
   if(m)return {kind:"roman",label:m[1],body:m[2]};
   m=String(line||"").match(/^((?:\([1-9]\d*\)|（[1-9]\d*）|\([ivxlcdm]+\)))\s*(.*)$/i);
   if(m)return {kind:"subq",label:m[1],body:m[2]};
@@ -356,7 +352,7 @@ function layoutRecords(snapshotState){
     }
     records.push(Object.assign({},q,{
       id:q.id,number:index+1,sectionHeading:sectionHeading,
-      gapMm:q.gap>0?q.gap:MODES.questionGapMm(snapshotState.template,snapshotState.layout),
+      gapMm:info.onePerPage?0:(q.gap>0?q.gap:MODES.questionGapMm(snapshotState.template,snapshotState.layout)),
       breakBefore:q.breakBefore===true||(snapshotState.template==="book"&&info.sectionForceNewPage&&sectionChanged&&index>0)
     }));
   });
@@ -747,7 +743,7 @@ async function createLatestPdf(){
   try{
     var current=revision,snapshotState=deepClone(state);snapshotState.exportDate=localDate();
     els.pdfStatus.textContent="正在本机用 Typst WASM 优先生成 PDF…";
-    var engine=await import("./typst-engine.js?v=20260921-mother7");
+    var engine=await import("./typst-engine.js?v=20261012-layout4");
     // Exact PDF compilation uses a clean Typst worker and stays independent from
     // the browser-measured preview/print layout.
     engine.disposeTypstWorker();
