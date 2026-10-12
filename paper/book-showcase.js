@@ -4,7 +4,7 @@
  var stage=document.getElementById("psBooksStage");if(!stage)return;
  var cards=Array.from(stage.querySelectorAll(".ps-book-card"));
  var dots=Array.from(document.querySelectorAll("[data-book-dot]"));
- var titles=["封面 · Everflow 原模板","Book · A4 密集做题本","Book · PAD 横版单题做题本"];
+ var titles=["封面展示","密集排版","单题横版"];
  var selected=0;
  function update(index,focus){
    selected=(index+cards.length)%cards.length;
@@ -19,7 +19,7 @@
    dots.forEach(function(dot,i){dot.setAttribute("aria-current",String(i===selected))});
    document.getElementById("psBookLabel").textContent=titles[selected];
    var badge=document.getElementById("psBookModeBadge");
-   if(badge)badge.textContent=["Book · 封面","Book compact · 210×297 mm","Book padl · 200×150 mm"][selected];
+   if(badge)badge.textContent=String(selected+1).padStart(2,"0")+" / 03";
    if(focus)cards[selected].focus({preventScroll:true});
  }
  cards.forEach(function(card,i){
