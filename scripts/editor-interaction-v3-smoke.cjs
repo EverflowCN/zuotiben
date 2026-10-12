@@ -5,7 +5,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:1366,height:900}});
-  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.log('PAGE_ERR',error.message)});
   const data={
    version:2,type:'everflow-local-paper',title:'交互回归测试',template:'exam',layout:'a4',
    questions:[
@@ -45,7 +45,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const hit=await page.evaluate(({x,y})=>{
     const el=document.elementFromPoint(x,y);
     const handle=document.getElementById('navigatorResizer');
-    window.__resizeLog=[];
+    window.__resizeLog=[];window.__rootMutations=[];
+    new MutationObserver(()=>window.__rootMutations.push(document.documentElement.style.getPropertyValue('--navigator-w'))).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
     for(const evt of ['pointerdown','pointermove','pointerup'])handle.addEventListener(evt,e=>window.__resizeLog.push({type:e.type,x:e.clientX,element:e.target.id}),{capture:true});
     return {hit:el?.id,hitClass:el?.className,handle:handle.getBoundingClientRect().toJSON()};
   },{x:split.x+split.width/2,y:split.y+150});
@@ -53,6 +54,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   await page.mouse.move(split.x+split.width/2,split.y+150);
   await page.mouse.down();await page.mouse.move(split.x+split.width/2+80,split.y+150,{steps:8});await page.mouse.up();
   console.log('SPLITTER_EVENTS',JSON.stringify(await page.evaluate(()=>window.__resizeLog)));
+  console.log('SPLITTER_MUTATIONS',JSON.stringify(await page.evaluate(()=>window.__rootMutations)));
   const wider=await page.locator('#navigatorPanel').boundingBox();
   const geometryDebug=await page.evaluate(()=>({
     navStyle:document.documentElement.style.getPropertyValue('--navigator-w'),
