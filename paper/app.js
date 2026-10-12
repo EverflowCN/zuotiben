@@ -1,10 +1,12 @@
 (function(){
 "use strict";
 var STORAGE_KEY="zuotiben-local-paper-v1";
+var ARCHIVE=window.EverflowArchive;
 var THEME_KEY="zuotiben-paper-theme-v1";
 var els={};
 
 function byId(id){return document.getElementById(id)}
+function $(id){return byId(id)}
 function cleanText(v){return String(v==null?"":v).replace(/\r\n?/g,"\n").trim()}
 function uid(){return "local-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
 function toast(msg){els.toast.textContent=msg;els.toast.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){els.toast.classList.remove("show")},2000)}
@@ -19,39 +21,55 @@ function normalizeQuestion(raw,index){
     importedIndex:index,
     content:cleanText(raw.content||raw.stem||raw.question||raw.text||raw.title||""),
     options:options,
-    source:"local",latexEnabled:false,type:raw.type,section:raw.section,gap:raw.gap,showOptions:raw.showOptions,breakBefore:raw.breakBefore===true
+    source:"local",latexEnabled:false,type:raw.type,section:raw.section,gap:raw.gap,showOptions:raw.showOptions,breakBefore:raw.breakBefore===true,
+    answer:cleanText(raw.answer||raw.correct_answer||""),explanation:cleanText(raw.explanation||raw.analysis||"")
   };
 }
 function parseMarkdown(text,fileName){
-  var lines=cleanText(text).split("\n");
-  var title=(fileName||"").replace(/\.(md|markdown)$/i,"")||"本地试卷";
-  var questions=[],current=null;
-  function finish(){
-    if(!current)return;
-    current.content=cleanText(current.body.join("\n"));delete current.body;
-    if(current.content||current.options.length){current.importedIndex=questions.length;questions.push(current)}
-    current=null;
-  }
-  lines.forEach(function(line){
-    var titleMatch=line.match(/^#\s+(.+?)\s*$/);
-    if(titleMatch&&!questions.length&&!current){title=cleanText(titleMatch[1]);return}
-    var qHead=line.match(/^##\s*(?:第\s*)?(\d+)(?:\s*题)?(?:[.、．:\s-]+(.*))?$/i);
-    var numbered=line.match(/^\s*(\d+)[.、．]\s+(.+)$/);
-    if(qHead||(!current&&numbered)){
-      finish();
-      var tail=qHead?cleanText(qHead[2]||""):cleanText(numbered[2]||"");
-      current={id:uid(),body:tail?[tail]:[],options:[],source:"local",latexEnabled:false};return;
-    }
-    if(!current)return;
-    var option=line.match(/^\s*([A-Ha-h])[.、．:：]\s*(.+)$/);
-    if(option){current.options.push(cleanText(option[2]));return}
-    current.body.push(line);
-  });
-  finish();
-  if(!questions.length){
-    cleanText(text).split(/\n{2,}/).filter(Boolean).forEach(function(block,i){questions.push(normalizeQuestion({content:block},i))});
-  }
-  return {title:title,questions:questions};
+ var title=(fileName||"").replace(/\.(md|markdown)$/i,"")||"本地试卷",
+     section="",questions=[],current=null,mode="stem";
+ function finish(){
+   if(!current)return;
+   current.content=cleanText(current.body.join("\n"));
+   current.answer=cleanText(current.answerLines.join("\n"));
+   current.explanation=cleanText(current.explanationLines.join("\n"));
+   delete current.body;delete current.answerLines;delete current.explanationLines;
+   if(current.content||current.options.length){
+     current.importedIndex=questions.length;
+     current.type=(current.section.includes("选择")?"选择题":current.section.includes("填空")?"填空题":current.options.length?"选择题":"解答题");
+     current.showOptions=current.section?current.section.includes("选择"):current.options.length>0;
+     questions.push(current);
+   }current=null;
+ }
+ cleanText(text).split("\n").forEach(function(raw){
+   const line=raw.trim(),top=line.match(/^#\s+(.+)$/);
+   if(top&&!questions.length&&!current){title=cleanText(top[1]);return}
+   const sectionHead=line.match(/^##\s+((?:[一二三四五六七八九十]+[、．.]|第[一二三四五六七八九十]+部分).+)$/);
+   if(sectionHead){finish();section=cleanText(sectionHead[1]);return}
+   const qHead=line.match(/^#{2,3}\s*(?:第\s*)?(\d+)(?:\s*题)?(?:\s*[、.．:\-]\s*(.+))?$/);
+   const num=line.match(/^\s*(\d+)[.、．]\s+(.+)$/);
+   if(qHead||(!current&&num)){
+     finish();
+     current={id:uid(),body:[],options:[],answerLines:[],explanationLines:[],section:section,source:"local",latexEnabled:false};
+     let tail=cleanText(qHead?(qHead[2]||""):num[2]);if(tail)current.body.push(tail);
+     mode="stem";return;
+   }
+   if(!current)return;
+   const answer=line.match(/^(?:答案|参考答案|正确答案)\s*[：:]\s*(.*)$/);
+   const explanation=line.match(/^(?:解析|答案解析|解题过程)\s*[：:]\s*(.*)$/);
+   if(answer){mode="answer";if(answer[1])current.answerLines.push(answer[1]);return}
+   if(explanation){mode="explanation";if(explanation[1])current.explanationLines.push(explanation[1]);return}
+   const option=line.match(/^[(（]?([A-Ha-h])[)）.、．:：]\s*(.*)$/);
+   if(mode==="stem"&&option){current.options.push(cleanText(option[2]));return}
+   if(mode==="answer")current.answerLines.push(raw);
+   else if(mode==="explanation")current.explanationLines.push(raw);
+   else current.body.push(raw);
+ });
+ finish();
+ if(!questions.length){
+   cleanText(text).split(/\n{2,}/).filter(Boolean).forEach((b,i)=>questions.push(normalizeQuestion({content:b},i)));
+ }
+ return {title,questions};
 }
 function parseJson(text,fileName){
   var data=JSON.parse(text),title=(fileName||"").replace(/\.(json|everflow)$/i,"")||"本地试卷",list=[];
@@ -64,13 +82,22 @@ function parseFile(file,text){
   var lower=file.name.toLowerCase();
   return lower.endsWith(".json")||lower.endsWith(".everflow")?parseJson(text,file.name):parseMarkdown(text,file.name);
 }
-function saveAndOpen(parsed,fileName){
+async function saveAndOpen(parsed,fileName){
   var payload={
     template:parsed.template,layout:parsed.layout,header:parsed.header,coverTitle:parsed.coverTitle||parsed.title,version:2,type:"everflow-local-paper",title:parsed.title||"本地试卷",sourceName:fileName||"本地文件",
     savedAt:new Date().toISOString(),
     questions:parsed.questions.map(function(q){return Object.assign({},q,{localId:q.id,source:"local",latexEnabled:false})}),
     originalIds:parsed.originalIds||parsed.questions.map(function(q){return q.id})
   };
+  // Save the previous active paper before replacing the compatibility draft.
+  if(ARCHIVE){
+    try{
+      let current=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+      if(current&&Array.isArray(current.questions)&&current.questions.length)
+        await ARCHIVE.savePaper(current,{checkpoint:true,label:"导入前备份"});
+      await ARCHIVE.savePaper(payload,{id:"import-"+uid(),checkpoint:true,label:"新导入试卷"});
+    }catch(e){console.warn("IndexedDB archive unavailable, keeping local draft",e)}
+  }
   localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
   location.href="./editor/";
 }
@@ -124,7 +151,7 @@ function init(){
   ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton","dropZone"].forEach(function(id){els[id]=byId(id)});
   initTheme();
   els.startBlankButton.onclick=function(){
-    if(hasDraft()&&!window.confirm("新建项目会覆盖当前浏览器草稿。请先在编辑器保存 .everflow 项目备份。仍要新建吗？"))return;
+    // Previous drafts are now backed up to the local project archive before creating a new paper.
     var questions=[
       normalizeQuestion({content:"设函数 $f(x)=x^2+2x$，则 $f'(1)=$（　）。",options:["$2$","$3$","$4$","$5$"],section:"选择题（共 10 小题，每题 5 分）"},0),
       normalizeQuestion({content:"设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，求 $\\det A$。",section:"解答题"},1)
@@ -151,7 +178,27 @@ function init(){
   els.importButton.onclick=function(){els.fileInput.click()};
   els.openProjectButton.onclick=function(){els.fileInput.click()};
   els.fileInput.onchange=function(){importFile(els.fileInput.files&&els.fileInput.files[0])};
-  els.copyPromptButton.onclick=copyPrompt;els.downloadTemplateButton.onclick=downloadTemplate;
+  els.copyPromptButton.onclick=function(){$("aiPromptModal").hidden=false};
+  $("aiPromptClose").onclick=function(){$("aiPromptModal").hidden=true};
+  $("aiPromptModal").onclick=function(e){if(e.target===$("aiPromptModal"))$("aiPromptModal").hidden=true};
+  document.querySelectorAll(".ai-copy").forEach(function(btn){
+    btn.onclick=async function(){
+      var platform=btn.dataset.ai||"AI";
+      var prompt="请作为"+platform+"题目转录助手，严格遵守以下要求：\n\n"+aiPrompt()+"\n\n按原卷标题、所属大题输出 Markdown；选择题选项 A. B. C. D.，如有答案与解析可分别以『答案：』『解析：』开头保留。";
+      try{await navigator.clipboard.writeText(prompt)}catch(e){
+        var ta=document.createElement("textarea");ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+      }
+      $("aiPromptModal").hidden=true;toast(platform+" 提示词已复制");
+    };
+  });
+  $("pasteImportButton").onclick=function(){
+    var markdown=$("pasteMarkdown").value;
+    if(!markdown.trim()){toast("先粘贴 Markdown 内容");return}
+    var parsed=parseMarkdown(markdown,"粘贴的题目.md");
+    if(!parsed.questions.length){toast("未找到可导入的题目，请核对标题格式");return}
+    saveAndOpen(parsed,"网页粘贴 Markdown").catch(e=>toast("转换失败："+e.message));
+  };
+  els.downloadTemplateButton.onclick=downloadTemplate;
   els.howButton.onclick=function(){showModal(true)};
   document.querySelectorAll("[data-modal-close]").forEach(function(x){x.onclick=function(){showModal(false)}});
   document.addEventListener("keydown",function(e){if(e.key==="Escape")showModal(false)});
