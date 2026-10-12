@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const context={window:{}};
+vm.runInNewContext(fs.readFileSync('paper/editor/browser-layout.js','utf8'),context);
+const engine=context.window.EverflowBrowserLayout;
+const column={left:-30000,right:-29358,width:642};
+assert.equal(engine.horizontalFitRatio(column,{left:-30000,right:-29358}),1);
+assert.equal(engine.horizontalFitRatio(column,{left:-29980,right:-29400}),1);
+assert.equal(engine.horizontalFitRatio(column,{left:-30000,right:-29357.5}),1);
+assert.ok(engine.horizontalFitRatio(column,{left:-30000,right:-29000})<1);
+assert.ok(engine.horizontalFitRatio(column,{left:-30100,right:-29358})<1);
+const geo={columns:1,columnHeightMm:269};
+function item(id,height,breaks=[]){return {id,heightMm:height,safeBreaksMm:breaks,record:{}}}
+let result=engine.paginate([item('a',30),item('b',30)],geo,false);
+assert.equal(result.pages.length,1);
+assert.equal(result.pages[0].columns[0].fragments.length,2);
+result=engine.paginate([item('a',30),item('b',30)],geo,true);
+assert.equal(result.pages.length,2);
+assert.ok(result.pages.every(p=>p.columns[0].fragments.length===1));
+result=engine.paginate([item('long',500,[100,200,300,400])],geo,false);
+assert.equal(result.pages.length,3);
+assert.equal(result.overflowQuestionIds.length,0);
+assert.equal(result.pages[0].columns[0].fragments[0].heightMm,200);
+console.log('PASS: normal width never triggers repair; pagination and safe splits');

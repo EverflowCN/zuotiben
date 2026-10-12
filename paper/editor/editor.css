@@ -1933,7 +1933,7 @@ body.is-resizing-panes *{
   display:grid;gap:var(--paper-column-gap);align-items:stretch;
 }
 .browser-paper-column{position:relative;min-width:0;overflow:hidden}
-.paper-layout-item{position:relative;box-sizing:border-box;min-width:0;overflow:visible;cursor:pointer}
+.paper-layout-item{position:relative;display:flow-root;box-sizing:border-box;min-width:0;overflow:visible;cursor:pointer}
 .paper-layout-item .question{margin:0!important;padding:0!important;break-inside:avoid;outline:0!important}
 .paper-layout-item .question-line{display:grid;grid-template-columns:2.25em minmax(0,1fr);column-gap:.55em;align-items:start}
 .paper-layout-item .question-number{font-weight:400;text-align:right;white-space:nowrap}

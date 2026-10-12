@@ -46,7 +46,9 @@ function eachVisibleTextNode(root,callback){
     var parent=node.parentElement;
     if(!parent||parent.closest("[hidden],[aria-hidden='true'],script,style,.browser-gap-handle"))return NodeFilter.FILTER_REJECT;
     var style=getComputedStyle(parent);
-    return style.display==="none"||style.visibility==="hidden"?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;
+    // The off-screen measurement layer is intentionally visibility:hidden.
+    // Its text still paints into layout rects and must participate in measuring.
+    return style.display==="none"||(style.visibility==="hidden"&&!parent.closest(".paper-measurement-layer"))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;
   }});
   while(walker.nextNode())if(callback(walker.currentNode)===true)break;
 }
@@ -100,6 +102,13 @@ function maxSegment(height,breaks){
   return max;
 }
 
+function horizontalFitRatio(columnBox,ink){
+  var paintedWidth=Math.max(columnBox.right,ink.right)-Math.min(columnBox.left,ink.left);
+  // Do not reserve a pixel from already-fitting content: that makes every
+  // pass shrink a full-width block forever, even when there is no overflow.
+  return paintedWidth<=columnBox.width+1?1:columnBox.width/paintedWidth;
+}
+
 function geometry(info,template){
   var columns=Math.max(1,Number(info.columns)||1),gap=Number(info.columnGapMm)||0;
   var header=template==="book"?((Number(info.headerHeightPt)||25)*25.4/72):0;
@@ -119,7 +128,7 @@ function measureNodes(layer,records,geo,scales){
     node.style.zoom=String(currentScale);
     var box=node.getBoundingClientRect(),height=roundMm(box.height/pxPerMm),breaks=safeBreaks(node,pxPerMm);
     var ink=inkBounds(node),columnBox=layer.getBoundingClientRect();
-    var horizontalRatio=Math.min(1,(columnBox.width-1)/Math.max(columnBox.width,ink.right-columnBox.left));
+    var horizontalRatio=horizontalFitRatio(columnBox,ink);
     return {id:record.id,index:index,record:record,node:node,heightMm:height,safeBreaksMm:breaks,scale:currentScale,horizontalRatio:horizontalRatio,maxSegmentMm:maxSegment(height,breaks)};
   });
 }
@@ -330,5 +339,6 @@ async function render(options){
   }finally{layer.remove()}
 }
 
-global.EverflowBrowserLayout={render:render,waitForResources:waitForResources,geometry:geometry,pxPerMm:PX_PER_MM};
+global.EverflowBrowserLayout={render:render,waitForResources:waitForResources,geometry:geometry,pxPerMm:PX_PER_MM,
+  horizontalFitRatio:horizontalFitRatio,paginate:paginate};
 })(window);
