@@ -35,20 +35,34 @@ main{padding:29px min(4vw,40px) 60px;min-width:0}.topline{display:flex;justify-c
 @media(max-width:830px){header.top{height:59px;padding:0 13px}.nav{font-size:11px;gap:10px}.layout{display:block}aside{position:static;height:auto;display:none;border-bottom:1px solid var(--border)}aside.open{display:flex}#papers{max-height:55vh}main{padding:14px 12px}.mobile-nav{display:block;margin-bottom:13px}.pill{display:none}.toolbar{align-items:flex-start}.buttons{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}.buttons button{font-size:10px;padding:10px 3px}.sheet{margin:0 auto}.topline h2{font-size:23px}}
 @page{size:A4;margin:0}
 @media print{body{background:#fff}header.top,aside,.mobile-nav,.topline,.toolbar,#status,#answers,.footer{display:none!important}.layout,main,#sheets{display:block!important;padding:0!important;margin:0!important;width:100%!important;zoom:1!important}.sheet{width:210mm;height:297mm;max-width:none;break-after:page;page-break-after:always;box-shadow:none;border:0;margin:0;padding:17mm 18mm 14mm}.sheet:last-child{break-after:auto}}
-</style></head>
+</style><link rel="stylesheet" href="./bb-layout.css?v=20261013-3"><style id="printPageRule">@page{size:A4 portrait;margin:0}</style></head>
 <body>
-<header class="top"><a class="brand" href="../"><span class="logo">E</span><span>Everflow<small>PAPER STUDIO / TEST</small></span></a><nav class="nav"><a href="../editor/">正式编辑器 ↗</a><a href="../">返回做题本</a></nav></header>
+<header class="top"><a class="brand" href="../"><span class="logo">E</span><span>Everflow<small>PAPER STUDIO / TEST</small></span></a><nav class="nav"><button id="demoTop" type="button" class="demo-nav">体验示例题</button><a href="../editor/">正式编辑器 ↗</a><a href="../">返回做题本</a></nav></header>
 <div class="layout">
-<aside id="sidebar"><div class="sideintro"><div class="eyebrow">LOCAL · PRIVATE</div><h1>数学二模拟卷</h1><p>独立测试页，不修改正式题库。上传你的 ZIP 后查看全部模拟卷目录。</p></div>
-<label class="upload" for="file">↥ 导入本地题库 ZIP / JSON</label><input hidden id="file" type="file" accept=".zip,.json,.everflow"><div id="uploadStatus">尚未导入。本页面不会上传试卷、答案或图片到服务器。</div>
+<aside id="sidebar"><div class="sideintro"><div class="eyebrow">LOCAL · PRIVATE</div><h1>数学二模拟卷</h1><p>独立的试卷装订台。示例题打开即看，导入 ZIP 可使用全部模拟卷。</p></div>
+<label class="upload" for="file">↥ 导入本地题库 ZIP / JSON</label><input hidden id="file" type="file" accept=".zip,.json,.everflow"><div id="uploadStatus">示例题可直接体验。其他模拟卷需本地导入，试题不会上传到服务器。</div>
 <div class="controls"><input id="query" type="search" placeholder="搜索试卷、机构、年份"><div class="twoselect"><select id="provider"><option value="">全部机构</option></select><select id="year"><option value="">全部年份</option></select></div></div>
 <div class="listcount" id="count">等待本地导入</div><div id="papers" role="listbox"></div></aside>
-<main><button id="mobileNav" class="mobile-nav" type="button">☰ 展开试卷目录</button>
-<div class="topline"><div><span class="eyebrow">EVERFLOW / LAYOUT TEST</span><h2 id="title">试卷排版测试区</h2><p id="subtitle">导入你的 bbkaoyan_data.zip，选择一套试卷，即可预览 A4 排版和本地 PDF 打印。</p></div><span class="pill">A4 · 210 × 297 mm</span></div>
+<main><div class="mobile-switches"><button id="mobileNav" class="mobile-nav" type="button">☰ 试卷目录</button><button id="mobileSettings" class="mobile-nav" type="button">⚙ 排版设置</button></div>
+<div class="topline"><div><span class="eyebrow">EVERFLOW / LAYOUT TEST</span><h2 id="title">试卷排版测试区</h2><p id="subtitle">导入你的 bbkaoyan_data.zip，选择一套试卷，即可预览 A4 排版和本地 PDF 打印。</p></div><span class="pill">试卷装订台 · <strong>TEST</strong></span></div>
 <div class="toolbar"><label><input type="checkbox" id="ansToggle">显示答案解析</label><label><input type="checkbox" id="ansPrint">打印含答案</label><div class="buttons"><button id="save" disabled>导出工程</button><button id="editor" disabled>打开编辑器</button><button id="print" class="primary" disabled>打印 / PDF</button></div></div>
-<div id="status">请导入本地 ZIP；题目内容仅在当前设备解析，不写入网站公开仓库。</div>
+<div id="status">正在载入原创示例题……本页面仅在当前设备处理导入试卷。</div>
 <div id="sheets"><div class="empty">▤<br>开始前，选择左侧「导入本地题库 ZIP / JSON」。<br>支持你已经提取的 bbkaoyan_data.zip，并仅筛选数学二模拟卷。</div></div>
-<section id="answers" hidden><h3>答案与解析</h3><div id="answerList"></div></section><div class="footer">Everflow · 彼时流年若水 ｜ Test 环境不修改正式排版模板和用户记录</div></main></div>
+<section id="answers" hidden><h3>答案与解析</h3><div id="answerList"></div></section><div class="footer">Everflow · 彼时流年若水 ｜ Test 环境不修改正式排版模板和用户记录</div></main>
+<aside class="settings" id="settings">
+<div class="settings-header"><span class="eyebrow">PAPER LAYOUT</span><h3>装订与排版</h3><p>调整设置后，预览自动重新分页</p></div>
+<div class="setting-group"><div class="setting-label"><b>纸张规格</b><small id="paperSizeInfo">A4 · 210×297 mm</small></div>
+<div class="choice-pair"><button type="button" data-size="a4" class="active">A4 <small>纵向</small></button><button type="button" data-size="a3">A3 <small>横向</small></button></div></div>
+<div class="setting-group"><div class="setting-label"><b>排版模式</b><small>所见即所得</small></div>
+<div class="choice-pair"><button type="button" data-mode="exam" class="active">试卷 <small>连续排题</small></button><button type="button" data-mode="book">做题本 <small>一题一页</small></button></div></div>
+<div class="setting-group"><label class="setting-label" for="titleField"><b>试卷标题</b><small>可修改</small></label>
+<input class="setting-input" id="titleField" maxlength="110" value="数学二 · 排版体验卷（示例题）"></div>
+<div class="setting-group"><label class="setting-label" for="fontSize"><b>正文字号</b><small id="fontNumber">10 pt</small></label><input id="fontSize" type="range" min="9" max="12" step=".5" value="10"></div>
+<div class="setting-group"><label class="setting-label" for="gapSize"><b>题间距</b><small id="gapNumber">13 px</small></label><input id="gapSize" type="range" min="6" max="26" step="1" value="13"></div>
+<div class="setting-group"><div class="setting-label"><b>预览缩放</b><small id="zoomValue">100%</small></div>
+<div class="zoom-row"><button type="button" id="zoomDown">− 缩小</button><button type="button" id="zoomUp">＋ 放大</button></div></div>
+<div class="setting-foot"><div><b id="pageStats">— 页 · — 题</b><small>浏览器本地排版</small></div><button id="demoButton" type="button">体验示例题 ↗</button></div>
+</aside></div>
 <script>
 (function(){
 'use strict';
