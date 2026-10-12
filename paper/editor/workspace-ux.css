@@ -69,3 +69,15 @@
  .workspace-dialog-content{padding:12px}
  .workspace-graph-actions{gap:6px}
 }
+
+/* Exact exam-cover geometry from user's Everflow 数二90套 ExamA4 reference:
+   centered title at 120.9mm, author at 148.05mm, low-left line & date. */
+.everflow-refined-cover .everflow-cover-kicker,
+.everflow-refined-cover .everflow-cover-sub,
+.everflow-refined-cover .everflow-cover-note{display:none!important}
+.everflow-refined-cover .browser-cover-title{top:120.9mm!important;left:18mm!important;right:18mm!important;font-family:"Everflow Song",serif!important;font-size:24.7871pt!important;font-weight:700!important;line-height:30pt!important;padding:0!important}
+.everflow-refined-cover .browser-cover-signature{top:148.05mm!important;left:18mm!important;right:18mm!important;font-family:"Everflow Song",serif!important;font-size:18.3313pt!important;font-weight:700!important;line-height:18pt!important}
+.everflow-refined-cover .browser-cover-line{top:266mm!important;left:18mm!important;width:50mm!important;border-top:.4pt solid #111!important}
+.everflow-refined-cover .browser-cover-brand{left:19.3mm!important;top:270.55mm!important;font-family:"Everflow Song",serif!important;font-size:9.4645pt!important;font-weight:700!important;line-height:12pt!important}
+.everflow-refined-cover .browser-cover-date{left:19.3mm!important;top:277.15mm!important;color:#d32728!important;font-size:8.9664pt!important;font-weight:700!important;line-height:11pt!important}
+body[data-template="book"] .everflow-refined-cover .browser-cover-title{font-size:21.9178pt!important}
