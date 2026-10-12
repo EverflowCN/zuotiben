@@ -1,10 +1,10 @@
-/* Book showcase: two genuine Everflow Book physical-page previews. */
+/* Three genuine mother-template pages: cover / compact A4 / landscape PAD. */
 (function(){
  "use strict";
  var stage=document.getElementById("psBooksStage");if(!stage)return;
  var cards=Array.from(stage.querySelectorAll(".ps-book-card"));
  var dots=Array.from(document.querySelectorAll("[data-book-dot]"));
- var titles=["Book · A4 紧凑做题本","Book · PAD 竖版做题本"];
+ var titles=["封面 · Everflow 原模板","Book · A4 密集做题本","Book · PAD 横版单题做题本"];
  var selected=0;
  function update(index,focus){
    selected=(index+cards.length)%cards.length;
@@ -12,14 +12,14 @@
      var rel=(i-selected+cards.length)%cards.length;
      card.classList.toggle("is-centered",rel===0);
      card.classList.toggle("is-next",rel===1);
-     card.classList.toggle("is-prev",cards.length>2&&rel===cards.length-1);
+     card.classList.toggle("is-prev",rel===cards.length-1);
      card.setAttribute("aria-current",String(rel===0));
      card.tabIndex=rel===0?0:-1;
    });
    dots.forEach(function(dot,i){dot.setAttribute("aria-current",String(i===selected))});
    document.getElementById("psBookLabel").textContent=titles[selected];
    var badge=document.getElementById("psBookModeBadge");
-   if(badge)badge.textContent=selected===0?"Book compact · A4":"Book padp · 200×250 mm";
+   if(badge)badge.textContent=["Book · 封面","Book compact · 210×297 mm","Book padl · 200×150 mm"][selected];
    if(focus)cards[selected].focus({preventScroll:true});
  }
  cards.forEach(function(card,i){
