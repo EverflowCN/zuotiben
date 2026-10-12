@@ -59,6 +59,21 @@ async function inspect(browser,name){
       }
       assert.ok(m.pages[0].titleSigGap>2,name+' '+vp.label+' cover title overlaps signature '+JSON.stringify(m.pages[0]));
       assert.ok(m.pages[0].titleLines<=1.1,name+' '+vp.label+' cover title wraps '+JSON.stringify(m.pages[0]));
+      if(vp.width<=980){
+        const header=await page.evaluate(()=>({
+          height:document.querySelector('.ps-header').getBoundingClientRect().height,
+          navHidden:getComputedStyle(document.querySelector('.ps-header-links')).display==='none',
+          menuVisible:getComputedStyle(document.querySelector('.ps-header-mobile-menu')).display!=='none'
+        }));
+        assert.ok(header.height<=76,name+' '+vp.label+' header grew into vertically wrapped text '+JSON.stringify(header));
+        assert.ok(header.navHidden&&header.menuVisible,name+' '+vp.label+' menu not responsive');
+        await page.locator('#psMobileMenu summary').click();
+        assert.equal(await page.locator('#psMobileMenu').evaluate(e=>e.open),true);
+        assert.equal(await page.locator('.ps-mobile-nav-popover a').count(),4);
+        await page.locator('#psMobileMenu summary').click();
+      }else{
+        assert.equal(await page.locator('#psMobileMenu').isVisible(),false);
+      }
       await page.screenshot({path:'test-results/showcase-'+name+'-'+vp.label+'.png',fullPage:false});
     }
     assert.deepEqual(errors,[],name+' console errors '+errors.join(' | '));
