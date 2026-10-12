@@ -7,17 +7,19 @@
 var DB="everflow-paper-local-v1",CURRENT="zuotiben-local-paper-v1",ACTIVE="everflow-active-paper-id-v1";
 var pending=Promise.resolve(),database=null,backend="indexeddb",memory=new Map();
 function uid(){return "ep-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)}
+function normalizeFolderId(x){return typeof x==="string"&&x.length<100?x:""}
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function open(){
  if(database)return database;
  database=new Promise(function(resolve){
    if(!global.indexedDB){backend="memory";resolve(null);return}
    try{
-     var request=indexedDB.open(DB,1);
+     var request=indexedDB.open(DB,2);
      request.onupgradeneeded=function(){
        var db=request.result;
        if(!db.objectStoreNames.contains("papers"))db.createObjectStore("papers",{keyPath:"id"});
        if(!db.objectStoreNames.contains("history"))db.createObjectStore("history",{keyPath:"key"});
+       if(!db.objectStoreNames.contains("folders"))db.createObjectStore("folders",{keyPath:"id"});
      };
      request.onsuccess=function(){resolve(request.result)};
      request.onerror=function(){backend="memory";resolve(null)};
@@ -58,7 +60,7 @@ function activeId(){try{return localStorage.getItem(ACTIVE)||""}catch(e){return 
 function setActive(id){localStorage.setItem(ACTIVE,id)}
 async function list(){
  var out=(await all("papers")).sort((a,b)=>String(b.modified||"").localeCompare(String(a.modified||"")));
- return out.map(p=>({id:p.id,title:p.title,sourceName:p.sourceName,count:p.data?.questions?.length||0,modified:p.modified,created:p.created}));
+ return out.map(p=>({id:p.id,title:p.title,folderId:p.folderId||"",sourceName:p.sourceName,count:p.data?.questions?.length||0,modified:p.modified,created:p.created}));
 }
 function serialize(data){
  var o=clone(data||{}),now=new Date().toISOString();
@@ -70,7 +72,7 @@ async function savePaper(data,opts){
  opts=opts||{};var id=opts.id||activeId()||uid(),now=new Date().toISOString();
  var existing=await get("papers",id),record={
   id:id,title:data.title||"未命名试卷",sourceName:data.sourceName||"本地草稿",
-  created:existing?.created||now,modified:now,data:serialize(data)
+  created:existing?.created||now,modified:now,folderId:normalizeFolderId(opts.folderId===undefined?existing?.folderId:opts.folderId),data:serialize(data)
  };
  await put("papers",record);
  if(opts.checkpoint!==false){
@@ -102,10 +104,10 @@ async function openPaper(id){
  setActive(record.id);
  return record;
 }
-async function newPaper(title,questions){
+async function newPaper(title,questions,folderId){
  var draft={version:2,type:"everflow-local-paper",template:"exam",layout:"a4",title:title||"新试卷",coverTitle:title||"新试卷",sourceName:"本机新增",questions:questions||[{id:uid(),content:"",options:[],section:"一、选择题",type:"选择题",showOptions:true}],originalIds:[]};
  draft.originalIds=draft.questions.map(x=>x.id);
- var rec=await savePaper(draft,{id:uid(),checkpoint:true,label:"新建试卷"});
+ var rec=await savePaper(draft,{id:uid(),folderId:normalizeFolderId(folderId),checkpoint:true,label:"新建试卷"});
  localStorage.setItem(CURRENT,JSON.stringify(rec.data));return rec;
 }
 async function history(id){return (await all("history")).filter(x=>x.paperId===id).sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(x=>({key:x.key,at:x.at,label:x.label,questions:x.data.questions?.length||0}))}
@@ -116,10 +118,59 @@ async function restore(key){
  return saved;
 }
 async function removePaper(id){await del("papers",id);for(const item of (await all("history")).filter(x=>x.paperId===id))await del("history",item.key);if(activeId()===id)localStorage.removeItem(ACTIVE)}
+async function listFolders(){
+ return (await all("folders")).map(function(x){return {id:x.id,name:x.name,created:x.created}})
+ .sort(function(a,b){return a.name.localeCompare(b.name,"zh-CN")});
+}
+async function createFolder(name){
+ name=String(name||"").trim().slice(0,60);
+ if(!name)throw new Error("请输入文件夹名称");
+ var now=new Date().toISOString(),r={id:"folder-"+uid(),name:name,created:now};
+ await put("folders",r);return r;
+}
+async function renameFolder(id,name){
+ name=String(name||"").trim().slice(0,60);
+ if(!name)throw new Error("文件夹名称不能为空");
+ var previous=await get("folders",id);
+ if(!previous)throw new Error("未找到该文件夹");
+ previous.name=name;await put("folders",previous);return previous;
+}
+async function movePaper(id,folderId){
+ var current=await get("papers",id);
+ if(!current)throw new Error("项目不存在");
+ folderId=normalizeFolderId(folderId);
+ if(folderId&&!(await get("folders",folderId)))throw new Error("目标文件夹不存在");
+ current.folderId=folderId;current.modified=new Date().toISOString();
+ await put("papers",current);
+ return current;
+}
+async function deleteFolder(id){
+ if(!(await get("folders",id)))return;
+ // Deleting a folder never deletes papers or their history.
+ for(var paper of (await all("papers")).filter(x=>x.folderId===id)){
+  paper.folderId="";await put("papers",paper);
+ }
+ await del("folders",id);
+}
+async function saveBatch(papers,folderId){
+ folderId=normalizeFolderId(folderId);
+ if(folderId&&!(await get("folders",folderId)))throw new Error("目标文件夹不存在");
+ if(!Array.isArray(papers)||!papers.length)throw new Error("未找到可导入的试卷");
+ if(papers.length>100)throw new Error("单次最多导入 100 份试卷");
+ var result=[];
+ for(var p of papers){
+  if(!p||!Array.isArray(p.questions)||!p.questions.length)continue;
+  var data=serialize(p);
+  // A newly imported paper is always a new entity, never a replacement.
+  result.push(await savePaper(data,{id:uid(),folderId:folderId,checkpoint:false,activate:false}));
+ }
+ if(!result.length)throw new Error("ZIP 中没有可导入的有效题目");
+ return result;
+}
 function queuedSave(data,opts){
  var value=clone(data);
  pending=pending.then(()=>savePaper(value,opts)).catch(err=>console.error("Everflow local history save failed",err));
  return pending;
 }
-global.EverflowArchive={open,list,getPaper:id=>get("papers",id),savePaper,queuedSave,activeId,setActive,ensureActive,openPaper,newPaper,history,restore,removePaper,backend:()=>backend};
+global.EverflowArchive={open,list,getPaper:id=>get("papers",id),savePaper,queuedSave,activeId,setActive,ensureActive,openPaper,newPaper,history,restore,removePaper,listFolders,createFolder,renameFolder,movePaper,deleteFolder,saveBatch,backend:()=>backend};
 })(window);
