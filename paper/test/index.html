@@ -85,7 +85,7 @@ function clearUrls(){state.urls.forEach(URL.revokeObjectURL);state.urls=[]}
 function resize(){var width=state.size==='a3'?1588:794;var room=Math.max(240,sid.parentElement.clientWidth-26);var fit=Math.min(1,room/width);var applied=Math.max(.2,Math.min(1.1,fit*state.zoom));sid.style.zoom=String(applied);el('zoomValue').textContent=Math.round(applied*100)+'%'}
 window.addEventListener('resize',resize);resize();
 function options(q){var o=q.options||{};return Array.isArray(o)?o.map(v=>String(typeof v==='object'?(v.text||v.content||''):v||'')):Object.keys(o).filter(k=>/^[A-H]$/.test(k)).sort().map(k=>String(o[k]||''))}
-function normalize(e,i){var q=e.question||e;var section=e.section_title||q.section||'试题';return {id:q.id||i+1,n:Number(e.question_number)||i+1,section:section,content:String(q.stem_latex||q.stem||q.content||''),options:(section.includes('选择')||!e.section_title&&String(q.type||'').includes('选择'))?options(q):[],assets:q.assets||[],answer:String(q.correct_answer_latex||q.correct_answer||q.answer||''),explanation:String(q.answer_explanation||q.explanation_latex||q.explanation||q.analysis||'')}}
+function normalize(e,i){var q=e.question||e;var section=e.section_title||q.section||'试题';return {id:q.id||i+1,n:Number(e.question_number)||i+1,section:section,content:String(q.stem_latex||q.stem||q.content||''),options:(section.includes('选择')||!e.section_title&&String(q.type||'').includes('选择'))?options(q):[],assets:q.assets||[],images:q.images||[],answer:String(q.correct_answer_latex||q.correct_answer||q.answer||''),explanation:String(q.answer_explanation||q.explanation_latex||q.explanation||q.analysis||'')}}
 function math(src){var frag=document.createDocumentFragment(),s=String(src||''),rex=/\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$|(?<!\\)\$([^$\n]+?)\$/g,m,last=0;while((m=rex.exec(s))){if(m.index>last)frag.append(document.createTextNode(s.slice(last,m.index)));var d=m[1]!=null||m[3]!=null,v=m[1]??m[2]??m[3]??m[4],n=ui('span',d?'mathdisplay':'mathinline');try{if(window.temml)n.innerHTML=temml.renderToString(v,{displayMode:d,throwOnError:false,trust:false});else n.textContent=m[0]}catch(e){n.textContent=m[0]}frag.append(n);last=rex.lastIndex}if(last<s.length)frag.append(document.createTextNode(s.slice(last)));return frag}
 function list(){var q=el('query').value.trim().toLowerCase(),p=el('provider').value,y=el('year').value;var a=state.docs.filter(v=>(!p||v.provider===p)&&(!y||String(v.year)===y)&&(!q||(v.title+' '+v.provider+' '+v.series+' '+v.year).toLowerCase().includes(q)));el('count').textContent='显示 '+a.length+' / '+state.docs.length+' 份试卷（含演示）';var f=document.createDocumentFragment();a.forEach(v=>{var b=ui('button','item'+(state.current&&state.current.id===v.id?' active':''));b.type='button';b.setAttribute('role','option');b.append(ui('strong','',v.title),ui('small','',v.provider+' · '+v.year+' 年 · '+v.count+' 题'));b.onclick=()=>select(v);f.append(b)});el('papers').replaceChildren(f)}
 function setupFilters(){var a=[...new Set(state.docs.map(v=>v.provider))].sort((a,b)=>a.localeCompare(b,'zh-CN'));var ys=[...new Set(state.docs.map(v=>v.year))].sort((a,b)=>b-a);el('provider').replaceChildren(new Option('全部机构',''));el('year').replaceChildren(new Option('全部年份',''));a.forEach(x=>el('provider').add(new Option(x,x)));ys.forEach(x=>el('year').add(new Option(x+' 年',String(x))))}
@@ -267,7 +267,30 @@ async function importFile(file){
    msg('请检查文件内容：'+e.message);
  }
 }
-function everflow(){var p=state.current,qs=state.raw.questions.map(normalize);return {version:2,type:'everflow-local-paper',template:state.mode==='book'?'book':'exam',layout:state.mode==='book'?'single':state.size,title:p.title,coverTitle:p.title,header:'',testVisualConfig:{fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),withCover:el('coverToggle').checked},questions:qs.map(q=>({id:'bb-'+p.id+'-'+q.id,content:q.content,options:q.options,section:q.section,type:q.section.includes('选择')?'选择题':q.section.includes('填空')?'填空题':'解答题',showOptions:q.section.includes('选择')&&q.options.length>0,answer:q.answer,explanation:q.explanation,gap:0,breakBefore:false})),originalIds:qs.map(q=>'bb-'+p.id+'-'+q.id)}}
+function everflow(){var p=state.current,qs=state.raw.questions.map(normalize);return {version:2,type:'everflow-local-paper',template:state.mode==='book'?'book':'exam',layout:state.mode==='book'?'single':state.size,title:p.title,coverTitle:p.title,header:'',testVisualConfig:{fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),withCover:el('coverToggle').checked},questions:qs.map(q=>({id:'bb-'+p.id+'-'+q.id,content:q.content,options:q.options,section:q.section,type:q.section.includes('选择')?'选择题':q.section.includes('填空')?'填空题':'解答题',showOptions:q.section.includes('选择')&&q.options.length>0,answer:q.answer,explanation:q.explanation,images:q.images||[],gap:0,breakBefore:false})),originalIds:qs.map(q=>'bb-'+p.id+'-'+q.id)}}
+async function fullProjectWithImages(){
+  const project=everflow();
+  if(!state.zip||!state.raw)return project;
+  const normalized=state.raw.questions.map(normalize);
+  let total=0;
+  for(let i=0;i<normalized.length;i++){
+    const q=normalized[i],figures=[];
+    for(const asset of q.assets||[]){
+      if(!asset.id||!['stem','option','options','question'].includes(asset.usage||'stem'))continue;
+      let ext=(String(asset.storage_path||'').match(/\.(png|jpe?g|webp|gif|svg)$/i)||[])[0]||'.jpg';
+      let candidate='bbkaoyan_data/assets/'+state.current.id+'/q'+q.id+'/'+(asset.usage||'stem')+'_'+asset.id+ext;
+      let file=state.zip.file(candidate);
+      if(!file)throw Error('试题 '+(i+1)+' 缺少图片 '+candidate+'；请检查原 ZIP。');
+      let data=await file.async('base64');
+      total+=data.length;
+      if(total>1600000)throw Error('图片累计超过本机安全导入上限（约 1.6 MB）。可拆分试卷后导入，避免浏览器草稿存储失败。');
+      let mime=/\.svg$/i.test(ext)?'image/svg+xml':/\.png$/i.test(ext)?'image/png':/\.webp$/i.test(ext)?'image/webp':/\.gif$/i.test(ext)?'image/gif':'image/jpeg';
+      figures.push({src:'data:'+mime+';base64,'+data,alt:String(asset.alt_text||'试题配图'),usage:asset.usage||'stem'});
+    }
+    if(figures.length)project.questions[i].images=(project.questions[i].images||[]).concat(figures);
+  }
+  return project;
+}
 function download(name,text){var url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'})),a=ui('a');a.href=url;a.download=name.replace(/[\\/:*?"<>|]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 el('file').onchange=e=>{var f=e.target.files[0];if(f)importFile(f);e.target.value=''};
 el('historyButton').onclick=openHistory;
@@ -279,11 +302,19 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')el('historyModal').h
 el('ansToggle').onchange=()=>{el('answers').hidden=!el('ansToggle').checked;scheduleHistorySave()};
 el('ansPrint').onchange=()=>{if(state.raw&&!state.loading)render().catch(e=>msg(e.message))};
 el('coverToggle').onchange=()=>rerender();
-el('save').onclick=()=>{if(state.raw)download(state.current.title+'.everflow',JSON.stringify(everflow(),null,2))};
+el('save').onclick=async()=>{
+ if(!state.raw)return;
+ try{
+   el('save').disabled=true;
+   const project=await fullProjectWithImages();
+   download(state.current.title+'.everflow',JSON.stringify(project,null,2));
+ }catch(e){msg('工程保存失败：'+e.message)}
+ finally{el('save').disabled=false}
+};
 el('editor').onclick=async()=>{try{
   if(!state.raw||state.loading)throw Error('请选择已经完成预览的试卷');
   await saveHistory(true);
-  var project=everflow(),archive=window.EverflowArchive;
+  var project=await fullProjectWithImages(),archive=window.EverflowArchive;
   if(archive){
     var existing=JSON.parse(localStorage.getItem('zuotiben-local-paper-v1')||'null');
     if(existing?.questions?.length)await archive.savePaper(existing,{checkpoint:true,label:'模板体验导入前备份'});
