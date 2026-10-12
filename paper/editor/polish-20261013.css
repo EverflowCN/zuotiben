@@ -1,0 +1,308 @@
+/* Everflow Paper Studio 2026-10-13 / readability and neutral UI.
+ * Presentation-only override: leaves validated paper millimeter geometry intact.
+ */
+:root{
+  --ef-green:#315e51;
+  --ef-green-dim:#edf5f0;
+  --ef-border:#dce7e0;
+  --ef-ink:#283a34;
+  --ef-muted:#718278;
+  --ef-canvas:#eef3ef;
+  --ef-hover:#f1f6f2;
+  --ef-focus:#6b9a83;
+}
+body.editor-page{background:var(--ef-canvas)!important;color:var(--ef-ink)}
+/* One clean top bar, no black legacy PDF-editor chrome or dark chips. */
+body.editor-page .texpage-topbar{
+  height:59px!important;min-height:59px!important;padding:0 18px!important;
+  background:rgba(252,253,251,.98)!important;
+  border-bottom:1px solid var(--ef-border)!important;
+  color:var(--ef-ink)!important;
+  box-shadow:0 1px 0 #ffffffb8!important;
+  backdrop-filter:blur(12px)!important;
+}
+body.editor-page .texpage-topbar .brand{color:#263b32!important}
+body.editor-page .texpage-topbar .brand small{color:#8a988f!important}
+body.editor-page .texpage-topbar .brand-mark{
+  background:var(--ef-green)!important;border:0!important;color:white!important;
+  width:32px!important;height:32px!important;border-radius:9px!important
+}
+body.editor-page .texpage-topbar .local-pill,
+body.editor-page .texpage-topbar .save-state{color:#527568!important;font-size:11px!important;white-space:nowrap}
+body.editor-page .texpage-topbar .ghost-btn,
+body.editor-page .texpage-topbar .icon-text-btn{
+  background:#fff!important;color:#3a5d4f!important;border:1px solid #d8e4da!important;
+  box-shadow:none!important;border-radius:9px!important;min-height:35px!important
+}
+body.editor-page .texpage-topbar .ghost-btn:hover,
+body.editor-page .texpage-topbar .icon-text-btn:hover{background:#eaf4ec!important;border-color:#adcbb7!important}
+body.editor-page .texpage-topbar .primary-btn{background:var(--ef-green)!important;color:#fff!important;border:1px solid var(--ef-green)!important;border-radius:9px!important}
+body.editor-page .texpage-topbar .mode-switch{background:#f0f5f0!important;border:1px solid #dae7dd!important;border-radius:9px!important}
+body.editor-page .texpage-topbar .mode-switch button{color:#688073!important}
+body.editor-page .texpage-topbar .mode-switch button[aria-pressed="true"]{
+  background:#fff!important;color:var(--ef-green)!important;box-shadow:0 1px 5px #294a3021!important;border-radius:7px!important
+}
+body.editor-page .texpage-topbar .editor-top-actions{gap:9px!important;align-items:center!important}
+body.editor-page .texpage-topbar .template-trigger{
+  background:#f2f6f2!important;border-color:#d3e1d6!important;
+  font-size:11px!important;color:#315344!important;max-width:220px!important
+}
+body.editor-page .texpage-topbar .template-popover{
+  background:#fff!important;border:1px solid #d6e5da!important;box-shadow:0 15px 40px #233c2d23!important
+}
+/* Preserve the existing responsive workbench, correcting its header height. */
+body.editor-page .texpage-workbench{height:calc(100dvh - 59px)!important;background:#f7faf7!important}
+body.editor-page .pane-resizer{background:#e5ede6!important}
+body.editor-page .pane-resizer:hover,body.editor-page .pane-resizer.is-dragging{background:#afcbbb!important}
+body.editor-page .texpage-navigator{background:#fbfdfb!important;border-right:1px solid var(--ef-border)!important}
+body.editor-page .navigator-head{
+  background:#f9fbf9!important;border-bottom:1px solid var(--ef-border)!important;
+  padding:10px 13px!important;height:auto!important;min-height:64px!important
+}
+body.editor-page .navigator-title span{color:#84948a!important;font-size:9px!important}
+body.editor-page .navigator-title strong{font-size:12px!important;color:#293e33!important}
+body.editor-page .navigator-head>b{background:#e9f2ec!important;color:#42664f!important;border-radius:8px!important}
+body.editor-page .workspace-projects{
+  background:#fbfdfb!important;border-bottom:1px solid var(--ef-border)!important;
+  padding:12px 11px 9px!important
+}
+body.editor-page .workspace-heading{font-size:12px!important;color:#385448!important}
+body.editor-page .workspace-heading button,body.editor-page .workspace-mini-actions button{
+  background:#fff!important;border:1px solid #d6e6da!important;color:#446b54!important;
+  border-radius:9px!important;font-size:11px!important;min-height:33px!important
+}
+body.editor-page .workspace-paper-list{max-height:136px!important;gap:3px!important;margin:8px 0!important;scrollbar-width:thin}
+body.editor-page .workspace-paper{padding:8px!important;min-height:36px!important;border-radius:9px!important;border:1px solid transparent!important}
+body.editor-page .workspace-paper:hover{background:#f0f6f0!important}
+body.editor-page .workspace-paper.is-active{
+  background:#e8f3eb!important;border-color:#cae3d1!important;color:#2f6a49!important;
+  box-shadow:none!important
+}
+body.editor-page .workspace-paper-icon{color:#56836a!important}
+body.editor-page .workspace-help{font-size:10px!important;line-height:1.65!important;color:#89998b!important;margin:6px 0 0!important}
+body.editor-page .workspace-mini-actions{gap:6px!important}
+body.editor-page .workspace-mini-actions button:hover{background:#eaf4ed!important}
+body.editor-page .navigator-tabs{
+  background:#f6faf6!important;border-bottom:1px solid var(--ef-border)!important;
+  padding:6px 10px!important;gap:5px!important;min-height:49px!important
+}
+body.editor-page .navigator-tabs button{
+  color:#71877a!important;font-size:12px!important;height:34px!important;
+  border-radius:9px!important;background:transparent!important
+}
+body.editor-page .navigator-tabs button[aria-selected="true"]{
+  color:#2d6045!important;background:#fff!important;box-shadow:0 1px 5px #183c2514!important
+}
+body.editor-page #outlinePanel .order-toolbar{
+  background:#fff!important;min-height:44px!important;padding:8px 10px!important;border-bottom:1px solid #e8eee9!important;
+}
+body.editor-page .texpage-navigator .order-toolbar strong{font-size:11px!important;color:#536958!important}
+body.editor-page .texpage-navigator .order-toolbar-actions .text-btn{
+  color:#426c52!important;font-size:10px!important;padding:5px 6px!important;
+  border-radius:7px!important
+}
+body.editor-page .texpage-navigator .order-toolbar-actions .text-btn:hover{background:#eaf3ec!important}
+body.editor-page #outlinePanel .order-list{
+  padding:8px!important;scrollbar-width:thin!important;background:#fbfdfb!important;
+}
+/* Remove ALL reddish left strips, including multi-select/inset shadow. */
+body.editor-page .texpage-navigator .order-item,
+body.editor-page .texpage-navigator .order-item.is-selected,
+body.editor-page .texpage-navigator .order-item.is-multi-selected{
+  min-height:67px!important;padding:9px 7px!important;
+  border:1px solid transparent!important;border-left:1px solid transparent!important;
+  border-radius:10px!important;outline:none!important;box-shadow:none!important;
+  background:transparent!important;
+  transition:background .13s,border-color .13s!important;
+}
+body.editor-page .texpage-navigator .order-item:hover{
+  background:#f0f6f0!important;border-color:#e0ebe1!important;
+}
+body.editor-page .texpage-navigator .order-item.is-selected{
+  background:#eaf5ec!important;border-color:#bbd9c4!important;
+}
+body.editor-page .texpage-navigator .order-item.is-multi-selected{
+  background:#e8f3eb!important;border-color:#94c6a2!important;
+}
+body.editor-page .texpage-navigator .order-check{accent-color:#4d8a65!important}
+body.editor-page .texpage-navigator .order-copy b{
+  font-size:11px!important;font-weight:600!important;line-height:1.48!important;
+  color:#31483c!important;display:-webkit-box!important;-webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;overflow:hidden!important;word-break:break-word!important
+}
+body.editor-page .texpage-navigator .order-copy small{
+  color:#879a8d!important;font-size:10px!important;line-height:1.45!important;
+  white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;overflow:hidden!important
+}
+body.editor-page .texpage-navigator .order-num{
+  color:#416653!important;min-width:24px!important;font-size:11px!important;font-weight:700!important
+}
+body.editor-page .texpage-navigator .drag-handle{color:#a1b2a7!important}
+body.editor-page .texpage-navigator .order-controls{gap:2px!important}
+body.editor-page .texpage-navigator .order-controls button{background:#fff!important;border:1px solid #dce8dd!important;border-radius:5px!important;color:#50725f!important}
+body.editor-page .navigator-actions{border-color:var(--ef-border)!important;background:#fbfdfb!important}
+/* Editorial surfaces: readable hierarchy, less visual noise. */
+body.editor-page .texpage-editor-pane,body.editor-page .texpage-preview-pane{border-color:var(--ef-border)!important}
+body.editor-page .texpage-editor-pane{background:#fff!important}
+body.editor-page .editor-tabbar{background:#f5f9f6!important;border-bottom:1px solid #e2ebe3!important}
+body.editor-page .editor-tabbar .editor-tab{color:#41614e!important}
+body.editor-page .editor-tabbar .tab-dot{background:#589470!important}
+body.editor-page .editor-commandbar{background:#fff!important;border-color:#e1ebe3!important}
+body.editor-page .editor-commandbar strong{color:#314a3c!important;font-size:13px!important}
+body.editor-page .editor-command-actions .text-btn{color:#496e58!important;border-color:#d6e4da!important;border-radius:7px!important}
+body.editor-page .texpage-question-editor{
+  background:#fff!important;scrollbar-width:thin!important
+}
+body.editor-page .texpage-question-editor textarea,body.editor-page .texpage-question-editor input,
+body.editor-page .texpage-question-editor select{
+  border:1px solid #dce7df!important;background:#fcfdfb!important;
+  border-radius:9px!important;color:#2a3e33!important
+}
+body.editor-page .texpage-question-editor textarea:focus,
+body.editor-page .texpage-question-editor input:focus,
+body.editor-page .texpage-question-editor select:focus{
+  outline:2px solid #93be9d70!important;border-color:#70a17d!important
+}
+/* The right toolbar is grouped into two simple balanced rows. */
+body.editor-page .texpage-preview-pane{background:#e6ece6!important}
+body.editor-page .preview-toolbar{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:31px 35px!important;
+  gap:5px 10px!important;
+  min-height:83px!important;
+  height:83px!important;
+  flex:0 0 83px!important;
+  padding:7px 13px!important;
+  background:#fbfdfb!important;
+  color:#3e594a!important;
+  border-bottom:1px solid var(--ef-border)!important;
+}
+body.editor-page .preview-toolbar-left{grid-column:1!important;grid-row:1!important;justify-self:start!important;max-width:100%!important;overflow:hidden!important}
+body.editor-page .preview-toolbar-left strong{
+  max-width:220px!important;color:#344b3b!important;font-size:11px!important;
+  font-weight:700!important
+}
+body.editor-page .preview-status-dot{background:#4c9a6b!important;width:7px!important;height:7px!important}
+body.editor-page .preview-toolbar .preview-chip{
+  border:1px solid #d3e5d8!important;color:#53745e!important;background:#eef7f0!important;
+  font-size:9px!important;border-radius:7px!important;height:24px!important;min-height:24px!important
+}
+body.editor-page .preview-toolbar-right{grid-column:2!important;grid-row:1!important;justify-self:end!important;gap:7px!important}
+body.editor-page .preview-toolbar-center{grid-column:1!important;grid-row:2!important;justify-self:start!important;gap:4px!important;color:#45634e!important}
+body.editor-page .preview-toolbar-extra{
+  grid-column:2!important;grid-row:2!important;justify-self:end!important;position:static!important;
+  min-width:0!important;display:flex!important;gap:9px!important;
+  font-size:11px!important;color:#59725e!important;background:transparent!important;
+  padding:0!important;white-space:nowrap!important
+}
+body.editor-page .preview-toolbar-extra label{gap:5px!important;font-weight:600!important}
+body.editor-page .preview-toolbar-extra input{accent-color:#478765!important}
+body.editor-page .preview-toolbar .viewer-btn,body.editor-page .preview-toolbar .zoom-indicator{
+  height:30px!important;min-height:30px!important;min-width:30px!important;
+  background:#fff!important;border:1px solid #e0e9e1!important;border-radius:8px!important;
+  padding:0 7px!important;color:#486451!important;font-size:11px!important
+}
+body.editor-page .preview-toolbar .viewer-btn:hover,body.editor-page .preview-toolbar .zoom-indicator:hover{
+  background:#eaf4ed!important;border-color:#bad5be!important
+}
+body.editor-page .preview-toolbar .zoom-indicator{font-weight:750!important;min-width:46px!important}
+body.editor-page .preview-toolbar .page-indicator{color:#5e7967!important;font-size:11px!important;min-width:42px!important}
+body.editor-page .preview-toolbar .toolbar-divider{background:#dbe7df!important}
+body.editor-page .preview-toolbar #printButton,body.editor-page .preview-toolbar #browserPrintButton{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;
+  min-height:32px!important;height:32px!important;padding:0 12px!important;
+  font:650 11px/1.25 system-ui!important;border-radius:8px!important;white-space:nowrap!important
+}
+body.editor-page .preview-toolbar #printButton{
+  border:1px solid #cadfcf!important;background:#edf6ef!important;color:#32664c!important
+}
+body.editor-page .preview-toolbar #browserPrintButton{
+  border:1px solid #315e51!important;background:#315e51!important;color:#fff!important
+}
+body.editor-page .texpage-preview-pane .pdf-status{
+  background:#f3f8f4!important;border-bottom:1px solid #e1ebe3!important;
+  color:#597d63!important;font-size:11px!important;line-height:1.6!important;padding:8px 13px!important
+}
+body.editor-page .texpage-preview-pane .typst-preview{background:#e7ede7!important}
+/* Commercial-use free outline icon components (Lucide / ISC + Feather / MIT). */
+body.editor-page .ef-icon-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important}
+body.editor-page .ef-icon{
+  width:16px;height:16px;flex:0 0 16px;display:inline-block;vertical-align:middle;
+  pointer-events:none;stroke-width:1.9
+}
+body.editor-page .viewer-btn .ef-icon,body.editor-page .icon-text-btn .ef-icon{width:16px;height:16px}
+body.editor-page #saveProjectButton .ef-icon,body.editor-page #printButton .ef-icon{width:15px;height:15px}
+/* Malformed formulas stay readable without raw Temml ParseError. */
+body.editor-page .math-safe-rendered{display:inline;max-width:100%;vertical-align:baseline}
+body.editor-page .math-safe-display{display:block;text-align:center;margin:2mm 0;max-width:100%;overflow-wrap:anywhere}
+body.editor-page .math-safe-fallback{
+  color:#625129;background:#fbf8ec;border-bottom:1px dotted #ba9d59;
+  padding:0 2px;border-radius:2px;overflow-wrap:anywhere;white-space:pre-wrap;
+}
+body.editor-page .paper-inline-solution{overflow-wrap:anywhere!important;word-break:normal!important}
+body.editor-page .paper-inline-solution .math-safe-fallback{font-style:normal!important}
+/* Popovers, buttons, focus styles. */
+body.editor-page .workspace-dialog{border:1px solid #d5e5d8!important}
+body.editor-page .workspace-dialog header{background:#f8fbf8!important}
+body.editor-page button:focus-visible,body.editor-page input:focus-visible,body.editor-page a:focus-visible{
+  outline:2px solid #69a882!important;outline-offset:2px!important
+}
+body.editor-page #outlinePanel .batch-bar{border-color:#dbe7dc!important;background:#f1f7f2!important}
+@media(max-width:1250px){
+ body.editor-page .texpage-topbar .save-state{display:none!important}
+ body.editor-page .preview-toolbar-left strong{max-width:150px!important}
+ body.editor-page .preview-toolbar .preview-chip{display:none!important}
+}
+@media(max-width:1179px){
+ body.editor-page .texpage-navigator{top:59px!important;height:calc(100dvh - 59px)!important}
+ body.editor-page .preview-toolbar{grid-template-rows:31px 35px!important;height:83px!important}
+ body.editor-page .preview-toolbar-left strong{max-width:130px!important}
+}
+@media(max-width:767px){
+ body.editor-page .texpage-topbar{
+  min-height:99px!important;height:99px!important;padding:7px 9px!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:38px 41px!important;gap:5px!important
+ }
+ body.editor-page .texpage-topbar .editor-top-actions{
+  grid-column:1/-1!important;grid-row:2!important;max-width:100%!important;
+  overflow-x:auto!important;justify-content:flex-end!important;gap:5px!important
+ }
+ body.editor-page .texpage-topbar .brand{font-size:13px!important}
+ body.editor-page .texpage-topbar .brand small{font-size:9px!important}
+ body.editor-page .texpage-workbench{height:calc(100dvh - 99px)!important}
+ body.editor-page .texpage-navigator{top:99px!important;height:calc(100dvh - 99px)!important}
+ body.editor-page .preview-toolbar{
+   min-height:83px!important;height:83px!important;flex-basis:83px!important;
+   grid-template-columns:minmax(0,1fr) auto!important;
+   grid-template-rows:32px 34px!important;
+   padding:5px 8px!important;gap:5px!important
+ }
+ body.editor-page .preview-toolbar-left strong{max-width:95px!important;font-size:10px!important}
+ body.editor-page .preview-toolbar-center{grid-row:2!important;grid-column:1!important;max-width:100%!important;position:static!important;transform:none!important;gap:2px!important}
+ body.editor-page .preview-toolbar-center .viewer-btn{min-width:27px!important;padding:0 4px!important}
+ body.editor-page .preview-toolbar-extra{grid-column:2!important;grid-row:2!important;gap:6px!important;font-size:10px!important}
+ body.editor-page .preview-toolbar-right{grid-column:2!important;grid-row:1!important;gap:5px!important}
+ body.editor-page .preview-toolbar #printButton,body.editor-page .preview-toolbar #browserPrintButton{
+   padding:0 8px!important;min-width:unset!important;height:31px!important;
+   font-size:10px!important;gap:4px!important
+ }
+ body.editor-page .preview-toolbar .fit-btn{display:none!important}
+ body.editor-page .preview-toolbar .preview-chip{display:none!important}
+ body.editor-page .workspace-projects{padding:10px!important}
+ body.editor-page .workspace-paper-list{max-height:128px!important}
+}
+@media(max-width:390px){
+ body.editor-page .preview-toolbar-left strong{max-width:70px!important}
+ body.editor-page .preview-toolbar-extra{gap:4px!important;font-size:9px!important}
+ body.editor-page .preview-toolbar #printButton{padding:0 5px!important}
+ body.editor-page .preview-toolbar #browserPrintButton{padding:0 5px!important}
+ body.editor-page .preview-toolbar .page-indicator{min-width:35px!important}
+}
+/* Never restyle printed physical paper geometry in these editor chrome overrides. */
+@media print{
+  body.editor-page .texpage-topbar,body.editor-page .workspace-projects,
+  body.editor-page .preview-toolbar,body.editor-page .workspace-dialog-backdrop{display:none!important}
+}
