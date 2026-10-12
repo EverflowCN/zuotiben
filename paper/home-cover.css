@@ -1,0 +1,138 @@
+/* The homepage's A4 illustration is the actual Everflow 85/90-set ExamA4
+ * COVER layout, not a sheet of practice questions.
+ * Geometry corresponds to the browser editor's own mother-cover settings:
+ * title 120.9mm; signature 148.05mm; rule 266mm;
+ * brand 270.55mm; red update date 277.15mm on a 210 × 297mm page.
+ */
+@font-face{
+  font-family:"Everflow Cover Song";
+  src:url("./assets/vendor/typst/fonts/FandolSong-Regular.otf") format("opentype");
+  font-style:normal;font-weight:400;font-display:swap
+}
+@font-face{
+  font-family:"Everflow Cover Song";
+  src:url("./assets/vendor/typst/fonts/FandolSong-Bold.otf") format("opentype");
+  font-style:normal;font-weight:700;font-display:swap
+}
+.ps-document-frame--cover{--cover-ink:#101211}
+.ps-document-frame--cover .ps-document-top span{
+  color:var(--ps-text);
+}
+.ps-paper-demo.ps-master-cover{
+  box-sizing:border-box;
+  width:min(100%, 400px);
+  max-width:100%;
+  height:auto;
+  max-height:none;
+  aspect-ratio:210 / 297;
+  min-height:0;
+  margin:0 auto;
+  padding:0;
+  overflow:hidden;
+  border:1px solid #e3e4df;
+  border-radius:0;
+  box-shadow:0 11px 32px #13271d14;
+  background:#fff;
+  color:var(--cover-ink);
+  container-type:inline-size;
+  font-family:"Everflow Cover Song","Songti SC","SimSun",serif;
+  line-height:1.2;
+  position:relative;
+}
+.ps-paper-demo.ps-master-cover > .ps-master-title,
+.ps-paper-demo.ps-master-cover > .ps-master-signature,
+.ps-paper-demo.ps-master-cover > .ps-master-rule,
+.ps-paper-demo.ps-master-cover > .ps-master-brand,
+.ps-paper-demo.ps-master-cover > .ps-master-date{
+  position:absolute;
+  z-index:1;
+  display:block;
+  height:auto;
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  background:none;
+  border-radius:0;
+}
+.ps-master-cover > .ps-master-title{
+  top:40.7071%; /* 120.9 / 297 */
+  left:8.5714%;
+  width:82.8572%;
+  text-align:center;
+  font-size:3.936cqw; /* 24.7871pt at 210mm physical width */
+  font-weight:700;
+  line-height:1.21;
+  letter-spacing:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.ps-master-cover > .ps-master-signature{
+  top:49.8485%; /* 148.05 / 297 */
+  left:8.5714%;
+  width:82.8572%;
+  text-align:center;
+  font-size:2.91cqw; /* 18.3313pt */
+  font-weight:700;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.ps-master-cover > .ps-master-rule{
+  top:89.5623%; /* 266 / 297 */
+  left:8.5714%;
+  width:23.8095%; /* 50 / 210 */
+  height:0!important;
+  border-top:1px solid #202020!important;
+}
+.ps-master-cover > .ps-master-brand{
+  top:91.0943%; /* 270.55 / 297 */
+  left:9.1905%; /* 19.3 / 210 */
+  width:85%;
+  text-align:left;
+  font-size:1.5023cqw; /* 9.4645pt */
+  line-height:1.28;
+  font-weight:700;
+  white-space:nowrap;
+}
+.ps-master-cover > .ps-master-date{
+  top:93.3165%; /* 277.15 / 297 */
+  left:9.1905%;
+  width:85%;
+  color:#c92c2c;
+  text-align:left;
+  font-size:1.4233cqw; /* 8.9664pt */
+  line-height:1.24;
+  font-weight:700;
+  white-space:nowrap;
+}
+.ps-document-frame--cover .ps-document-caption{
+  align-items:center;
+  margin-top:16px;
+  gap:14px;
+  font-size:11px;
+}
+.ps-document-frame--cover .ps-document-caption strong{color:var(--ps-accent)}
+body.paper-home.dark .ps-paper-demo.ps-master-cover{
+  background:#fff;
+  color:#161616;
+}
+@supports not (font-size:1cqw){
+  .ps-master-cover > .ps-master-title{font-size:clamp(12px,2vw,20px)}
+  .ps-master-cover > .ps-master-signature{font-size:clamp(11px,1.7vw,15px)}
+  .ps-master-cover > .ps-master-brand{font-size:clamp(8px,.9vw,10px)}
+  .ps-master-cover > .ps-master-date{font-size:clamp(8px,.9vw,10px)}
+}
+@media(max-width:760px){
+  .ps-paper-demo.ps-master-cover{
+    width:min(100%,380px);
+    max-height:none;
+    padding:0;
+  }
+  .ps-document-frame--cover{padding:15px}
+}
+@media(max-width:400px){
+  .ps-document-frame--cover .ps-document-caption{
+    font-size:10px;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+}
