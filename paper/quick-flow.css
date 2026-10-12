@@ -100,3 +100,31 @@ body.paper-home.dark .ps-flow-graphic-paper{color:#2d4132}
  .ps-flow-card,.ps-flow-arrow,.ps-flow-code-sheet,.ps-finished-sheet,.ps-flow-action{transition:none!important}
  .ps-flow-card:hover,.ps-flow-action:hover,.ps-flow-card:hover .ps-flow-code-sheet,.ps-flow-card:hover .ps-finished-sheet{transform:none!important}
 }
+
+/* Compact import stays inside the surviving “一份文档” walkthrough.
+   No independent “从这里开始制作” panel or duplicate AI form. */
+.ps-flow-import{margin:20px 0 8px;border:1px solid var(--ps-line);border-radius:15px;background:var(--ps-panel);overflow:hidden;scroll-margin-top:90px}
+.ps-flow-import>summary{min-height:67px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none;color:var(--ps-ink)}
+.ps-flow-import>summary::-webkit-details-marker{display:none}
+.ps-flow-import>summary:hover{background:var(--ps-accent-2)}
+.ps-flow-import-icon{flex:0 0 36px;height:36px;display:grid;place-items:center;border:1px solid #d6e8da;border-radius:10px;background:#eff8f1;color:var(--ps-accent);font-size:24px;line-height:1}
+.ps-flow-import>summary>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.ps-flow-import>summary strong{font-size:13px;font-weight:750}
+.ps-flow-import>summary small{font-size:11px;line-height:1.55;color:var(--ps-muted)}
+.ps-flow-import-chevron{margin-left:auto;font-size:18px;color:var(--ps-accent);transition:transform .15s ease}
+.ps-flow-import[open] .ps-flow-import-chevron{transform:rotate(180deg)}
+.ps-flow-import-body{padding:16px 18px 18px;border-top:1px solid var(--ps-line);display:grid;gap:11px}
+.ps-flow-import-body label{font-size:12px;color:var(--ps-text)}
+.ps-flow-import-body textarea{width:100%;min-height:142px;max-width:100%;resize:vertical;box-sizing:border-box;border-radius:10px;border:1px solid var(--ps-line);background:var(--ps-bg);color:var(--ps-ink);padding:12px 13px;line-height:1.6;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+.ps-flow-import-body textarea:focus{outline:2px solid color-mix(in srgb,var(--ps-accent) 28%,transparent);outline-offset:1px;border-color:var(--ps-accent)}
+.ps-flow-import-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ps-flow-import-actions>.ps-flow-action{width:auto;min-width:112px;flex:0 0 auto}
+@media(max-width:760px){
+  .ps-quick-guide{padding-top:34px}
+  .ps-flow-import>summary{padding:12px 13px}
+  .ps-flow-import-body{padding:14px 12px}
+  .ps-flow-import-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ps-flow-import-actions>.ps-flow-action{width:100%;min-width:0}
+  .ps-flow-import-actions>.ps-flow-action:first-child{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){.ps-flow-import-chevron{transition:none}}
