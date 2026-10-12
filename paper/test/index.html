@@ -85,7 +85,7 @@ function clearUrls(){state.urls.forEach(URL.revokeObjectURL);state.urls=[]}
 function resize(){var width=state.size==='a3'?1588:794;var room=Math.max(240,sid.parentElement.clientWidth-26);var fit=Math.min(1,room/width);var applied=Math.max(.2,Math.min(1.1,fit*state.zoom));sid.style.zoom=String(applied);el('zoomValue').textContent=Math.round(applied*100)+'%'}
 window.addEventListener('resize',resize);resize();
 function options(q){var o=q.options||{};return Array.isArray(o)?o.map(v=>String(typeof v==='object'?(v.text||v.content||''):v||'')):Object.keys(o).filter(k=>/^[A-H]$/.test(k)).sort().map(k=>String(o[k]||''))}
-function normalize(e,i){var q=e.question||e;var section=e.section_title||q.section||'试题';return {id:q.id||i+1,n:Number(e.question_number)||i+1,section:section,content:String(q.stem_latex||q.stem||q.content||''),options:(section.includes('选择')||!e.section_title&&String(q.type||'').includes('选择'))?options(q):[],assets:q.assets||[],answer:String(q.correct_answer_latex||q.correct_answer||''),explanation:String(q.answer_explanation||q.explanation_latex||'')}}
+function normalize(e,i){var q=e.question||e;var section=e.section_title||q.section||'试题';return {id:q.id||i+1,n:Number(e.question_number)||i+1,section:section,content:String(q.stem_latex||q.stem||q.content||''),options:(section.includes('选择')||!e.section_title&&String(q.type||'').includes('选择'))?options(q):[],assets:q.assets||[],answer:String(q.correct_answer_latex||q.correct_answer||q.answer||''),explanation:String(q.answer_explanation||q.explanation_latex||q.explanation||q.analysis||'')}}
 function math(src){var frag=document.createDocumentFragment(),s=String(src||''),rex=/\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$|(?<!\\)\$([^$\n]+?)\$/g,m,last=0;while((m=rex.exec(s))){if(m.index>last)frag.append(document.createTextNode(s.slice(last,m.index)));var d=m[1]!=null||m[3]!=null,v=m[1]??m[2]??m[3]??m[4],n=ui('span',d?'mathdisplay':'mathinline');try{if(window.temml)n.innerHTML=temml.renderToString(v,{displayMode:d,throwOnError:false,trust:false});else n.textContent=m[0]}catch(e){n.textContent=m[0]}frag.append(n);last=rex.lastIndex}if(last<s.length)frag.append(document.createTextNode(s.slice(last)));return frag}
 function list(){var q=el('query').value.trim().toLowerCase(),p=el('provider').value,y=el('year').value;var a=state.docs.filter(v=>(!p||v.provider===p)&&(!y||String(v.year)===y)&&(!q||(v.title+' '+v.provider+' '+v.series+' '+v.year).toLowerCase().includes(q)));el('count').textContent='显示 '+a.length+' / '+state.docs.length+' 份试卷（含演示）';var f=document.createDocumentFragment();a.forEach(v=>{var b=ui('button','item'+(state.current&&state.current.id===v.id?' active':''));b.type='button';b.setAttribute('role','option');b.append(ui('strong','',v.title),ui('small','',v.provider+' · '+v.year+' 年 · '+v.count+' 题'));b.onclick=()=>select(v);f.append(b)});el('papers').replaceChildren(f)}
 function setupFilters(){var a=[...new Set(state.docs.map(v=>v.provider))].sort((a,b)=>a.localeCompare(b,'zh-CN'));var ys=[...new Set(state.docs.map(v=>v.year))].sort((a,b)=>b-a);el('provider').replaceChildren(new Option('全部机构',''));el('year').replaceChildren(new Option('全部年份',''));a.forEach(x=>el('provider').add(new Option(x,x)));ys.forEach(x=>el('year').add(new Option(x+' 年',String(x))))}
@@ -135,8 +135,9 @@ function scheduleHistorySave(){
 async function saveHistory(version){
  if(!archive||!state.current||!state.raw)return;
  clearTimeout(state.historyTimer);
+ const lightweightMeta=Object.assign({},state.current);delete lightweightMeta.localRaw;
  const record=await archive.save({
-   meta:state.current,raw:state.raw,
+   meta:lightweightMeta,raw:state.raw,
    source:state.source||'demo',packKey:state.packKey,config:historyConfig()
  },{version:!!version});
  updateHistoryCount().catch(()=>{});
@@ -163,6 +164,7 @@ async function restoreHistory(entry){
    }
    state.current=JSON.parse(JSON.stringify(entry.meta));
    state.raw=JSON.parse(JSON.stringify(entry.raw));
+   if(entry.source!=='zip')state.current.localRaw=state.raw;
    state.size=entry.config?.size==='a3'?'a3':'a4';
    state.mode=entry.config?.mode==='book'?'book':'exam';
    state.zoom=Math.max(.6,Math.min(1.1,Number(entry.config?.zoom)||1));
@@ -175,9 +177,7 @@ async function restoreHistory(entry){
    state.baseTitle=entry.meta?.title||'本机试卷';
    el('title').textContent=state.baseTitle;
    // Recover without depending on a ZIP listing that might have been lost.
-   if(!state.docs.some(p=>p.id===state.current.id)){
-     state.docs=[DEMO_META,...state.docs.filter(p=>p.id!==DEMO_META.id),state.current];
-   }
+   state.docs=[DEMO_META,...state.docs.filter(p=>p.id!==DEMO_META.id&&p.id!==state.current.id),state.current];
    setupFilters();list();updateSettings();
    await render();
    el('sidebar').classList.remove('open');
@@ -265,6 +265,11 @@ async function importFile(file){
 function everflow(){var p=state.current,qs=state.raw.questions.map(normalize);return {version:2,type:'everflow-local-paper',template:state.mode==='book'?'book':'exam',layout:state.mode==='book'?'single':state.size,title:p.title,coverTitle:p.title,header:'',testVisualConfig:{fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),withCover:el('coverToggle').checked},questions:qs.map(q=>({id:'bb-'+p.id+'-'+q.id,content:q.content,options:q.options,section:q.section,type:q.section.includes('选择')?'选择题':q.section.includes('填空')?'填空题':'解答题',showOptions:q.section.includes('选择')&&q.options.length>0,answer:q.answer,explanation:q.explanation,gap:0,breakBefore:false})),originalIds:qs.map(q=>'bb-'+p.id+'-'+q.id)}}
 function download(name,text){var url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'})),a=ui('a');a.href=url;a.download=name.replace(/[\\/:*?"<>|]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 el('file').onchange=e=>{var f=e.target.files[0];if(f)importFile(f);e.target.value=''};
+el('historyButton').onclick=openHistory;
+el('historyQuickSave').onclick=()=>saveHistory(true).catch(error=>msg('保存快照失败：'+error.message));
+el('historyClose').onclick=()=>el('historyModal').hidden=true;
+el('historyModal').onclick=e=>{if(e.target===el('historyModal'))el('historyModal').hidden=true};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')el('historyModal').hidden=true});
 ['query','provider','year'].forEach(k=>el(k).addEventListener(k==='query'?'input':'change',list));
 el('ansToggle').onchange=()=>el('answers').hidden=!el('ansToggle').checked;
 el('ansPrint').onchange=()=>{if(state.raw&&!state.loading)render().catch(e=>msg(e.message))};
@@ -315,14 +320,32 @@ function updateSettings(){
 }
 function rerender(){updateSettings();if(state.raw&&!state.loading)render().catch(e=>msg(e.message))}
 document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{state.size=b.dataset.size;rerender()});
-document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;rerender()});
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
+   state.mode=b.dataset.mode;
+   if(state.mode==='book'&&state.size==='a3'){
+     state.size='a4';
+     msg('做题本母版为 A4 单题单页，已经将尺寸调整为 A4。');
+   }
+   rerender()
+ });
 ['fontSize','gapSize'].forEach(id=>el(id).onchange=rerender);
 el('demoButton').onclick=()=>select(DEMO_META);
 el('demoTop').onclick=()=>{select(DEMO_META);el('sidebar').classList.remove('open')};
 el('titleField').onchange=()=>{if(!state.current)return;state.current.title=el('titleField').value.trim()||state.baseTitle;el('title').textContent=state.current.title;rerender()};
 el('zoomDown').onclick=()=>{state.zoom=Math.max(.6,+(state.zoom-.1).toFixed(2));resize();el('zoomValue').textContent=Math.round(state.zoom*100)+'%'};
 el('zoomUp').onclick=()=>{state.zoom=Math.min(1.1,+(state.zoom+.1).toFixed(2));resize();el('zoomValue').textContent=Math.round(state.zoom*100)+'%'};
-state.docs=[DEMO_META];setupFilters();list();updateSettings();select(DEMO_META);
+state.docs=[DEMO_META];setupFilters();list();updateSettings();
+(async()=>{
+  try{
+    await updateHistoryCount();
+    const last=JSON.parse(localStorage.getItem('everflow-template-test-current')||'null');
+    if(last?.key){
+      const old=await archive.get(last.key);
+      if(old?.raw){await restoreHistory(old);return}
+    }
+  }catch(e){console.warn('Test history could not auto-restore',e)}
+  await select(DEMO_META);
+})();
 
 })();
 </script><script src="../editor/local-projects.js?v=20261013-workspace2"></script><script src="../editor/save-manager.js"></script><script src="../editor/vendor/jspdf.umd.min.js?v=20261013-local2"></script>
