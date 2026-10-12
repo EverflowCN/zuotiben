@@ -104,16 +104,21 @@ async function waitForBrowserLayout(page, timeout=120000){
     await page.locator('#settingsTabButton').click();
     assert.equal(await page.locator('#headerInput').inputValue(),'数学练习');
 
-    const dl=page.waitForEvent('download',{timeout:120000}).then(download=>({kind:'download',download}));
-    const pdfFailure=page.waitForFunction(()=>{
-      const status=document.querySelector('#pdfStatus')?.textContent||'';
-      return /PDF.+失败|生成或保存失败|Typst.+失败|异常|Error/i.test(status);
-    },null,{timeout:120000}).then(async()=>({kind:'failure',status:await page.locator('#pdfStatus').innerText()}));
-    await page.locator('#printButton').click();
-    const pdfResult=await Promise.race([dl,pdfFailure]);
-    if(pdfResult.kind==='failure')throw new Error('PDF export failed: '+pdfResult.status);
-    await pdfResult.download.saveAs('test-results/editor.pdf');
-    assert.equal(fs.readFileSync('test-results/editor.pdf').subarray(0,5).toString(),'%PDF-');
+    // The PDF action must use the exact preview DOM and not the separate React PDF renderer.
+    assert.equal(await page.locator('#printButton').isVisible(),false);
+    await waitForBrowserLayout(page);
+    const previewMarkup=await page.locator('#typstPreview').innerHTML();
+    await page.locator('#browserPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===2);
+    assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Print changed the already-paginated preview');
+
+    // Chromium's print-to-PDF from that same DOM verifies actual PDF bytes.
+    if(browserName==='chromium'){
+      await page.evaluate(()=>document.body.classList.add('browser-print-active'));
+      await page.pdf({path:'test-results/editor.pdf',printBackground:true,preferCSSPageSize:true});
+      await page.evaluate(()=>document.body.classList.remove('browser-print-active'));
+      assert.equal(fs.readFileSync('test-results/editor.pdf').subarray(0,5).toString(),'%PDF-');
+    }
 
     // Tablet: navigator becomes drawer; editor and preview stay split.
     await page.setViewportSize({width:834,height:1112});
@@ -139,6 +144,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),false);
     assert.equal(await page.locator('#mobileDownloadButton').isVisible(),true);
     assert.equal(await page.locator('#previewModeButton').isVisible(),true);
+    const actionRects=await page.locator('.texpage-topbar .editor-top-actions').evaluate(el=>{const p=el.getBoundingClientRect();return {left:p.left,right:p.right,scrollWidth:el.scrollWidth,width:el.clientWidth}});
+    assert.ok(actionRects.right<=393&&actionRects.left>=0&&actionRects.scrollWidth<=actionRects.width+2,'mobile topbar overflows '+JSON.stringify(actionRects));
 
     await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),true);
@@ -154,11 +161,13 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.ok(pageWidth<=390);
     await page.screenshot({path:'test-results/editor-mobile-texpage.png',fullPage:true});
 
+    await page.locator('#mobileDownloadButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===3);
     await page.locator('#editModeButton').click();
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
     assert.deepEqual(errors,[]);
-    console.log('PASS ['+browserName+']: responsive editor, browser pagination/print, and exact local PDF download');
+    console.log('PASS ['+browserName+']: responsive editor, browser pagination/print, and print-to-PDF sourced from the exact preview DOM');
   }finally{
     await browser.close();
   }
