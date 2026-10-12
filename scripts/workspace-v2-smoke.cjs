@@ -17,7 +17,7 @@ const assert=require('node:assert/strict');
    ],originalIds:['oa1','oa2','oa3']
   };
   await page.addInitScript(data=>{
-    localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify(data));
+    if(!localStorage.getItem('zuotiben-local-paper-v1'))localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify(data));
   },source);
   await page.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded'});
   await page.locator('#localPaperList .workspace-paper').first().waitFor({timeout:16000});
