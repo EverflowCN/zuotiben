@@ -178,8 +178,13 @@ async function waitForBrowserLayout(page, timeout=120000){
     await page.locator('#mobileDownloadButton').click();
     const mobilePdf=await mobilePdfPromise;
     await mobilePdf.saveAs('test-results/editor-mobile-direct.pdf');
-    assert.equal(fs.readFileSync('test-results/editor-mobile-direct.pdf').subarray(0,5).toString(),'%PDF-');
+    const mobileBytes=fs.readFileSync('test-results/editor-mobile-direct.pdf');
+    assert.equal(mobileBytes.subarray(0,5).toString(),'%PDF-');
+    assert.deepEqual(mobileBytes,pdfBytes,'Mobile must download the EXACT cached PDF bytes seen on desktop');
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),mobilePrintCalls);
+    await waitForBrowserLayout(page);
+    // Cached vector PDFs may download directly from the mobile editor without switching tabs.
+    await page.locator('#previewModeButton').click();
     await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
