@@ -1,0 +1,61 @@
+
+:root{--accent:#345e9d;--qfont:10pt;--qgap:13px}
+body{background:#eef1f6}
+header.top{border-bottom:1px solid #d6e0ec;box-shadow:0 1px 3px #152e5a10}
+header .logo{background:var(--accent);border-radius:9px}
+.demo-nav{border:1px solid #a7bddb;border-radius:8px;color:#2b5591;background:#ecf3fb;font-size:12px;font-weight:700;padding:9px 12px}
+.layout{grid-template-columns:270px minmax(0,1fr) 245px}
+#sidebar{border-right:1px solid #dce3ed}
+#sidebar .sideintro{padding:21px 18px 12px}
+#sidebar .sideintro h1{font-size:21px}
+#sidebar .item.active{background:#eaf2fe;border-left:3px solid #416eae;padding-left:17px}
+#sidebar .upload{background:var(--accent);margin:3px 15px 11px}
+#sidebar .listcount{background:#f6f9fe;color:#526a89}
+.settings{border-left:1px solid #dce3ed;border-right:0;background:#fff;overflow:auto;padding-bottom:18px}
+.settings-header{padding:22px 18px 14px;border-bottom:1px solid #eef0f3}
+.settings-header h3{font-size:18px;margin:6px 0}.settings-header p{font-size:11px;color:#7f8994;margin:0}
+.setting-group{padding:16px;border-bottom:1px solid #f0f1f4}
+.setting-label{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:12px;margin-bottom:10px}
+.setting-label b{font-size:12px}.setting-label small{font-size:10px;color:#8995a2}
+.choice-pair{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.choice-pair button{border:1px solid #e1e5ea;background:#f9fafc;border-radius:8px;padding:10px 3px;font-size:12px;color:#526172;font-weight:700}
+.choice-pair button small{display:block;font-weight:400;font-size:10px;margin-top:3px;color:#8793a2}
+.choice-pair button.active{border-color:#7aa3e3;background:#eef5ff;color:#22569e;box-shadow:inset 0 0 0 1px #bad2f6}
+.setting-input{border:1px solid #dbe0e5;border-radius:7px;width:100%;padding:9px 8px;font-size:12px}
+.setting-group input[type=range]{width:100%;accent-color:var(--accent)}
+.zoom-row{display:flex;gap:8px}.zoom-row button{flex:1;padding:9px 6px;font-size:11px;border:1px solid #dde3eb;background:#f9fbfe;border-radius:7px}
+.setting-foot{padding:19px;display:grid;gap:13px}
+.setting-foot>div{display:flex;justify-content:space-between;font-size:12px;color:#53637a}.setting-foot small{font-size:10px;color:#9ca6b1}
+.setting-foot button{border:1px solid #bdd1ec;background:#f3f8ff;color:#345b90;border-radius:9px;font-size:12px;font-weight:700;padding:11px}
+main{background:#eef1f6;padding:24px clamp(16px,2vw,32px) 40px}
+.topline h2{font-weight:800}.topline .eyebrow{color:#6d83a5}
+.toolbar{box-shadow:0 1px 4px #1e375e0c}
+.toolbar .buttons button.primary{background:var(--accent);border-color:var(--accent)}
+.toolbar input{accent-color:var(--accent)}
+#status{background:#e2ebf9;border-left-color:#7e9dca;color:#465e7f}
+#sheets{padding-top:4px}
+.sheet{border:0;box-shadow:0 10px 30px #263c6021;width:210mm;flex-shrink:0}
+.sheet .question{font-size:var(--qfont);margin-bottom:var(--qgap)}
+body[data-paper-size="a3"] .sheet{width:420mm;height:297mm;padding:17mm 24mm 14mm}
+body[data-paper-mode="book"] .sheet .question{line-height:1.8}
+.mobile-switches{display:none}
+@media(max-width:1280px){.layout{grid-template-columns:237px minmax(0,1fr) 223px}.setting-group{padding:12px}.settings-header{padding:14px}}
+@media(max-width:1080px){
+.layout{display:block}#sidebar{display:none;position:static;height:auto;max-height:none}
+#sidebar.open{display:flex;max-height:70vh}#papers{max-height:48vh}
+.settings{display:none;position:static;height:auto;max-height:none;border-top:1px solid #dce3ed}
+.settings.open{display:block}.mobile-switches{display:flex;gap:8px;margin-bottom:10px}
+.mobile-switches .mobile-nav{display:block;padding:9px 12px;color:#375680;border-color:#cbdaef}
+main{padding:17px 12px 36px}
+}
+@media(max-width:550px){
+.nav{gap:7px}header.top{padding:0 12px}.demo-nav{padding:7px;font-size:11px}
+main{padding:12px 10px 28px}.topline h2{font-size:21px}
+.toolbar label{font-size:11px}.toolbar .buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
+.toolbar .buttons button{font-size:10px;padding:10px 2px}#sheets{align-items:flex-start}
+}
+@media print{
+header.top,#sidebar,.settings,.mobile-switches,.topline,.toolbar,#status,#answers,.footer{display:none!important}
+main{background:white!important}.sheet{box-shadow:none!important;width:210mm!important;height:297mm!important}
+body[data-paper-size="a3"] .sheet{width:420mm!important;height:297mm!important;padding:17mm 24mm 14mm!important}
+}
