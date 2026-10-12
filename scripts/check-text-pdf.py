@@ -1,0 +1,25 @@
+import sys
+import fitz
+from PIL import Image, ImageFilter, ImageChops
+raster, text = [fitz.open(p) for p in sys.argv[1:]]
+assert len(raster) == len(text)
+extracted=''.join(p.get_text() for p in text)
+assert '物理版式验证' in extracted.replace('\n',''), 'Native Chinese text cannot be extracted'
+for i,(a,b) in enumerate(zip(raster,text)):
+    assert a.rect == b.rect
+    images=[]
+    for page in (a,b):
+        pix=page.get_pixmap(matrix=fitz.Matrix(1,1),alpha=False)
+        img=Image.frombytes('RGB',[pix.width,pix.height],pix.samples).convert('L')
+        images.append(img.point(lambda v: 255 if v<180 else 0))
+    # Compare ink location allowing two PDF pixels for differing antialiasing.
+    ratios=[]
+    for source,target in (images,images[::-1]):
+        near=target.filter(ImageFilter.MaxFilter(5))
+        missing=ImageChops.subtract(source,near)
+        ink=sum(source.histogram()[1:])
+        absent=sum(missing.histogram()[1:])
+        ratios.append(absent/max(ink,1))
+    print('PDF VISUAL PAGE',i+1,'unmatched ink',ratios)
+    assert max(ratios)<.015, 'Text PDF visibly differs from preview image PDF'
+print('PASS selectable Chinese text + matching page geometry + visual ink placement')

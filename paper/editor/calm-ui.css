@@ -245,3 +245,7 @@ body.editor-page .question-nav-picker{display:inline-flex!important;align-items:
 body.editor-page .outline-tree-chevron,body.editor-page .workspace-root-chevron,body.editor-page .workspace-folder-exp{display:inline-flex!important;align-items:center!important;justify-content:center!important;align-self:center!important;line-height:1!important;padding:0!important}
 body.editor-page .outline-tree-section[aria-expanded="true"] .ef-chevron{transform:rotate(90deg)}
 body.editor-page .workspace-root-chevron .workspace-tree-icon,body.editor-page .workspace-folder-exp .workspace-tree-icon{width:16px!important;height:16px!important;display:block!important;flex:0 0 16px!important;margin:0!important}
+
+body.editor-page .preview-toolbar-right .exact-pdf-btn{font-size:11px!important;white-space:nowrap!important;padding:0 8px!important}
+body.editor-page #mobileTextDownloadButton{display:none!important}
+@media(max-width:767px){body.editor-page #mobileTextDownloadButton{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0 6px!important;font-size:11px!important}body.editor-page #mobileDownloadButton{font-size:11px!important;padding:0 6px!important}}

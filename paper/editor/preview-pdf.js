@@ -123,5 +123,5 @@ async function exportPreview(options){
   if(blob.size<1000)throw new Error("PDF 输出异常");
   return blob;
 }
-global.EverflowPreviewPdf={exportPreview:exportPreview};
+global.EverflowPreviewPdf={exportPreview:exportPreview,createExportNode:createExportNode,capture:capture,sheetMm:sheetMm,loadLibraries:libraries};
 })(window);

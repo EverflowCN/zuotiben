@@ -1096,10 +1096,13 @@ async function createLatestPdf(){
     if(wantsLiveTypst()&&(svgRevision!==revision||svgExportDate!==localDate()))scheduleTypstPreview();
   }
 }
-async function downloadPdf(){
+async function downloadPdf(kind){
+  var textMode=kind==="text";
   if(pdfExporting)return;
   pdfExporting=true;
   var button=els.printButton,mobileButton=els.mobileDownloadButton;
+  var textButtons=[els.textPdfButton,els.mobileTextDownloadButton].filter(Boolean);
+  textButtons.forEach(function(b){b.disabled=true;b.setAttribute("aria-busy","true")});
   if(button){button.disabled=true;button.setAttribute("aria-busy","true")}
   if(mobileButton){mobileButton.disabled=true;mobileButton.setAttribute("aria-busy","true")}
   try{
@@ -1119,16 +1122,18 @@ async function downloadPdf(){
     if(!window.EverflowPreviewPdf)throw new Error("直接下载模块未加载，请刷新页面");
     if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
     els.pdfStatus.textContent="正在准备 PDF · 逐页按照当前预览生成，无需系统打印…";
-    var blob=await window.EverflowPreviewPdf.exportPreview({
+    var exporter=textMode?window.EverflowPreviewTextPdf:window.EverflowPreviewPdf;
+    if(!exporter)throw new Error("文字下载模块未加载，请刷新页面");
+    var blob=await exporter.exportPreview({
       host:els.typstPreview,
       isStale:function(){return current!==revision||svgRevision!==current||els.typstPreview.dataset.layoutReady!=="true"},
-      onProgress:function(done,total){els.pdfStatus.textContent="正在直接生成 PDF · "+done+" / "+total+" 页；未调用系统打印"}
+      onProgress:function(done,total){els.pdfStatus.textContent=(textMode?"正在生成文字 PDF · ":"正在生成图像 PDF · ")+done+" / "+total+" 页；未调用系统打印"}
     });
     if(current!==revision)throw new Error("导出过程中题目有变化，请重新下载");
     var name=state.coverTitle||state.title||"Everflow";
-    var result=await SAVE.saveBlob(blob,{fileName:name+".pdf",mime:"application/pdf",extension:".pdf",preferNative:false});
+    var result=await SAVE.saveBlob(blob,{fileName:name+(textMode?"-文字":"")+".pdf",mime:"application/pdf",extension:".pdf",preferNative:false});
     if(result.method!=="cancelled"){
-      els.pdfStatus.textContent="PDF 直接下载完成 · 与当前预览使用同一组分页页面（高清图像型 PDF）。";
+      els.pdfStatus.textContent=textMode?"文字 PDF 下载完成 · 正文可搜索、复制；分页沿用预览，复杂公式与图片保留渲染结果。":"图像 PDF 下载完成 · 与当前预览使用同一组分页页面。";
       toast("PDF 已直接生成并保存");
     }
   }catch(err){
@@ -1136,6 +1141,7 @@ async function downloadPdf(){
     els.pdfStatus.textContent="直接下载失败："+(err&&err.message||"未知错误")+"。预览未更改，可再次尝试。";
   }finally{
     pdfExporting=false;
+    textButtons.forEach(function(b){b.disabled=false;b.removeAttribute("aria-busy")});
     if(button){button.disabled=false;button.removeAttribute("aria-busy")}
     if(mobileButton){mobileButton.disabled=false;mobileButton.removeAttribute("aria-busy")}
   }
@@ -1164,7 +1170,7 @@ async function exportProject(){
 function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
-   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton",
+   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","textPdfButton","mobileTextDownloadButton","browserPrintButton",
    "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton","prevQuestionButton","nextQuestionButton","questionNavPickerButton","questionNavCounter","questionNavPopover","questionNavMenu","selectAllQuestionsButton","selectChapterButton","clearQuestionSelectionButton","outlineSelectionSummary","editorGuideButton","editorGuideDialog","closeEditorGuideButton","finishEditorGuideButton","hideEditorGuideHint"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
@@ -1282,7 +1288,7 @@ function init(){
   };
   // Download: locally rasterize exactly the validated preview pages into a PDF.
   // Print: separately invoke the system print dialog using the same physical preview DOM.
-  els.printButton.onclick=downloadPdf;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
+  els.printButton.onclick=function(){downloadPdf("image")};if(els.textPdfButton)els.textPdfButton.onclick=function(){downloadPdf("text")};if(els.mobileTextDownloadButton)els.mobileTextDownloadButton.onclick=function(){downloadPdf("text")};if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
     var current=state.questions.find(function(q){return q.id===selectedId});
