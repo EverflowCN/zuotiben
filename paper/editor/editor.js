@@ -657,7 +657,7 @@ async function setMode(preview){
   if(wantsLiveTypst()){
     var today=localDate();
     if(svgRevision!==revision||svgExportDate!==today)await refreshTypstPreview();
-    else els.pdfStatus.textContent="浏览器分页预览已是最新；打印复用当前页面布局。";
+    else els.pdfStatus.textContent="分页已完成 · 预览已是最新；打印复用当前页面布局。";
   }else{
     els.pdfStatus.textContent="手机编辑模式：切到“预览”查看 ExamA4 浏览器分页。";
   }
@@ -762,7 +762,7 @@ async function createLatestPdf(){
       return createLatestPdf();
     }
     pdfBlob=blob;pdfRevision=current;pdfExportDate=snapshotState.exportDate;
-    els.pdfStatus.textContent="PDF 已在本机生成；未使用服务器编译。";
+    els.pdfStatus.textContent=(browserLayoutResult&&svgRevision===revision?"分页已完成 · ":"")+"精确 PDF 已在本机生成；未使用服务器编译。";
     return blob;
   }finally{
     pdfExporting=false;suspendTypstPreview=false;
@@ -792,7 +792,10 @@ async function browserPrint(){
     if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
     document.body.classList.add("browser-print-active");
     els.pdfStatus.textContent="正在打开浏览器打印窗口；请选择“另存为 PDF”。";
-    var cleanup=function(){document.body.classList.remove("browser-print-active");window.removeEventListener("afterprint",cleanup)};
+    var cleanup=function(){
+      document.body.classList.remove("browser-print-active");window.removeEventListener("afterprint",cleanup);
+      els.pdfStatus.textContent="分页已完成 · 浏览器打印窗口已关闭，当前预览仍可编辑。";
+    };
     window.addEventListener("afterprint",cleanup,{once:true});
     window.print();
   }catch(error){
