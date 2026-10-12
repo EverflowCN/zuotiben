@@ -151,3 +151,6 @@ body.editor-page .browser-toc-footer{position:absolute;bottom:16mm;left:22mm;rig
 }
 /* Prevent splitter drag selection from leaking across the 3 panes. */
 body.is-resizing-panes,body.is-resizing-panes *{user-select:none!important;cursor:col-resize!important}
+
+body.editor-page .workspace-folder-exp{flex:0 0 19px;width:19px;height:26px;padding:0;background:transparent;border:0;color:#699077;border-radius:5px;font-size:13px;cursor:pointer}
+body.editor-page .workspace-folder-exp:hover{background:#eaf4ec}
