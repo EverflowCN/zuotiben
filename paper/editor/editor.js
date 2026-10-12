@@ -14,6 +14,7 @@ var state={
   template:"exam",
   layout:"a4",
   header:"",
+  tocEnabled:false,
   testVisualConfig:null,
   questions:[],
   originalIds:[]
@@ -73,7 +74,7 @@ function normalizeQuestion(raw,index){
 }
 function snapshot(){return deepClone({
   title:state.title,coverTitle:state.coverTitle,sourceName:state.sourceName,template:state.template,layout:state.layout,
-  header:state.header,testVisualConfig:state.testVisualConfig,questions:state.questions,originalIds:state.originalIds
+  header:state.header,tocEnabled:state.tocEnabled,testVisualConfig:state.testVisualConfig,questions:state.questions,originalIds:state.originalIds
 })}
 function applySnapshot(s){
   state=s;selectedId=state.questions.some(function(q){return q.id===selectedId})?selectedId:(state.questions[0]&&state.questions[0].id);
@@ -112,6 +113,7 @@ function load(){
     var normalized=MODES.normalize(state.template,d.layout||d.mode);
     state.template=normalized.group;state.layout=normalized.mode;
     state.header=cleanText(d.header||"");
+    state.tocEnabled=d.tocEnabled===true;
     state.testVisualConfig=d.testVisualConfig&&typeof d.testVisualConfig==="object"?Object.assign({},d.testVisualConfig):null;
     state.sourceName=cleanText(d.sourceName||"浏览器本地草稿");
     state.questions=d.questions.map(normalizeQuestion);
@@ -128,7 +130,7 @@ function save(markDirty){
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       version:2,type:"everflow-local-paper",localOnly:true,
       title:state.title,coverTitle:state.coverTitle,sourceName:state.sourceName,
-      template:state.template,layout:state.layout,header:state.header,testVisualConfig:state.testVisualConfig,
+      template:state.template,layout:state.layout,header:state.header,tocEnabled:state.tocEnabled,testVisualConfig:state.testVisualConfig,
       savedAt:new Date().toISOString(),
       questions:state.questions.map(function(q){return Object.assign({},q,{localId:q.id})}),
       originalIds:state.originalIds
@@ -319,7 +321,34 @@ function updateBatchBar(){
   renderSectionManager();
 }
 
+function renderOutlineNav(){
+  if(!els.outlineNav)return;
+  els.outlineNav.replaceChildren();
+  var sections=uniqueSections();
+  if(!sections.length){
+    var message=document.createElement("span");message.className="outline-empty";
+    message.textContent="尚无大纲章节，点击「目录结构」添加";
+    els.outlineNav.appendChild(message);return;
+  }
+  sections.forEach(function(name,index){
+    var count=state.questions.filter(function(q){return q.section===name}).length;
+    var item=document.createElement("button");item.type="button";item.className="outline-section-chip";
+    var nameSpan=document.createElement("span");nameSpan.textContent=sectionDisplayName(name,index+1);
+    var countSpan=document.createElement("small");countSpan.textContent=count+" 题";
+    item.append(nameSpan,countSpan);
+    item.title="跳转到「"+name+"」对应的第一道题";
+    item.onclick=function(){
+      var q=state.questions.find(function(v){return v.section===name});
+      if(!q)return;
+      selectedId=q.id;renderOrder();renderQuestionEditor();
+      var row=Array.from(els.orderList.children).find(function(row){return state.questions[Number(row.dataset.index)]?.id===q.id});
+      if(row)row.scrollIntoView({behavior:"smooth",block:"nearest"});
+    };
+    els.outlineNav.appendChild(item);
+  });
+}
 function renderOrder(){
+  renderOutlineNav();
   els.orderList.replaceChildren();
   state.questions.forEach(function(q,i){
     var row=document.createElement("div");row.className="order-item"+(q.id===selectedId?" is-selected":"")+(selectedIds.has(q.id)?" is-multi-selected":"");row.draggable=true;row.dataset.index=i;
@@ -427,6 +456,28 @@ function createLayoutItem(record){
   return item;
 }
 function roundGapLabel(value){return (Math.round((Number(value)||0)*10)/10)+" mm"}
+function createBrowserToc(entries,number,total){
+  var page=document.createElement("section");
+  page.className="typst-page browser-paper-page browser-toc-page";
+  page.dataset.page=String(number);
+  page.style.setProperty("--paper-width","210mm");
+  page.style.setProperty("--paper-height","297mm");
+  var label=document.createElement("div");label.className="browser-toc-brand";
+  label.textContent="Everflow · 彼时流年若水";
+  var title=document.createElement("h1");title.textContent="目　录";
+  var subtitle=document.createElement("p");subtitle.textContent="CONTENTS  /  "+(state.title||"试卷");
+  var content=document.createElement("div");content.className="browser-toc-lines";
+  entries.forEach(function(e){
+    var row=document.createElement("div");row.className="browser-toc-line";
+    var name=document.createElement("span");name.textContent=e.heading;
+    var dots=document.createElement("span");dots.className="browser-toc-dots";
+    var num=document.createElement("b");num.textContent=String(e.page);
+    row.append(name,dots,num);content.appendChild(row);
+  });
+  var footer=document.createElement("footer");footer.className="browser-toc-footer";
+  footer.textContent="· "+number+" / "+total+" ·";
+  page.append(label,title,subtitle,content,footer);return page;
+}
 function createBrowserCover(snapshotState){
   var cover=document.createElement("section");cover.className="typst-page browser-paper-page browser-cover-page everflow-refined-cover";cover.dataset.page="1";
   cover.style.setProperty("--paper-width","210mm");cover.style.setProperty("--paper-height","297mm");
@@ -445,6 +496,8 @@ function createBrowserCover(snapshotState){
 function renderPaper(){
   renderTemplateState();
   els.paperQuestions.replaceChildren();
+  if(els.tocEnabledToggle)els.tocEnabledToggle.checked=!!state.tocEnabled;
+  if(els.tocEnabledSettings)els.tocEnabledSettings.checked=!!state.tocEnabled;
   els.previewTitle.textContent=state.title;
   els.coverPreviewTitle.textContent=state.coverTitle||state.title;
   els.coverPreviewDate.textContent="> > > 更新时间："+localDate();
@@ -510,8 +563,9 @@ function updatePages(){
 function loadUiState(){
   try{
     var d=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}");
-    if(d.navigatorWidth)document.documentElement.style.setProperty("--navigator-w",Math.max(190,Math.min(360,Number(d.navigatorWidth)))+"px");
-    if(d.editorWidth)document.documentElement.style.setProperty("--editor-w",Math.max(320,Math.min(820,Number(d.editorWidth)))+"px");
+    if(d.navigatorWidth)document.documentElement.style.setProperty("--navigator-w",Math.max(210,Math.min(470,Number(d.navigatorWidth)))+"px");
+    if(d.projectHeight)document.documentElement.style.setProperty("--workspace-h",Math.max(135,Math.min(520,Number(d.projectHeight)))+"px");
+    if(d.editorWidth)document.documentElement.style.setProperty("--editor-w",Math.max(280,Math.min(900,Number(d.editorWidth)))+"px");
     if(d.navigatorCollapsed&&window.matchMedia("(min-width:1180px)").matches)document.body.classList.add("navigator-collapsed");
   }catch(e){}
 }
@@ -556,13 +610,13 @@ function bindPaneResizer(el,kind){
     function move(ev){
       if(kind==="navigator"){
         var box=els.workbench.getBoundingClientRect();
-        var width=Math.max(190,Math.min(360,ev.clientX-box.left));
+        var width=Math.max(210,Math.min(470,ev.clientX-box.left));
         document.documentElement.style.setProperty("--navigator-w",width+"px");
         persistUiState({navigatorWidth:Math.round(width)});
       }else{
         var box=els.editPane.getBoundingClientRect();
-        var available=els.workbench.getBoundingClientRect().right-box.left-360;
-        var width=Math.max(320,Math.min(Math.max(320,available),ev.clientX-box.left));
+        var available=els.workbench.getBoundingClientRect().right-box.left-370;
+        var width=Math.max(280,Math.min(Math.max(280,available),ev.clientX-box.left));
         document.documentElement.style.setProperty("--editor-w",width+"px");
         persistUiState({editorWidth:Math.round(width)});
         requestAnimationFrame(applyPreviewZoom);
@@ -578,6 +632,38 @@ function bindPaneResizer(el,kind){
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);
   });
+}
+function bindWorkspaceHeightResizer(){
+  var handle=els.workspaceHeightResizer;
+  if(!handle||!els.workspaceProjects)return;
+  function setHeight(h){
+    h=Math.max(135,Math.min(520,Math.round(h)));
+    document.documentElement.style.setProperty("--workspace-h",h+"px");
+    handle.setAttribute("aria-valuenow",String(h));persistUiState({projectHeight:h});
+  }
+  handle.addEventListener("pointerdown",function(e){
+    if(e.button!==0)return;e.preventDefault();
+    var top=els.workspaceProjects.getBoundingClientRect().top;
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add("is-dragging");
+    function move(ev){setHeight(ev.clientY-top)}
+    function end(){
+      handle.classList.remove("is-dragging");
+      handle.removeEventListener("pointermove",move);
+      handle.removeEventListener("pointerup",end);
+      handle.removeEventListener("pointercancel",end);
+    }
+    handle.addEventListener("pointermove",move);
+    handle.addEventListener("pointerup",end);
+    handle.addEventListener("pointercancel",end);
+  });
+  handle.addEventListener("keydown",function(e){
+    if(!["ArrowUp","ArrowDown","Home","End"].includes(e.key))return;
+    e.preventDefault();
+    var cur=els.workspaceProjects.getBoundingClientRect().height;
+    setHeight(e.key==="Home"?135:e.key==="End"?520:cur+(e.key==="ArrowDown"?24:-24));
+  });
+  handle.addEventListener("dblclick",function(){setHeight(260)});
 }
 function previewBaseWidth(){
   var info=modeInfo();
@@ -658,7 +744,8 @@ async function refreshTypstPreview(){
       host:els.typstPreview,records:records,info:info,template:snapshotState.template,
       title:snapshotState.title,header:snapshotState.header,layoutVersion:"browser-r"+current,signal:browserLayoutController.signal,
       createItem:function(record){return createLayoutItem(record)},
-      createCover:snapshotState.testVisualConfig?.withCover===false?null:function(){return createBrowserCover(snapshotState)},renderMath:renderMath,
+      createCover:snapshotState.testVisualConfig?.withCover===false?null:function(){return createBrowserCover(snapshotState)},
+      createToc:snapshotState.tocEnabled?function(entries,n,t){return createBrowserToc(entries,n,t)}:null,renderMath:renderMath,
       onProgress:function(progress){
         if(progress.phase==="measuring")els.pdfStatus.textContent="正在测量题目、公式和图片…";
         else if(progress.phase==="repairing")els.pdfStatus.textContent="正在自动调整分页 · 第 "+progress.pass+"/3 轮";
@@ -674,7 +761,7 @@ async function refreshTypstPreview(){
     els.typstPreview.dataset.layoutReady="true";
     els.typstPreview.dataset.revision=String(current);
     var adjusted=Object.keys(result.scales||{}).length;
-    els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览与浏览器打印使用同一布局。";
+    els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(result.tocPageCount?" · "+result.tocPageCount+" 页目录":"")+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览、下载及打印使用同一分页结果。";
   }catch(e){
     if(!suspendTypstPreview&&!(e&&e.name==="AbortError")){
       console.error(e);
@@ -939,7 +1026,7 @@ function waitForBrowserLayoutRevision(targetRevision,timeout){
 async function exportProject(){
   var data={
     version:2,type:"everflow-local-paper",localOnly:true,latexEnabled:false,
-    template:state.template,layout:state.layout,header:state.header,originalIds:state.originalIds,
+    template:state.template,layout:state.layout,header:state.header,tocEnabled:state.tocEnabled,originalIds:state.originalIds,
     title:state.title,coverTitle:state.coverTitle,
     questions:state.questions.map(function(q){return Object.assign({},q,{localId:q.id})})
   };
@@ -950,7 +1037,7 @@ function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
    "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton",
-   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton"
+   "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
   selectedId=state.questions[0].id;syncInputs();bindDrag(els.orderList);
@@ -958,6 +1045,13 @@ function init(){
   loadUiState();
   bindPaneResizer(els.navigatorResizer,"navigator");
   bindPaneResizer(els.previewResizer,"preview");
+  bindWorkspaceHeightResizer();
+  function toggleToc(e){
+    var on=e.target.checked;
+    mutateState(function(){state.tocEnabled=on},"已"+(on?"开启":"关闭")+"目录页");
+  }
+  if(els.tocEnabledToggle)els.tocEnabledToggle.onchange=toggleToc;
+  if(els.tocEnabledSettings)els.tocEnabledSettings.onchange=toggleToc;
   if(els.outlineTabButton)els.outlineTabButton.onclick=function(){setNavigatorTab("outline")};
   if(els.settingsTabButton)els.settingsTabButton.onclick=function(){setNavigatorTab("settings")};
   if(els.navigatorToggleButton)els.navigatorToggleButton.onclick=toggleNavigator;
