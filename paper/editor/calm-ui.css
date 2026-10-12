@@ -242,6 +242,6 @@ body.editor-page .workspace-counter{font-variant-numeric:tabular-nums;white-spac
 /* Font-independent, optically centered navigation chevrons. */
 body.editor-page .ef-chevron{display:block!important;width:16px!important;height:16px!important;flex:0 0 16px!important;margin:0!important}
 body.editor-page .question-nav-picker{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;line-height:1!important}
-body.editor-page .outline-tree-chevron,body.editor-page .workspace-root-chevron,body.editor-page .workspace-folder-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;align-self:center!important;line-height:1!important;padding:0!important}
+body.editor-page .outline-tree-chevron,body.editor-page .workspace-root-chevron,body.editor-page .workspace-folder-exp{display:inline-flex!important;align-items:center!important;justify-content:center!important;align-self:center!important;line-height:1!important;padding:0!important}
 body.editor-page .outline-tree-section[aria-expanded="true"] .ef-chevron{transform:rotate(90deg)}
-body.editor-page .workspace-root-chevron .workspace-tree-icon,body.editor-page .workspace-folder-toggle .workspace-tree-icon{width:16px!important;height:16px!important;display:block!important;flex:0 0 16px!important;margin:0!important}
+body.editor-page .workspace-root-chevron .workspace-tree-icon,body.editor-page .workspace-folder-exp .workspace-tree-icon{width:16px!important;height:16px!important;display:block!important;flex:0 0 16px!important;margin:0!important}
