@@ -34,9 +34,14 @@
 .ps-book-showcase--template .ps-book-card.is-next:hover,
 .ps-book-showcase--template .ps-book-card.is-prev:hover{opacity:.93}
 .ps-book-showcase--template .ps-book-card:focus-visible{outline:2px solid var(--ps-accent)}
+/* The iframe itself keeps the full PHYSICAL page-sized layout viewport.
+   Scale the iframe as a visual object, not its contents: narrow iframe
+   viewports on iPad Safari trigger text inflation and mobile editor rules. */
 .ps-book-showcase--template .ps-book-template-frame{
- display:block!important;position:absolute;inset:0;
- width:100%!important;height:100%!important;
+ display:block!important;position:absolute!important;top:0!important;left:0!important;
+ width:var(--book-native-width,793.701px)!important;height:var(--book-native-height,1122.52px)!important;
+ max-width:none!important;max-height:none!important;
+ transform:scale(var(--book-scale,.35))!important;transform-origin:top left!important;
  box-sizing:border-box;border:0!important;margin:0;padding:0;
  background:white;overflow:hidden;pointer-events:none
 }
