@@ -73,7 +73,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await optionToggle.isChecked(),false);
     await sectionField.fill('一、选择题');
     assert.equal(await optionToggle.isChecked(),true);
-    await page.locator('#questionEditor textarea').fill('修改后的题干 $x^2    assert.match(await page.locator('#activeQuestionLabel').innerText(),/第 1 题/);
+    await page.locator('#questionEditor textarea').fill('修改后的题干 $x^2$');
+    assert.match(await page.locator('#activeQuestionLabel').innerText(),/第 1 题/);
     const firstTypstStatus=await waitForBrowserLayout(page);
     assert.match(firstTypstStatus,/分页已完成/);
     assert.ok((await page.locator('#typstPreview > section.typst-page').count())>=1);
