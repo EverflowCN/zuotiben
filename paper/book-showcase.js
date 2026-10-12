@@ -58,5 +58,24 @@
    var dx=e.clientX-down.x,dy=e.clientY-down.y;down=null;
    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)update(selected+(dx<0?1:-1),false);
  });
+ var mobileMenu=document.getElementById("psMobileMenu");
+ if(mobileMenu){
+   var summary=mobileMenu.querySelector("summary");
+   mobileMenu.addEventListener("toggle",function(){
+     summary.setAttribute("aria-label",mobileMenu.open?"关闭导航菜单":"打开导航菜单");
+   });
+   mobileMenu.querySelectorAll(".ps-mobile-nav-popover a").forEach(function(link){
+     link.addEventListener("click",function(){mobileMenu.open=false});
+   });
+   var mobileTheme=document.getElementById("psMobileThemeToggle");
+   if(mobileTheme)mobileTheme.addEventListener("click",function(){
+     var theme=document.getElementById("themeToggle");if(theme)theme.click();
+     mobileMenu.open=false;
+   });
+   document.addEventListener("pointerdown",function(e){
+     if(mobileMenu.open&&!mobileMenu.contains(e.target))mobileMenu.open=false;
+   });
+   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&mobileMenu.open)mobileMenu.open=false});
+ }
  update(0,false);
 })();
