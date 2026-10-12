@@ -27,6 +27,8 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Vendor local PDF libraries
+        run: bash scripts/install-pdf-vendor.sh
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
