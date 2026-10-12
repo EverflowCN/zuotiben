@@ -32,26 +32,85 @@ async function saveActive(checkpoint){
  let snapshot=api()?.snapshot();if(!snapshot)return;
  await db.savePaper(snapshot,{checkpoint:!!checkpoint,label:checkpoint?"切换前自动备份":"本地保存"});
 }
+let chosenFolder="";
+try{chosenFolder=localStorage.getItem("everflow-workspace-folder-v2")||""}catch(e){}
 async function renderFolders(){
  const target=$("localPaperList");if(!target)return;
- const list=await db.list(),active=db.activeId(),frag=document.createDocumentFragment();
- for(const p of list){
-  const b=button("","", "workspace-paper"+(p.id===active?" is-active":""));
-  b.onclick=async()=>{
-   if(p.id===db.activeId())return;
-   try{
-    await saveActive(true);await db.openPaper(p.id);location.reload();
-   }catch(e){toast("切换失败："+e.message)}
-  };
-  const ico=make("span","workspace-paper-icon","▤");
-  const name=make("span","workspace-paper-name",p.title);
-  const count=make("small","workspace-paper-count",p.count+"题");
-  b.title=p.title+" · "+date(p.modified);
-  b.append(ico,name,count);frag.append(b);
+ const [papers,folders]=await Promise.all([db.list(),db.listFolders()]);
+ if(chosenFolder&&!folders.some(f=>f.id===chosenFolder))chosenFolder="";
+ const active=db.activeId(),frag=document.createDocumentFragment();
+ function choose(id){
+   chosenFolder=id||"";
+   try{localStorage.setItem("everflow-workspace-folder-v2",chosenFolder)}catch(e){}
+   renderFolders();
  }
+ function paperRow(p){
+   const row=make("div","workspace-file-row"+(p.id===active?" is-active":""));
+   const open=button("","", "workspace-paper"+(p.id===active?" is-active":""));
+   const ico=make("span","workspace-paper-icon","▤");
+   const name=make("span","workspace-paper-name",p.title);
+   const count=make("small","workspace-paper-count",p.count+"题");
+   open.title=p.title+" · "+date(p.modified);
+   open.append(ico,name,count);
+   open.onclick=async()=>{
+     if(p.id===db.activeId())return;
+     try{await saveActive(true);await db.openPaper(p.id);location.reload()}
+     catch(e){toast("切换失败："+e.message)}
+   };
+   const move=make("select","workspace-file-move");
+   move.setAttribute("aria-label","移动 "+p.title+" 到文件夹");
+   move.title="移动试卷到文件夹";
+   move.add(new Option("移动…","_"));
+   move.add(new Option("根目录",""));
+   folders.forEach(f=>move.add(new Option(f.name,f.id)));
+   move.value="_";
+   move.onchange=async()=>{
+     if(move.value==="_")return;
+     try{
+       await db.movePaper(p.id,move.value);
+       await renderFolders();
+       toast("已移动到"+(folders.find(f=>f.id===move.value)?.name||"根目录"));
+     }catch(e){toast("移动失败："+e.message)}
+   };
+   row.append(open,move);return row;
+ }
+ function folderBlock(f,own){
+   const box=make("div","workspace-folder-block");
+   const head=make("div","workspace-folder-head");
+   const folderButton=button("","", "workspace-folder-name"+(chosenFolder===f.id?" is-selected":""));
+   folderButton.append(make("span","workspace-folder-icon","▣"),make("span","workspace-folder-label",f.name),make("small","workspace-folder-count",own.length+"份"));
+   folderButton.onclick=()=>choose(f.id);
+   const actions=button("⋯",()=>{
+      const modal=dialog("文件夹 · "+f.name);
+      modal.append(make("p","workspace-description","重命名或删除文件夹不会删除里面的试卷。删除后试卷回到根目录。"));
+      const name=make("input","workspace-input");name.value=f.name;name.maxLength=60;modal.append(name);
+      const bar=make("div","workspace-dialog-actions");
+      bar.append(button("保存名称",async()=>{
+        try{await db.renameFolder(f.id,name.value);await renderFolders();close()}catch(e){toast(e.message)}
+      }),button("删除文件夹",async()=>{
+        if(!confirm("删除文件夹「"+f.name+"」？其中试卷会移到根目录。"))return;
+        try{await db.deleteFolder(f.id);if(chosenFolder===f.id)choose("");await renderFolders();close()}catch(e){toast(e.message)}
+      },"workspace-action danger"));
+      modal.append(bar);
+   },"workspace-folder-menu");
+   actions.setAttribute("aria-label","管理文件夹 "+f.name);
+   head.append(folderButton,actions);box.append(head);
+   const children=make("div","workspace-folder-children");
+   own.forEach(p=>children.append(paperRow(p)));
+   if(!own.length)children.append(make("span","workspace-folder-empty","空文件夹 · 新建试卷或移动到这里"));
+   box.append(children);return box;
+ }
+ const root=papers.filter(p=>!p.folderId||!folders.some(f=>f.id===p.folderId));
+ const rootHead=button("","", "workspace-folder-root"+(!chosenFolder?" is-selected":""));
+ rootHead.append(make("span","workspace-folder-icon","▤"),make("span","workspace-folder-label","未分类试卷"),make("small","workspace-folder-count",root.length+"份"));
+ rootHead.onclick=()=>choose("");
+ frag.append(rootHead);
+ root.forEach(p=>frag.append(paperRow(p)));
+ folders.forEach(f=>frag.append(folderBlock(f,papers.filter(p=>p.folderId===f.id))));
  target.replaceChildren(frag);
- if(!list.length)target.textContent="暂无归档试卷";
+ if(!papers.length)target.append(make("p","workspace-description","还没有试卷，点击新建或导入 ZIP。"));
 }
+
 async function historyModal(){
  const box=dialog("本机历史版本");
  box.append(make("p","workspace-description","仅当前浏览器保存，保留最近约20个历史快照；清除网站数据会删除记录。重要项目请导出 .everflow 备份。"));
@@ -103,7 +162,7 @@ async function graphModal(){
   try{
    if(destination.value==="new"){
      await saveActive(true);
-     await db.newPaper("跨卷选题集 · "+new Date().toLocaleDateString("zh-CN"),output.map((q,i)=>Object.assign(q,{id:"graph-"+Date.now().toString(36)+"-"+i})));
+     await db.newPaper("跨卷选题集 · "+new Date().toLocaleDateString("zh-CN"),output.map((q,i)=>Object.assign(q,{id:"graph-"+Date.now().toString(36)+"-"+i})),chosenFolder);
      location.reload();
    }else{
      api().insertQuestions(output);
@@ -124,7 +183,9 @@ async function graphModal(){
      count.textContent="已选 "+chosen.size+" 题";
    };
    content.append(make("small","",e.paper.title+" · 第 "+(e.index+1)+" 题 · "+(e.question.section||"待分类")));
-   content.append(make("span","",clip(e.question.content,170)||"（空题）"));
+   const formula=make("span","workspace-graph-math",clip(e.question.content,170)||"（空题）");
+   if(window.EverflowSafeMath)window.EverflowSafeMath.render(formula);
+   content.append(formula);
    label.append(input,content);frag.append(label);
   }
   list.replaceChildren(frag);
@@ -137,10 +198,23 @@ async function initialize(){
  $("workspaceDialogClose").onclick=close;
  $("workspaceDialog").onclick=e=>{if(e.target===$("workspaceDialog"))close()};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("workspaceDialog").hidden)close()});
+ $("newLocalFolder").onclick=async()=>{
+   const box=dialog("新建项目文件夹");
+   box.append(make("p","workspace-description","一个文件夹可以收纳多套试卷；不同试卷仍可独立编辑、导出和跨卷选题。"));
+   const input=make("input","workspace-input");input.placeholder="例如：2027 数学二模拟卷";input.maxLength=60;
+   const action=button("创建文件夹",async()=>{
+     try{
+       const folder=await db.createFolder(input.value);
+       chosenFolder=folder.id;localStorage.setItem("everflow-workspace-folder-v2",chosenFolder);
+       await renderFolders();close();toast("已创建文件夹");
+     }catch(e){toast(e.message)}
+   },"workspace-action primary");
+   box.append(input,action);input.onkeydown=e=>{if(e.key==="Enter")action.click()};input.focus();
+ };
  $("newLocalPaper").onclick=async()=>{
   try{
    await saveActive(true);
-   await db.newPaper("新试卷 · "+new Date().toLocaleDateString("zh-CN"));
+   await db.newPaper("新试卷 · "+new Date().toLocaleDateString("zh-CN"),null,chosenFolder);
    location.reload();
   }catch(e){toast("新增失败："+e.message)}
  };
