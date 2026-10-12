@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: bash scripts/install-pdf-vendor.sh
       - run: npm install --no-save playwright
       - run: npx playwright install --with-deps chromium
       - name: Verify physical paper modes
