@@ -143,3 +143,21 @@ main{padding:15px 13px!important}.toolbar .buttons{gap:5px!important}.toolbar .b
  main,#sheets{zoom:1!important}
  .sheet{box-shadow:none!important}
 }
+
+/* Named print pages preserve a true A4 cover even for A3 double-column body sheets. */
+@page everflow-test-cover{size:210mm 297mm;margin:0}
+@page everflow-test-body-a4{size:210mm 297mm;margin:0}
+@page everflow-test-body-a3{size:420mm 297mm;margin:0}
+.sheet{page:everflow-test-body-a4}
+.sheet.everflow-test-cover{page:everflow-test-cover}
+body[data-paper-size="a3"] .sheet:not(.everflow-test-cover){page:everflow-test-body-a3}
+body[data-paper-size="a3"] .sheet.everflow-test-cover{
+ width:210mm!important;height:297mm!important;padding:0!important
+}
+@media print{
+ body[data-paper-size="a3"] .sheet.everflow-test-cover{
+   width:210mm!important;height:297mm!important;min-width:210mm!important;max-width:210mm!important;
+   padding:0!important
+ }
+ .sheet.everflow-test-cover{break-after:page!important;page-break-after:always!important}
+}
