@@ -64,7 +64,7 @@ async function exportPreview(options){
      var rect=range.getBoundingClientRect();if(!rect.width||!rect.height)continue;
      // Range bounds are the em box. Use the same embedded font's ascent/descent,
      // rather than guessing a baseline from font size or line-height.
-     var ascent=font.face.ascent/font.face.unitsPerEm*size,descent=-font.face.descent/font.face.unitsPerEm*size;
+     var ascent=font.face.ascent/font.face.unitsPerEm*size,descent=Math.abs(font.face.descent)/font.face.unitsPerEm*size;
      var baseline=rect.top+(rect.height-ascent-descent)/2+ascent;
      entries.push({text:char,x:(rect.left-root.left)*.75,y:(root.height-(baseline-root.top))*.75,size:size*.75,font:font.pdf,color:color(style),opacity:opacity});
     }
