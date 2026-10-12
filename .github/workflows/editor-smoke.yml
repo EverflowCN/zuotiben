@@ -2,7 +2,7 @@ name: Editor browser and PDF verification
 on:
   push:
     branches: [main]
-    paths: ['paper/**', 'scripts/editor-smoke.cjs', '.github/workflows/editor-smoke.yml']
+    paths: ['paper/**', 'scripts/editor-smoke.cjs', 'scripts/paper-test-smoke.cjs', 'scripts/install-pdf-vendor.sh', '.github/workflows/editor-smoke.yml']
   workflow_dispatch:
 permissions:
   contents: read
