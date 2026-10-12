@@ -1,0 +1,114 @@
+{
+  "paper": {
+    "id": "everflow-demo",
+    "title": "数学二 · 排版体验卷（示例题）"
+  },
+  "questions": [
+    {
+      "question_number": 1,
+      "section_title": "一、选择题",
+      "question": {
+        "id": "demo-1",
+        "stem": "求极限 $\\displaystyle \\lim_{x\\to 0}\\frac{\\sin 3x}{x}$ 的值。",
+        "options": {
+          "A": "$0$",
+          "B": "$1$",
+          "C": "$3$",
+          "D": "不存在"
+        },
+        "correct_answer": "C（3）",
+        "answer_explanation": "利用 $\\lim_{u\\to0}\\frac{\\sin u}{u}=1$，得原式 $=3$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 2,
+      "section_title": "一、选择题",
+      "question": {
+        "id": "demo-2",
+        "stem": "定积分 $\\displaystyle \\int_{0}^{1}2x\\,\\mathrm{d}x$ 等于（　）。",
+        "options": {
+          "A": "$0$",
+          "B": "$1$",
+          "C": "$2$",
+          "D": "$3$"
+        },
+        "correct_answer": "B（1）",
+        "answer_explanation": "由牛顿—莱布尼茨公式：$\\int_0^1 2x\\,\\mathrm{d}x=[x^2]_0^1=1$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 3,
+      "section_title": "二、填空题",
+      "question": {
+        "id": "demo-3",
+        "stem": "设 $f(x)=\\ln(1+x^2)$，则 $f'(x)=$ ________。",
+        "options": {},
+        "correct_answer": "$\\frac{2x}{1+x^2}$",
+        "answer_explanation": "对复合函数求导：$f'(x)=\\frac{1}{1+x^2}\\cdot2x$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 4,
+      "section_title": "二、填空题",
+      "question": {
+        "id": "demo-4",
+        "stem": "设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，则 $\\det(A)=$ ________。",
+        "options": {},
+        "correct_answer": "$-2$",
+        "answer_explanation": "$|A|=1\\times4-2\\times3=-2$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 5,
+      "section_title": "三、解答题",
+      "question": {
+        "id": "demo-5",
+        "stem": "求微分方程 $\\displaystyle y'+y=0$ 满足初始条件 $y(0)=2$ 的特解。",
+        "options": {},
+        "correct_answer": "$y(x)=2e^{-x}$",
+        "answer_explanation": "分离变量：$\\frac{\\mathrm{d}y}{y}=-\\mathrm{d}x$，所以 $y=Ce^{-x}$，由 $y(0)=2$ 得 $C=2$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 6,
+      "section_title": "三、解答题",
+      "question": {
+        "id": "demo-6",
+        "stem": "设 $D=\\{(x,y)\\mid 0\\le x\\le1,\\;0\\le y\\le1\\}$，计算 $\\displaystyle \\iint_D xy\\,\\mathrm{d}x\\,\\mathrm{d}y$。",
+        "options": {},
+        "correct_answer": "$\\frac14$",
+        "answer_explanation": "由积分区域为矩形，$\\iint_D xy\\,\\mathrm{d}x\\,\\mathrm{d}y=\\big(\\int_0^1x\\,\\mathrm{d}x\\big)\\big(\\int_0^1y\\,\\mathrm{d}y\\big)=\\frac14$。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 7,
+      "section_title": "三、解答题",
+      "question": {
+        "id": "demo-7",
+        "stem": "设矩阵 $B=\\begin{bmatrix}1&2\\\\2&4\\end{bmatrix}$。求矩阵 $B$ 的秩，并写出其列向量组的一个极大线性无关组。",
+        "options": {},
+        "correct_answer": "$\\operatorname{rank}(B)=1$，第一列构成一个极大线性无关组。",
+        "answer_explanation": "第二列等于第一列的两倍，而第一列非零，所以秩为1。",
+        "assets": []
+      }
+    },
+    {
+      "question_number": 8,
+      "section_title": "三、解答题",
+      "question": {
+        "id": "demo-8",
+        "stem": "求不定积分 $\\displaystyle \\int x\\cos x\\,\\mathrm{d}x$，并用求导验证结果。",
+        "options": {},
+        "correct_answer": "$x\\sin x+\\cos x+C$",
+        "answer_explanation": "利用分部积分得到 $x\\sin x-\\int\\sin x\\,\\mathrm{d}x=x\\sin x+\\cos x+C$，求导得到 $x\\cos x$。",
+        "assets": []
+      }
+    }
+  ]
+}
