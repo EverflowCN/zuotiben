@@ -38,7 +38,7 @@ async function save(entry,{version=false}={}){
  const papers=await list();
  const identity=base+":"+String(entry.source||"demo");
  const matching=papers.filter(x=>x.identity===identity);
- const existing=matching[0];
+ const existing=matching.find(x=>!x.isVersion);
  const key=version||!existing?id():existing.key;
  const record={key,identity,source:entry.source||"demo",savedAt:now,
   meta:safe(entry.meta||{}),raw:safe(entry.raw||{}),config:safe(entry.config||{}),
