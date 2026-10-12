@@ -33,6 +33,9 @@ jobs:
           python3 -m http.server 8765 &
           node scripts/editor-smoke.cjs
           if [ "$BROWSER" = "chromium" ]; then
+            node scripts/paper-test-smoke.cjs
+          fi
+          if [ "$BROWSER" = "chromium" ]; then
             command -v pdftotext >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
             pdftotext -layout test-results/editor.pdf test-results/editor.txt
             if grep -q '第0页' test-results/editor.txt; then
