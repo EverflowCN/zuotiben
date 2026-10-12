@@ -1,0 +1,185 @@
+/* Everflow Paper Studio tri-device layout, October 2026.
+   Rendering stays at physical mm; only preview zoom changes on screen. */
+body.editor-page .exact-pdf-btn{display:none!important}
+body.editor-page .editor-topbar button,
+body.editor-page .preview-toolbar button{white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb;min-width:0}
+body.editor-page .editor-topbar .brand,
+body.editor-page .editor-topbar .brand span,
+body.editor-page .editor-topbar .template-trigger span{white-space:nowrap;min-width:0}
+body.editor-page .browser-paper-preview{overscroll-behavior:contain}
+body.editor-page .preview-toolbar-right #browserPrintButton{white-space:nowrap!important}
+body.editor-page .typst-preview.browser-paper-preview{overflow:auto!important}
+body.editor-page .browser-paper-page{transform:none!important}
+/* Shared physical margins; never reflow paper contents for display size. */
+@media(min-width:1180px){
+ body.editor-page .editor-topbar{height:64px!important;min-height:64px!important;display:flex!important;flex-wrap:nowrap!important;gap:12px!important}
+ body.editor-page .texpage-topbar .editor-top-actions{display:flex!important;flex-wrap:nowrap!important;overflow:visible!important;gap:8px!important;min-width:0}
+ body.editor-page .preview-toolbar{min-width:0;gap:8px!important}
+ body.editor-page .preview-toolbar-left{min-width:0;overflow:hidden}
+ body.editor-page .preview-toolbar-left strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body.editor-page .preview-toolbar-right{flex:0 0 auto}
+}
+@media(min-width:768px) and (max-width:1179px){
+ body.editor-page .editor-topbar{height:60px!important;min-height:60px!important;display:flex!important;flex-wrap:nowrap!important;padding-inline:10px!important}
+ body.editor-page .texpage-topbar .editor-top-actions{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;max-width:75%;overflow:hidden}
+ body.editor-page #templateButtonLabel{max-width:145px;overflow:hidden;text-overflow:ellipsis}
+ body.editor-page .preview-toolbar{display:grid!important;grid-template-columns:minmax(90px,1fr) auto!important;min-height:52px;gap:8px}
+ body.editor-page .preview-toolbar-center{grid-column:1;grid-row:1;justify-self:end;max-width:100%;min-width:0}
+ body.editor-page .preview-toolbar-left{grid-column:1;grid-row:1;justify-self:start;max-width:36%;overflow:hidden}
+ body.editor-page .preview-toolbar-left strong{max-width:100%!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body.editor-page .preview-toolbar-left .preview-chip{display:none!important}
+ body.editor-page .preview-toolbar-right{grid-column:2;grid-row:1;justify-self:end}
+ body.editor-page #browserPrintButton{font-size:11px!important;padding:0 9px!important}
+ body.editor-page .preview-toolbar-center .fit-btn{display:none}
+}
+/* Phone: fixed two-row header, one full-width workspace, compact floating page navigator. */
+@media(max-width:767px){
+ body.editor-page{overflow:hidden!important;width:100%!important}
+ body.editor-page .texpage-topbar{
+   position:sticky!important;top:0!important;z-index:101!important;
+   height:100px!important;min-height:100px!important;max-height:100px!important;
+   display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:31px 42px!important;align-content:center!important;
+   padding:8px 10px!important;gap:6px!important;
+   overflow:visible!important;
+ }
+ body.editor-page .texpage-topbar .editor-brand-wrap{
+   grid-row:1!important;width:100%!important;height:31px!important;
+   min-width:0!important;overflow:hidden!important;
+ }
+ body.editor-page .texpage-topbar .brand-mark{
+   width:28px!important;height:28px!important;min-width:28px!important;
+   font-size:15px!important;line-height:28px!important;
+ }
+ body.editor-page .texpage-topbar .brand{font-size:14px!important;min-width:0;max-width:100%}
+ body.editor-page .texpage-topbar .brand>span:last-child{
+   display:block!important;max-width:calc(100vw - 65px)!important;
+   white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:13px!important;
+ }
+ body.editor-page .texpage-topbar .brand small{display:none!important}
+ body.editor-page .texpage-topbar .editor-top-actions{
+   grid-row:2!important;display:grid!important;
+   grid-template-columns:32px minmax(0,1fr) 42px 108px!important;
+   width:100%!important;min-width:0!important;max-width:100%!important;
+   gap:6px!important;align-items:center!important;
+   overflow:visible!important;justify-content:stretch!important;
+ }
+ body.editor-page .texpage-topbar .save-state,
+ body.editor-page .texpage-topbar .local-pill,
+ body.editor-page .texpage-topbar .history-actions,
+ body.editor-page .texpage-topbar #saveProjectButton{display:none!important}
+ body.editor-page .texpage-topbar .navigator-toggle{
+   grid-column:1!important;display:grid!important;
+   width:32px!important;min-width:32px!important;height:40px!important;padding:0!important;
+ }
+ body.editor-page .texpage-topbar .template-control{
+   grid-column:2!important;width:100%!important;min-width:0!important;
+   max-width:none!important;flex:none!important;order:unset!important;
+ }
+ body.editor-page .texpage-topbar #templateButton{
+   display:flex!important;width:100%!important;max-width:100%!important;
+   min-width:0!important;height:40px!important;min-height:40px!important;
+   padding:0 8px!important;align-items:center!important;justify-content:space-between!important;
+ }
+ body.editor-page .texpage-topbar #templateButtonLabel{
+   display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;
+   white-space:nowrap!important;min-width:0!important;max-width:100%!important;
+   font-size:11px!important;line-height:1.2!important;
+ }
+ body.editor-page .texpage-topbar .mobile-pdf-btn{
+   grid-column:3!important;display:flex!important;width:42px!important;
+   min-width:42px!important;max-width:42px!important;
+   height:40px!important;min-height:40px!important;padding:0!important;
+   justify-content:center!important;align-items:center!important;
+   font-size:12px!important;line-height:1!important;
+ }
+ body.editor-page .texpage-topbar .mobile-mode-switch{
+   grid-column:4!important;display:flex!important;width:108px!important;min-width:108px!important;
+   height:40px!important;min-height:40px!important;flex:0 0 auto!important;
+   overflow:hidden!important;white-space:nowrap!important;align-items:center!important;
+ }
+ body.editor-page .texpage-topbar .mobile-mode-switch button{
+   display:flex!important;align-items:center!important;justify-content:center!important;
+   width:54px!important;min-width:54px!important;height:38px!important;min-height:38px!important;
+   padding:0 3px!important;line-height:1!important;font-size:12px!important;
+   flex:0 0 54px!important;white-space:nowrap!important;
+ }
+ body.editor-page .texpage-workbench{height:calc(100dvh - 100px)!important;max-height:calc(100dvh - 100px)!important}
+ body.editor-page .texpage-navigator{top:100px!important;height:calc(100dvh - 100px)!important}
+ body.editor-page .workbench-backdrop{inset:100px 0 0!important}
+ body.editor-page .template-popover{top:100px!important;max-height:calc(100dvh - 112px)!important}
+ body.editor-page .texpage-editor-pane,body.editor-page .texpage-preview-pane{height:100%!important;min-height:0!important}
+ body.editor-page .preview-toolbar{
+   height:47px!important;min-height:47px!important;flex-basis:47px!important;
+   display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+   grid-template-rows:47px!important;gap:5px!important;padding:0 9px!important;
+ }
+ body.editor-page .preview-toolbar-left{grid-column:1!important;grid-row:1!important;min-width:0!important;max-width:100%!important;overflow:hidden!important}
+ body.editor-page .preview-toolbar-left strong{
+   max-width:calc(100vw - 180px)!important;overflow:hidden!important;text-overflow:ellipsis!important;
+   white-space:nowrap!important;font-size:11px!important;
+ }
+ body.editor-page .preview-toolbar-left .preview-chip{display:none!important}
+ body.editor-page .preview-toolbar-right{grid-column:2!important;grid-row:1!important;justify-self:end!important;min-width:0!important}
+ body.editor-page .preview-toolbar-right #browserPrintButton{
+   display:flex!important;min-height:34px!important;height:34px!important;
+   padding:0 10px!important;font-size:11px!important;
+ }
+ body.editor-page .preview-toolbar-center{
+   position:fixed!important;z-index:95!important;
+   bottom:calc(10px + env(safe-area-inset-bottom))!important;
+   left:50%!important;transform:translateX(-50%)!important;
+   display:flex!important;align-items:center!important;justify-content:center!important;
+   width:min(94vw,410px)!important;max-width:94vw!important;min-width:0!important;
+   padding:6px 6px!important;gap:3px!important;
+   overflow:visible!important;white-space:nowrap!important;
+   border-radius:13px!important;box-shadow:0 6px 24px #1a223c35!important;
+ }
+ body.editor-page .preview-toolbar-center .viewer-btn{
+   min-width:27px!important;width:29px!important;padding:0!important;font-size:13px!important;
+   flex:0 0 29px!important;
+ }
+ body.editor-page .preview-toolbar-center .page-indicator{min-width:51px!important;font-size:10px!important;text-align:center}
+ body.editor-page .preview-toolbar-center .zoom-indicator{width:48px!important;min-width:48px!important;padding:0!important;font-size:11px!important}
+ body.editor-page .preview-toolbar-center .fit-btn{min-width:37px!important;padding:0 5px!important;font-size:10px!important}
+ body.editor-page .preview-toolbar-center .toolbar-divider{margin:0 2px!important}
+ body.editor-page .texpage-preview-pane .pdf-status{
+   min-height:0!important;line-height:1.5!important;font-size:11px!important;
+   padding:7px 10px!important;overflow-wrap:anywhere!important;
+ }
+ body.editor-page .texpage-preview-pane .typst-preview{
+   min-width:0!important;padding:10px 6px calc(86px + env(safe-area-inset-bottom))!important;
+ }
+ body.editor-page .texpage-preview-pane .typst-preview > section.typst-page.browser-paper-page{
+   width:var(--paper-width,210mm)!important;max-width:none!important;
+ }
+}
+@media(max-width:359px){
+ body.editor-page .texpage-topbar{padding-inline:6px!important}
+ body.editor-page .texpage-topbar .editor-top-actions{
+   grid-template-columns:28px minmax(0,1fr) 37px 94px!important;gap:4px!important;
+ }
+ body.editor-page .texpage-topbar .navigator-toggle{width:28px!important;min-width:28px!important}
+ body.editor-page .texpage-topbar .mobile-pdf-btn{width:37px!important;min-width:37px!important;max-width:37px!important}
+ body.editor-page .texpage-topbar .mobile-mode-switch{width:94px!important;min-width:94px!important}
+ body.editor-page .texpage-topbar .mobile-mode-switch button{width:47px!important;min-width:47px!important;flex-basis:47px!important;font-size:11px!important}
+ body.editor-page .preview-toolbar-center .fit-btn{display:none!important}
+}
+/* Print the same validated physical DOM, never UI zoom.
+   Desktop/tablet/mobile use identical mm dimensions and line breaks. */
+@media print{
+ html,body.editor-page{background:#fff!important;width:auto!important;height:auto!important;overflow:visible!important}
+ body.editor-page.browser-print-active .editor-topbar,
+ body.editor-page.browser-print-active .preview-toolbar,
+ body.editor-page.browser-print-active .preview-toolbar-center,
+ body.editor-page.browser-print-active .pdf-status{display:none!important}
+ body.editor-page.browser-print-active .browser-paper-preview{
+   display:block!important;width:auto!important;height:auto!important;max-height:none!important;
+   min-height:0!important;overflow:visible!important;
+   margin:0!important;padding:0!important;background:#fff!important;
+ }
+ body.editor-page.browser-print-active .browser-paper-page{
+   zoom:1!important;transform:none!important;box-shadow:none!important;border:0!important;
+   page-break-inside:avoid!important;break-inside:avoid!important;
+ }
+}
