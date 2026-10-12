@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="./workspace-v2.css?v=20261013-complete3">
 <link rel="stylesheet" href="./interaction-v3.css?v=20261013-splitfix-final2">
 <link rel="stylesheet" href="./pane-autofit.css?v=20261013-autofit1">
-<link rel="stylesheet" href="./calm-ui.css?v=20261013-text1">
+<link rel="stylesheet" href="./calm-ui.css?v=20261013-download-finish1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -236,8 +236,8 @@
         <label><input type="checkbox" id="showExplanationsToggle"> 解析</label>
       </div>
       <div class="preview-toolbar-right">
-        <button class="primary-btn exact-pdf-btn" id="printButton" type="button" title="直接下载与当前预览完全一致的 PDF，不调用系统打印">PDF（图像）稳定版</button>
-        <button class="viewer-btn exact-pdf-btn" id="textPdfButton" type="button" title="正文可复制；沿用预览分页，复杂公式与图片保留渲染结果">PDF（文字）快速版</button>
+        <button class="primary-btn exact-pdf-btn" id="printButton" type="button" title="逐页取自当前预览，不调用系统打印；保留页面外观">PDF（图像）稳定版</button>
+        <button class="viewer-btn exact-pdf-btn" id="textPdfButton" type="button" title="正文可搜索复制；沿用预览分页及位置，复杂公式和图像保留预览效果">PDF（文字）快速版</button>
       </div>
     </div>
 
@@ -287,7 +287,7 @@
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="56" height="35" rx="5"/><path d="M23 7v35M43 7v35M18 25l4-4 4 4M38 25l4-4 4 4"/></svg></div><strong>01 · 拖动分栏</strong><p>把鼠标移到左、中、右区域之间的细竖线，左右拖动即可分配空间；双击分割线恢复默认。左侧上下分界也能拖动。</p></article>
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="7" width="44" height="34" rx="5"/><path d="M20 18l4 4 8-9M36 18h11M20 31h27"/></svg></div><strong>02 · 查看与勾选不同</strong><p>点击题干进入编辑，不会自动批量选中；点击左侧方框多选。支持「全选」「选本章」「清除」，勾选后使用批量移动等操作。</p></article>
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 24l-8 0m8 0-5-5m5 5-5 5M47 24l8 0m-8 0 5-5m-5 5 5 5"/><rect x="20" y="12" width="24" height="24" rx="5"/><path d="M27 23h10M27 28h7"/></svg></div><strong>03 · 快速跳转</strong><p>编辑栏顶部的 ‹ › 切换上一题、下一题，点击题号即可打开大纲选择器。键盘快捷键：Alt + ↑ / ↓（输入框外有效）。</p></article>
-      <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18v22h48V18H8zM14 8h20l5 10H14zM47 20v13m-5-5 5 5 5-5"/></svg></div><strong>04 · 预览即 PDF</strong><p>右侧只保留一组「下载 PDF / 打印」。直接下载不调用系统打印；建议优先用电脑和 A4 竖版，A3 与横版打印前检查分页。</p></article>
+      <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18v22h48V18H8zM14 8h20l5 10H14zM47 20v13m-5-5 5 5 5-5"/></svg></div><strong>04 · 预览即 PDF</strong><p>右侧提供「PDF（图像）稳定版」与「PDF（文字）快速版」两种直接下载。二者均使用当前预览的分页，不调用系统打印；图像版保证外观，文字版正文可搜索复制，数学公式和图片仍按预览保留。</p></article>
     </div>
     <footer><label><input type="checkbox" id="hideEditorGuideHint"> 已了解操作方式</label><button id="finishEditorGuideButton" type="button">开始编辑 <span aria-hidden="true">→</span></button></footer>
   </section>
