@@ -177,7 +177,9 @@ async function restoreHistory(entry){
    state.baseTitle=entry.meta?.title||'本机试卷';
    el('title').textContent=state.baseTitle;
    // Recover without depending on a ZIP listing that might have been lost.
-   state.docs=[DEMO_META,...state.docs.filter(p=>p.id!==DEMO_META.id&&p.id!==state.current.id),state.current];
+   state.docs=state.current.id===DEMO_META.id?
+      [state.current]:
+      [DEMO_META,...state.docs.filter(p=>p.id!==DEMO_META.id&&p.id!==state.current.id),state.current];
    setupFilters();list();updateSettings();
    await render();
    el('sidebar').classList.remove('open');
@@ -210,6 +212,9 @@ function openHistory(){
  }).catch(e=>host.textContent='历史记录读取失败：'+e.message);
 }
 async function select(p){
+ if(state.current&&state.raw&&state.current.id!==p.id&&!state.loading){
+   try{await saveHistory(false)}catch(e){console.warn('Switch backup failed',e)}
+ }
  state.current=p;state.source=p.demo?'demo':(p.localRaw?'json':'zip');
  if(!p.demo&&!p.localRaw&&!state.zip){msg('无法找到本机题库 ZIP，可从历史记录恢复或重新导入。');return}
  el('title').textContent=p.title;
@@ -271,7 +276,7 @@ el('historyClose').onclick=()=>el('historyModal').hidden=true;
 el('historyModal').onclick=e=>{if(e.target===el('historyModal'))el('historyModal').hidden=true};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')el('historyModal').hidden=true});
 ['query','provider','year'].forEach(k=>el(k).addEventListener(k==='query'?'input':'change',list));
-el('ansToggle').onchange=()=>el('answers').hidden=!el('ansToggle').checked;
+el('ansToggle').onchange=()=>{el('answers').hidden=!el('ansToggle').checked;scheduleHistorySave()};
 el('ansPrint').onchange=()=>{if(state.raw&&!state.loading)render().catch(e=>msg(e.message))};
 el('coverToggle').onchange=()=>rerender();
 el('save').onclick=()=>{if(state.raw)download(state.current.title+'.everflow',JSON.stringify(everflow(),null,2))};
@@ -314,12 +319,18 @@ function updateSettings(){
  el('gapNumber').textContent=el('gapSize').value+' px';
  el('paperSizeInfo').textContent=state.size==='a3'?'A3 · 420×297 mm':'A4 · 210×297 mm';
  el('printPageRule').textContent='@page {size:'+(state.size==='a3'?'A3 landscape':'A4 portrait')+';margin:0}';
- document.querySelectorAll('[data-size]').forEach(b=>b.classList.toggle('active',b.dataset.size===state.size));
+ document.querySelectorAll('[data-size]').forEach(b=>{
+  b.classList.toggle('active',b.dataset.size===state.size);
+  b.disabled=state.mode==='book'&&b.dataset.size==='a3';
+});
  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
  resize();
 }
 function rerender(){updateSettings();if(state.raw&&!state.loading)render().catch(e=>msg(e.message))}
-document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{state.size=b.dataset.size;rerender()});
+document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{
+ if(state.mode==='book'&&b.dataset.size==='a3'){msg('做题本一题一页使用 A4 母版；A3 双栏属于试卷模式。');return}
+ state.size=b.dataset.size;rerender()
+});
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
    state.mode=b.dataset.mode;
    if(state.mode==='book'&&state.size==='a3'){
