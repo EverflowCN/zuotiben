@@ -81,3 +81,17 @@
 .everflow-refined-cover .browser-cover-brand{left:19.3mm!important;top:270.55mm!important;font-family:"Everflow Song",serif!important;font-size:9.4645pt!important;font-weight:700!important;line-height:12pt!important}
 .everflow-refined-cover .browser-cover-date{left:19.3mm!important;top:277.15mm!important;color:#d32728!important;font-size:8.9664pt!important;font-weight:700!important;line-height:11pt!important}
 body[data-template="book"] .everflow-refined-cover .browser-cover-title{font-size:21.9178pt!important}
+
+/* A failed layout never turns a known-good preview into a blank canvas. */
+#typstPreview.is-stale-preview>.browser-paper-page{opacity:.55;filter:grayscale(.24)}
+#typstPreview.is-stale-preview:before{
+  content:"上一版预览（已过期，不可下载或打印）";
+  position:sticky;top:5px;z-index:20;display:block;width:min(94%,430px);
+  text-align:center;margin:0 auto 11px;padding:10px;border:1px solid #eabf91;
+  background:#fff5e8;color:#89562a;border-radius:8px;font:600 12px system-ui;
+}
+.layout-error-card{align-self:center;width:min(560px,96%);padding:38px 24px;background:#fff;
+  box-shadow:0 8px 36px #233d321f;border:1px solid #e7cbbb;border-radius:14px;
+  font:13px/1.85 system-ui;color:#554039;margin:42px auto}
+.layout-error-card strong{display:block;font-size:17px;color:#573c34}
+.layout-error-card button{margin-top:13px;background:#456957;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
