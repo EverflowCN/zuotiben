@@ -350,11 +350,11 @@ async function render(options){
           });
         });
       });
-      var tocCount=options.createToc&&tocSections.length?Math.ceil(tocSections.length/22):0;
+      var tocCount=options.createToc&&tocSections.length?Math.ceil(tocSections.length/16):0;
       if(options.createCover)fragment.appendChild(options.createCover());
       if(tocCount){
         for(var ti=0;ti<tocCount;ti++){
-          var entries=tocSections.slice(ti*22,(ti+1)*22).map(function(section){
+          var entries=tocSections.slice(ti*16,(ti+1)*16).map(function(section){
             return {heading:section.heading,page:section.bodyPage+coverCount+tocCount};
           });
           fragment.appendChild(options.createToc(entries,coverCount+ti+1,coverCount+tocCount+pagination.pages.length));
