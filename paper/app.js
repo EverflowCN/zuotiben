@@ -164,8 +164,10 @@ async function copyTextWithFallback(value){
   }catch(e){return false}
 }
 function moveToMarkdown(){
-  var target=byId("pasteMarkdown");
-  document.getElementById("workbench").scrollIntoView({behavior:"smooth",block:"start"});
+  var panel=byId("manualImport"),target=byId("pasteMarkdown");
+  if(!panel||!target)return;
+  panel.open=true;
+  panel.scrollIntoView({behavior:"smooth",block:"center"});
   target.focus({preventScroll:true});
 }
 function importPastedMarkdown(markdown){
@@ -192,7 +194,7 @@ function initTheme(){
   els.themeToggle.onclick=function(){document.body.classList.toggle("dark");localStorage.setItem(THEME_KEY,document.body.classList.contains("dark")?"dark":"light")};
 }
 function init(){
-  ["toast","themeToggle","fileInput","importButton","openProjectButton","copyPromptButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton","dropZone"].forEach(function(id){els[id]=byId(id)});
+  ["toast","themeToggle","fileInput","openProjectButton","downloadTemplateButton","continueButton","howButton","formatModal","startBlankButton"].forEach(function(id){els[id]=byId(id)});
   initTheme();
   var coverDate=byId("psCoverDate");
   if(coverDate){
@@ -207,39 +209,20 @@ function init(){
     ];
     saveAndOpen({title:"未命名试卷",coverTitle:"未命名试卷",questions:questions},"新建示例工程");
   };
-  var dropZone=els.dropZone;
-  ["dragenter","dragover"].forEach(function(type){
-    dropZone.addEventListener(type,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.add("drag-over")});
+  // Files are imported from the main action button; the removed hero
+  // workbench no longer owns a drop zone.
+  document.addEventListener("dragover",function(e){
+    if(e.dataTransfer&&Array.from(e.dataTransfer.types||[]).includes("Files"))e.preventDefault();
   });
-  ["dragleave","dragend"].forEach(function(type){
-    dropZone.addEventListener(type,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over")});
+  document.addEventListener("drop",function(e){
+    if(!e.dataTransfer||!e.dataTransfer.files.length)return;
+    e.preventDefault();
+    var file=e.dataTransfer.files[0];
+    if(/\.(md|markdown|json|everflow)$/i.test(file.name))importFile(file);
+    else toast("支持导入 .md、.json 或 .everflow 文件");
   });
-  dropZone.addEventListener("drop",function(e){
-    e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over");
-    var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-    if(file){
-      if(!/\.(md|markdown|json|everflow)$/i.test(file.name)){toast("暂不支持此格式，请使用 .md、.json 或 .everflow");return}
-      importFile(file);
-    }
-  });
-  document.addEventListener("dragover",function(e){if(e.dataTransfer&&e.dataTransfer.types.includes("Files"))e.preventDefault()});
-  document.addEventListener("drop",function(e){if(e.dataTransfer&&e.dataTransfer.files.length)e.preventDefault()});
-  els.importButton.onclick=function(){els.fileInput.click()};
   els.openProjectButton.onclick=function(){els.fileInput.click()};
   els.fileInput.onchange=function(){importFile(els.fileInput.files&&els.fileInput.files[0])};
-  els.copyPromptButton.onclick=function(){$("aiPromptModal").hidden=false};
-  $("aiPromptClose").onclick=function(){$("aiPromptModal").hidden=true};
-  $("aiPromptModal").onclick=function(e){if(e.target===$("aiPromptModal"))$("aiPromptModal").hidden=true};
-  document.querySelectorAll(".ai-copy").forEach(function(btn){
-    btn.onclick=async function(){
-      var platform=btn.dataset.ai||"AI";
-      var prompt="请作为"+platform+"题目转录助手，严格遵守以下要求：\n\n"+aiPrompt()+"\n\n按原卷标题、所属大题输出 Markdown；选择题选项 A. B. C. D.，如有答案与解析可分别以『答案：』『解析：』开头保留。";
-      try{await navigator.clipboard.writeText(prompt)}catch(e){
-        var ta=document.createElement("textarea");ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
-      }
-      $("aiPromptModal").hidden=true;toast(platform+" 提示词已复制");
-    };
-  });
   $("pasteImportButton").onclick=function(){
     importPastedMarkdown($("pasteMarkdown").value);
   };
@@ -248,8 +231,7 @@ function init(){
     if(await copyTextWithFallback(message)){
       toast("规则已复制！回到豆包对话框粘贴即可");
     }else{
-      toast("当前浏览器不允许自动复制，可使用上方「选择 AI」按钮");
-      $("copyPromptButton").click();
+      toast("当前浏览器不允许自动复制，请检查剪贴板权限后重试");
     }
   };
   $("quickPasteClipboardButton").onclick=async function(){
