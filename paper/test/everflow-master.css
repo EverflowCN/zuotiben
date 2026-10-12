@@ -161,3 +161,19 @@ body[data-paper-size="a3"] .sheet.everflow-test-cover{
  }
  .sheet.everflow-test-cover{break-after:page!important;page-break-after:always!important}
 }
+
+/* Landscape tablets use a compact three-pane workspace instead of dropping settings out of view. */
+@media (min-width:880px) and (max-width:1024px) and (orientation:landscape){
+ .layout{display:grid!important;grid-template-columns:185px minmax(0,1fr) 198px!important}
+ #sidebar{position:sticky!important;display:flex!important;top:68px!important;height:calc(100dvh - 68px)!important;max-height:none!important}
+ .settings{position:sticky!important;display:block!important;top:68px!important;height:calc(100dvh - 68px)!important;max-height:none!important}
+ .mobile-switches{display:none!important}
+ main{padding:13px 9px 34px!important}
+ .toolbar .buttons{display:flex!important;width:auto!important;justify-content:flex-end}
+ .toolbar .buttons button{padding:8px 6px!important;font-size:9px!important}
+ .toolbar{padding:7px!important}
+ .nav{gap:8px!important}
+ #sidebar .sideintro{padding:13px 12px 10px!important}
+ #sidebar .upload{padding:9px 5px!important;font-size:10px!important}
+ .setting-group{padding:9px!important}
+}
