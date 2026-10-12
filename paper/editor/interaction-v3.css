@@ -205,7 +205,7 @@ body.editor-page .editor-guide-card footer button:hover{filter:brightness(1.06)}
 @media(max-width:767px){
   body.editor-page .texpage-workbench{display:block!important}
   body.editor-page .pane-resizer{display:none!important}
-  body.editor-page .editor-help-trigger{width:28px!important;min-width:28px!important;height:34px!important;padding:5px!important;justify-content:center}
+  body.editor-page .editor-top-actions .editor-help-trigger{position:absolute!important;top:9px!important;right:11px!important;z-index:5!important;grid-column:auto!important;width:29px!important;min-width:29px!important;height:29px!important;padding:5px!important;justify-content:center}
   body.editor-page .editor-help-trigger span{display:none!important}
   body.editor-page .question-nav-picker{min-width:68px!important;padding:0 6px!important}
   body.editor-page .question-nav-arrow{min-width:28px!important;padding:0 4px!important}
