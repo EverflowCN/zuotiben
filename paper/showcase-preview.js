@@ -6,9 +6,10 @@
 "use strict";
 var host=document.getElementById("typstPreview");
 var status=document.getElementById("previewStatus");
-var mode=new URLSearchParams(location.search).get("mode")==="padp"?"padp":"compact";
-var cfg=window.EverflowTemplateModes.mode("book",mode);
-var sampleQuestions=mode==="padp"?[
+var requested=new URLSearchParams(location.search).get("mode");
+var mode=requested==="cover"?"cover":requested==="padl"?"padl":"compact";
+var cfg=window.EverflowTemplateModes.mode("book",mode==="cover"?"compact":mode);
+var sampleQuestions=mode==="padl"?[
  {id:"pad-1",sectionHeading:"1. 解答题",number:1,
   content:"设函数 $f(x)=x^2+2x$，求 $f'(x)$ 并计算 $f'(1)$。",
   options:[],showOptions:false,gapMm:0}
@@ -62,13 +63,36 @@ function fitPage(){
  var scale=Math.max(.12,Math.min(1,innerWidth/px));
  host.style.setProperty("--browser-preview-scale",String(scale));
 }
+function createMasterCover(){
+ // These elements and mm coordinates are the Book cover positions defined in
+ // everflow-template.txt (cover-title/signature/brand/date). No decorations.
+ var cover=node("section","typst-page browser-paper-page browser-cover-page");
+ cover.dataset.page="1";
+ cover.style.setProperty("--paper-width","210mm");
+ cover.style.setProperty("--paper-height","297mm");
+ cover.append(
+   node("div","browser-cover-title","彼时流年若水做题本"),
+   node("div","browser-cover-signature","·彼时流年若水·"),
+   node("div","browser-cover-line"),
+   node("div","browser-cover-brand","Everflow·彼时流年若水"),
+   node("div","browser-cover-date","> > > 更新时间："+new Date().toLocaleDateString("zh-CN"))
+ );
+ return cover;
+}
 async function init(){
  fitPage();
+ if(mode==="cover"){
+   // Original master uses A4 independent front matter for every Book mode.
+   host.appendChild(createMasterCover());
+   fitPage();status.hidden=true;
+   document.documentElement.dataset.previewReady="true";
+   return;
+ }
  try{
    if(!window.EverflowBrowserLayout||!window.EverflowSafeMath)throw Error("模板渲染组件未就绪");
    var result=await window.EverflowBrowserLayout.render({
       host:host,records:sampleQuestions,info:cfg,template:"book",
-      title:mode==="padp"?"Book · PAD 竖版":"Book · A4 紧凑版",
+      title:mode==="padl"?"Book · PAD 横版":"Book · A4 密集版",
       header:"",layoutVersion:"book-showcase-"+mode,
       createItem:makeItem,renderMath:function(root){window.EverflowSafeMath.render(root)}
    });
