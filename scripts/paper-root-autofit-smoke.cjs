@@ -10,16 +10,34 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
   await page.locator('#psBooksStage .ps-book-card').first().waitFor({timeout:15000});
   assert.equal(await page.title(),'彼时流年若水做题本 · 免费开源本地组卷 | Everflow');
-  assert.equal(await page.locator('.ps-book-card').count(),3);
+  assert.equal(await page.locator('.ps-book-card').count(),2);
   assert.equal(await page.locator('.ps-book-card[aria-current="true"]').count(),1);
+  assert.equal(await page.locator('.ps-book-spine').count(),0);
+  assert.equal(await page.locator('.ps-book-face').count(),0);
   assert.equal(new URL(await page.locator('.ps-header-cta').getAttribute('href'),origin).pathname,'/library/');
   assert.equal(new URL(await page.locator('#startBlankButton').evaluate(e=>document.baseURI)).pathname,'/paper/');
+  await page.waitForFunction(()=>[...document.querySelectorAll('.ps-book-template-frame')].every(f=>f.contentDocument?.documentElement.dataset.previewReady==='true'),{timeout:30000});
+  const bookPreview=page.frameLocator('iframe[src*="mode=compact"]');
+  const padPreview=page.frameLocator('iframe[src*="mode=padp"]');
+  assert.equal(await bookPreview.locator('.browser-paper-page').count(),1);
+  assert.equal(await padPreview.locator('.browser-paper-page').count(),1);
+  assert.equal(await bookPreview.locator('.browser-running-header').count(),1);
+  assert.equal(await padPreview.locator('.browser-running-header').count(),1);
+  assert.equal(await bookPreview.locator('.paper-layout-item').count(),5);
+  assert.equal(await padPreview.locator('.paper-layout-item').count(),1);
+  assert.equal(await bookPreview.locator('.browser-paper-qr img').count(),1);
+  assert.equal(await padPreview.locator('.browser-paper-qr img').count(),1);
+  const dimensions=await page.evaluate(()=>[...document.querySelectorAll('.ps-book-template-frame')].map(f=>({
+    size:f.contentDocument.querySelector('.browser-paper-page').style.getPropertyValue('--paper-width'),
+    height:f.contentDocument.querySelector('.browser-paper-page').style.getPropertyValue('--paper-height')
+  })));
+  assert.deepEqual(dimensions,[{size:'210mm',height:'297mm'},{size:'200mm',height:'250mm'}]);
   await page.locator('#psBookNext').click();
-  assert.ok((await page.locator('#psBookLabel').innerText()).includes('标准试卷'));
-  await page.locator('[data-book-dot="2"]').click();
-  assert.ok((await page.locator('#psBookLabel').innerText()).includes('单题留空'));
+  assert.ok((await page.locator('#psBookLabel').innerText()).includes('PAD'));
+  await page.locator('[data-book-dot="0"]').click();
+  assert.ok((await page.locator('#psBookLabel').innerText()).includes('A4'));
   await page.locator('.ps-book-card.is-centered').press('ArrowRight');
-  assert.ok((await page.locator('#psBookLabel').innerText()).includes('母版封面'));
+  assert.ok((await page.locator('#psBookLabel').innerText()).includes('PAD'));
   await page.screenshot({path:'test-results/home-book-showcase-desktop.png',fullPage:false});
   await page.locator('#startBlankButton').click();
   await page.waitForURL('**/paper/editor/',{timeout:17000});
@@ -67,6 +85,6 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   assert.ok(overflow.doc<=overflow.view+3,'mobile root horizontal overflow '+JSON.stringify(overflow));
   await page.screenshot({path:'test-results/home-book-showcase-mobile.png',fullPage:false});
   assert.deepEqual(exceptions,[],'Uncaught JS: '+exceptions.join('; '));
-  console.log('PASS: domain homepage, archived old 研库, 3D book carousel, root draft -> editor navigation, adaptive preview & dropdown, mobile');
+  console.log('PASS: domain homepage, archived old 研库, native Book compact/PAD dual-page preview, root draft -> editor navigation, adaptive preview & dropdown, mobile');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});
