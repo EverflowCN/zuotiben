@@ -4,7 +4,10 @@ from PIL import Image, ImageFilter, ImageChops
 raster, text = [fitz.open(p) for p in sys.argv[1:]]
 assert len(raster) == len(text)
 extracted=''.join(p.get_text() for p in text)
-assert '物理版式验证' in extracted.replace('\n',''), 'Native Chinese text cannot be extracted'
+normalized=extracted.replace('\n','').replace(' ','')
+assert '物理版式验证' in normalized, 'Cover title cannot be searched/copied'
+assert '设' in normalized and '求' in normalized, 'Question stems cannot be extracted as searchable text'
+assert len(normalized)>35, f'Text layer too short ({len(normalized)} characters)'
 for i,(a,b) in enumerate(zip(raster,text)):
     assert a.rect == b.rect
     images=[]
