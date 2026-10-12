@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./editor.css?v=20261012-layout5">
   <link rel="stylesheet" href="./redesign.css?v=20261012-layout1">
   <link rel="stylesheet" href="./responsive-parity.css?v=20261013-direct-pdf1">
+  <link rel="stylesheet" href="./workspace-ux.css?v=20261013-workspace2">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -64,6 +65,15 @@
       <b id="questionCount">0</b>
     </div>
 
+    <div class="workspace-projects">
+      <div class="workspace-heading"><b>本机试卷文件夹</b><button id="newLocalPaper" type="button" title="同一项目中新增试卷">＋ 新建</button></div>
+      <div id="localPaperList" class="workspace-paper-list" role="list" aria-label="本机试卷列表"></div>
+      <div class="workspace-mini-actions">
+        <button id="openPaperGraph" type="button">▦ 题目图谱</button>
+        <button id="openLocalHistory" type="button">↺ 历史版本</button>
+      </div>
+      <p class="workspace-help">仅保存在当前浏览器。可切换试卷；建议定期导出工程备份。</p>
+    </div>
     <div class="navigator-tabs" role="tablist" aria-label="项目面板">
       <button id="outlineTabButton" type="button" role="tab" aria-selected="true">结构</button>
       <button id="settingsTabButton" type="button" role="tab" aria-selected="false">设置</button>
@@ -169,6 +179,10 @@
         <button class="viewer-btn fit-btn" id="previewFitButton" type="button" title="适合宽度">适宽</button>
       </div>
 
+      <div class="preview-toolbar-extra">
+        <label><input type="checkbox" id="showAnswersToggle"> 答案</label>
+        <label><input type="checkbox" id="showExplanationsToggle"> 解析</label>
+      </div>
       <div class="preview-toolbar-right">
         <button class="viewer-btn exact-pdf-btn" id="printButton" type="button" title="将预览中的每一张物理纸张直接下载为 PDF，不打开系统打印">下载 PDF</button>
         <button class="primary-btn" id="browserPrintButton" type="button" title="打开打印设置，打印当前预览">打印</button>
@@ -205,6 +219,12 @@
 </main>
 
 <div class="workbench-backdrop" id="workbenchBackdrop" hidden></div>
+<div class="workspace-dialog-backdrop" id="workspaceDialog" hidden>
+ <section class="workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="workspaceDialogTitle">
+  <header><div><span class="dialog-label">LOCAL WORKSPACE</span><h2 id="workspaceDialogTitle">题目图谱</h2></div><button id="workspaceDialogClose" type="button" aria-label="关闭">×</button></header>
+  <div id="workspaceDialogContent" class="workspace-dialog-content"></div>
+ </section>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script defer src="../assets/vendor/temml/temml.min.js?v=20260921-local1"></script>
@@ -216,6 +236,7 @@
 <script src="./vendor/html-to-image.js?v=20261013-local2"></script>
 <script src="./vendor/html2canvas.min.js?v=20261013-local2"></script>
 <script src="./preview-pdf.js?v=20261013-local2"></script>
-<script src="./editor.js?v=20261013-direct-pdf2"></script>
+<script src="./local-projects.js?v=20261013-workspace2"></script>
+<script src="./editor.js?v=20261013-workspace2"></script>
 </body>
 </html>
