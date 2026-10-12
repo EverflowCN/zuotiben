@@ -59,6 +59,7 @@ function normalizeQuestion(raw,index){
     id:String(raw.localId||raw.id||("local-"+index+"-"+Date.now().toString(36))),
     content:cleanText(raw.content||raw.stem||raw.question||raw.text||raw.title||""),
     options:options,
+    images:Array.isArray(raw.images)?raw.images.filter(function(im){return im&&/^data:image\/(?:png|jpeg|webp|gif|svg\+xml);base64,/i.test(String(im.src||""))}).map(function(im){return {src:String(im.src),alt:String(im.alt||"试题配图").slice(0,120)}}):[],
     type:raw.type|| (options.length?"选择题":"解答题"),
     section:cleanText(raw.section||""),
     gap:Math.max(0,Math.min(100,Number(raw.gap)||0)),
@@ -384,6 +385,15 @@ function layoutRecords(snapshotState){
   });
   return records;
 }
+function appendQuestionImages(parent,images){
+  if(!Array.isArray(images))return;
+  images.forEach(function(im){
+    if(!im||!/^data:image\/(?:png|jpeg|webp|gif|svg\+xml);base64,/i.test(String(im.src||"")))return;
+    var frame=document.createElement("figure");frame.className="everflow-question-image";
+    var img=document.createElement("img");img.src=im.src;img.alt=im.alt||"试题配图";
+    img.loading="eager";img.decoding="async";frame.appendChild(img);parent.appendChild(frame);
+  });
+}
 function createLayoutItem(record){
   var item=document.createElement("article");item.className="paper-layout-item";item.dataset.questionId=record.id;
   if(record.sectionHeading){
@@ -394,6 +404,7 @@ function createLayoutItem(record){
   var num=document.createElement("div");num.className="question-number";num.textContent=record.number+".";
   var body=document.createElement("div");body.className="question-body";textWithBreaks(body,record.content);
   line.append(num,body);question.appendChild(line);
+  appendQuestionImages(question,record.images);
   if(record.showOptions&&record.options&&record.options.length){
     var opts=document.createElement("div");opts.className="options "+choiceClass(record.options);
     record.options.forEach(function(option,index){
@@ -456,6 +467,7 @@ function renderPaper(){
     var num=document.createElement("div");num.className="question-number";num.textContent=(i+1)+".";
     var body=document.createElement("div");body.className="question-body";textWithBreaks(body,q.content);
     line.append(num,body);sec.appendChild(line);
+    appendQuestionImages(sec,q.images);
     if(q.showOptions&&q.options.length){
       var opts=document.createElement("div");opts.className="options "+choiceClass(q.options);
       q.options.forEach(function(o,j){var d=document.createElement("div");d.className="option";var l=document.createElement("span");l.className="option-label";l.textContent="("+String.fromCharCode(65+j)+")";var b=document.createElement("span");b.className="option-body";b.textContent=o;d.append(l,b);opts.appendChild(d)});
