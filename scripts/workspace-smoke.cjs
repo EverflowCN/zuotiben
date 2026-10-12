@@ -8,6 +8,28 @@ const assert=require('node:assert/strict');
   const origin='http://127.0.0.1:8765';
   await page.goto(origin+'/paper/',{waitUntil:'domcontentloaded'});
   assert.ok((await page.title()).includes('彼时流年若水'));
+  // Homepage hero must be the actual Everflow mother COVER (not a question page).
+  const cover=page.locator('.ps-paper-demo.ps-master-cover');
+  await cover.waitFor();
+  assert.equal(await cover.locator('.ps-q').count(),0,'homepage must not display sample questions as the cover');
+  const metrics=await cover.evaluate(el=>{
+    const r=el.getBoundingClientRect();
+    const pos=sel=>{const p=el.querySelector(sel).getBoundingClientRect();return (p.y-r.y)/r.height};
+    return {ratio:r.height/r.width,titleY:pos('.ps-master-title'),signatureY:pos('.ps-master-signature'),ruleY:pos('.ps-master-rule'),dateY:pos('.ps-master-date')};
+  });
+  assert.ok(Math.abs(metrics.ratio-297/210)<.02,'A4 physical aspect ratio: '+JSON.stringify(metrics));
+  assert.ok(Math.abs(metrics.titleY-120.9/297)<.025,'cover title geometry');
+  assert.ok(Math.abs(metrics.signatureY-148.05/297)<.025,'cover signature geometry');
+  assert.ok(Math.abs(metrics.ruleY-266/297)<.025,'cover foot rule geometry');
+  assert.ok(Math.abs(metrics.dateY-277.15/297)<.025,'cover red-date geometry');
+  assert.ok((await page.locator('#psCoverDate').textContent()).includes('更新时间：'));
+  for(const width of [820,390]){
+    await page.setViewportSize({width,height:1080});
+    assert.equal(await cover.isVisible(),true,'cover hidden at width '+width);
+    const box=await cover.boundingBox();
+    assert.ok(box.width>200&&box.width<=width,'cover width broken at '+width+': '+JSON.stringify(box));
+  }
+  await page.setViewportSize({width:1440,height:920});
   await page.locator('#copyPromptButton').click();
   assert.equal(await page.locator('#aiPromptModal').isVisible(),true);
   assert.equal(await page.locator('.ai-copy').count(),2);
