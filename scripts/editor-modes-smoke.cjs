@@ -51,6 +51,15 @@ function near(actual,expected,t=.035){
     near(initialRatio,210/297);
     assert.ok(await page.locator('.browser-paper-column [data-question-id="q2"] math[display="block"]').count());
     assert.ok(await page.locator('.browser-paper-column [data-question-id="q2"] .semantic-row.roman').count()>=2);
+    await page.evaluate(()=>document.body.classList.add('browser-print-active'));
+    await page.emulateMedia({media:'print'});
+    assert.equal(await page.locator('#paperStage').evaluate(el=>getComputedStyle(el).display),'none');
+    assert.equal(await page.locator('#typstPreview').evaluate(el=>getComputedStyle(el).position),'static');
+    near(await ratio(page,1),210/297,.001);
+    const printPdf=await page.pdf({preferCSSPageSize:true,printBackground:true});
+    assert.equal(printPdf.subarray(0,5).toString(),'%PDF-');
+    await page.emulateMedia({media:'screen'});
+    await page.evaluate(()=>document.body.classList.remove('browser-print-active'));
     console.log('PASS MODE A4 试卷 a4 ratio',initialRatio,'chip',await page.locator('#pageSizeChip').innerText());
 
     const cases=[

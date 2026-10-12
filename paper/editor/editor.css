@@ -1976,7 +1976,7 @@ body[data-template="book"] .paper-layout-item .paper-section-heading{
 .paper-question-fragment-window{position:relative;overflow:hidden}
 .paper-question-fragment-body{position:relative;min-height:0;will-change:transform}
 .browser-running-header{
-  position:absolute;top:5.7mm;right:var(--paper-right);left:var(--paper-left);height:5.3mm;
+  position:absolute;top:calc(var(--paper-top) - 5.3mm - var(--paper-head-sep,3mm));right:var(--paper-right);left:var(--paper-left);height:5.3mm;
   display:grid;grid-template-columns:1fr minmax(0,1.4fr) 1fr;align-items:start;border-bottom:.4pt solid #777;
   font-family:"Everflow Song",serif;font-size:10pt;font-weight:700;line-height:1.2;
 }

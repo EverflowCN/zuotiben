@@ -202,6 +202,7 @@ function renderPage(layoutPage,pageNumber,total,options,geo,logicalOffset,totalL
   page.style.setProperty("--paper-header",geo.headerMm+"mm");page.style.setProperty("--paper-footer",geo.footerMm+"mm");
   page.style.setProperty("--paper-column-gap",geo.columnGapMm+"mm");page.style.setProperty("--paper-font",info.fontPt+"pt");
   page.style.setProperty("--paper-leading",String(info.lineHeight));
+  page.style.setProperty("--paper-head-sep",(Number(info.headSepMm)||3)+"mm");
   page.style.setProperty("--master-choice-before",((Number(info.baselinePt)||0)*(Number(info.choiceBeforeSkipBaseline)||0)*25.4/72)+"mm");
 
   if(options.template==="book"){
