@@ -1,0 +1,38 @@
+name: Editor interaction v3 verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper/editor/interaction-v3.css'
+      - 'paper/editor/editor.js'
+      - 'paper/editor/index.html'
+      - 'scripts/editor-interaction-v3-smoke.cjs'
+      - '.github/workflows/editor-interaction-v3.yml'
+permissions:
+  contents: read
+concurrency:
+  group: editor-interaction-v3-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  interaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bash scripts/install-pdf-vendor.sh
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Test structure pane, selection, question nav, PDF and mobile view
+        run: |
+          mkdir -p test-results
+          python3 -m http.server 8765 &
+          node scripts/editor-interaction-v3-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-interaction-v3-screenshots
+          path: test-results/
