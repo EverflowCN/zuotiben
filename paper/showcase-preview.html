@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<base href="/paper/editor/">
+<title>Everflow · Book 原模板物理纸张预览</title>
+<link rel="stylesheet" href="/paper/assets/fonts/fandol/fonts.css?v=20260921-fandol1">
+<link rel="stylesheet" href="/paper/assets/vendor/temml/Temml-Local.css?v=20260921-local1">
+<link rel="stylesheet" href="/paper/editor/editor.css?v=20261012-layout5">
+<link rel="stylesheet" href="/paper/editor/test-parity.css?v=20261013-master2">
+<style>
+html,body{margin:0!important;padding:0!important;box-sizing:border-box;width:100%;height:100%;overflow:hidden!important;background:#fff!important}
+body{min-height:0!important}
+#typstPreview{display:block!important;box-sizing:border-box!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;padding:0!important;margin:0!important;background:#fff!important;box-shadow:none!important;border:0!important;gap:0!important}
+#typstPreview>.browser-paper-page{max-width:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;flex:none!important;zoom:var(--browser-preview-scale,1)!important}
+#typstPreview>.browser-paper-page~.browser-paper-page{display:none!important}
+#previewStatus{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font:11px/1.5 sans-serif;color:#89958b;background:#fff;z-index:2}
+#previewStatus[hidden]{display:none!important}
+</style>
+</head>
+<body class="editor-page" data-template="book">
+<div id="previewStatus" role="status">正在加载 Everflow 模板…</div>
+<div id="typstPreview" class="typst-preview browser-paper-preview texpage-preview-pane" aria-label="母版排版预览"></div>
+<script src="/paper/assets/vendor/temml/temml.min.js?v=20260921-local1"></script>
+<script src="/paper/editor/template-modes.js?v=20260921-mother5"></script>
+<script src="/paper/editor/safe-math.js?v=20261013-4"></script>
+<script src="/paper/editor/browser-layout.js?v=20261013-complete3"></script>
+<script src="/paper/showcase-preview.js?v=20261013-mother2"></script>
+</body>
+</html>
