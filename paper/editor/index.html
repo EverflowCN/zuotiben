@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="./workspace-v2.css?v=20261013-complete3">
 <link rel="stylesheet" href="./interaction-v3.css?v=20261013-splitfix-final2">
 <link rel="stylesheet" href="./pane-autofit.css?v=20261013-autofit1">
-<link rel="stylesheet" href="./calm-ui.css?v=20261013-matrix1">
+<link rel="stylesheet" href="./calm-ui.css?v=20261013-svg-arrows1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -40,7 +40,7 @@
 
     <div class="template-control">
       <button class="ghost-btn template-trigger" id="templateButton" type="button" aria-haspopup="true" aria-expanded="false">
-        <span id="templateButtonLabel">试卷 · A4 试卷</span><b>⌄</b>
+        <span id="templateButtonLabel">试卷 · A4 试卷</span><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="template-popover" id="templatePopover" hidden>
         <div class="template-popover-head">
@@ -185,11 +185,11 @@
         <strong id="activeQuestionLabel">题目编辑</strong>
       </div>
       <div class="pane-tab-actions editor-question-nav" role="group" aria-label="题目导航">
-        <button class="question-nav-arrow" id="prevQuestionButton" type="button" aria-label="上一题" title="上一题（Alt+↑）">‹</button>
+        <button class="question-nav-arrow" id="prevQuestionButton" type="button" aria-label="上一题" title="上一题（Alt+↑）"><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
         <button class="question-nav-picker" id="questionNavPickerButton" type="button" aria-label="选择大纲题目" aria-haspopup="true" aria-expanded="false">
-          <span id="questionNavCounter">1 / 1</span><span aria-hidden="true">⌄</span>
+          <span id="questionNavCounter">1 / 1</span><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
-        <button class="question-nav-arrow" id="nextQuestionButton" type="button" aria-label="下一题" title="下一题（Alt+↓）">›</button>
+        <button class="question-nav-arrow" id="nextQuestionButton" type="button" aria-label="下一题" title="下一题（Alt+↓）"><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
         <span class="local-state"><i></i> 本地自动保存</span>
         <div class="question-nav-popover" id="questionNavPopover" hidden><div class="question-nav-popover-header">按大纲定位题目</div><div id="questionNavMenu" class="question-nav-menu"></div></div>
       </div>
@@ -220,9 +220,9 @@
       </div>
 
       <div class="preview-toolbar-center" role="group" aria-label="分页预览控制">
-        <button class="viewer-btn" id="previewPrevPageButton" type="button" title="上一页">‹</button>
+        <button class="viewer-btn" id="previewPrevPageButton" type="button" title="上一页"><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
         <span class="page-indicator" id="previewPageIndicator">— / —</span>
-        <button class="viewer-btn" id="previewNextPageButton" type="button" title="下一页">›</button>
+        <button class="viewer-btn" id="previewNextPageButton" type="button" title="下一页"><svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
         <span class="toolbar-divider"></span>
         <button class="viewer-btn" id="previewZoomOutButton" type="button" title="缩小">−</button>
         <button class="zoom-indicator" id="previewZoomLabel" type="button" title="恢复 100%">100%</button>
@@ -304,8 +304,8 @@
 <script src="./preview-pdf.js?v=20261013-local2"></script>
 <script src="./local-projects.js?v=20261013-unlimited1"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="./editor.js?v=20261013-outline-tree1"></script>
-<script src="./workspace-ui.js?v=20261013-matrix1"></script>
+<script src="./editor.js?v=20261013-svg-arrows1"></script>
+<script src="./workspace-ui.js?v=20261013-svg-arrows1"></script>
 <script src="./workspace-zip.js?v=20261013-unlimited1"></script>
 <script src="./lucide-ui.js?v=20261013-filetree1"></script>
 </body>

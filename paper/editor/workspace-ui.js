@@ -36,7 +36,7 @@ function treeIcon(name){
  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
  for(const [k,v] of Object.entries({viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.7","stroke-linecap":"round","stroke-linejoin":"round","aria-hidden":"true"}))svg.setAttribute(k,v);
  svg.classList.add("workspace-tree-icon");
- const paths=name==="folder"?["M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"]:["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M8 13h8","M8 17h6"];
+ const paths=name==="chevron-down"?["m6 9 6 6 6-6"]:name==="chevron-right"?["m9 6 6 6-6 6"]:name==="folder"?["M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"]:["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M8 13h8","M8 17h6"];
  for(const d of paths){const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("d",d);svg.appendChild(path)}
  return svg;
 }
@@ -87,11 +87,12 @@ async function renderFolders(){
    const box=make("div","workspace-folder-block");
    const head=make("div","workspace-folder-head");
    const collapsed=!keyword&&collapsedFolders.has(f.id);
-   const arrow=button(collapsed?"▸":"▾",()=>{
+   const arrow=button("",()=>{
       if(collapsedFolders.has(f.id))collapsedFolders.delete(f.id);else collapsedFolders.add(f.id);
       try{localStorage.setItem("everflow-workspace-collapsed-v2",JSON.stringify([...collapsedFolders]))}catch(e){}
       renderFolders();
    },"workspace-folder-exp");
+   arrow.append(treeIcon(collapsed?"chevron-right":"chevron-down"));
    arrow.setAttribute("aria-label",collapsed?"展开文件夹 "+f.name:"折叠文件夹 "+f.name);
    const folderButton=button("","", "workspace-folder-name"+(chosenFolder===f.id?" is-selected":""));
    const folderIcon=make("span","workspace-folder-icon");folderIcon.appendChild(treeIcon("folder"));
@@ -120,7 +121,8 @@ async function renderFolders(){
  }
  const root=papers.filter(p=>!p.folderId||!folders.some(f=>f.id===p.folderId));
  const rootHead=button("","", "workspace-folder-root"+(!chosenFolder?" is-selected":""));
- rootHead.append(make("span","workspace-root-chevron","⌄"),make("span","workspace-folder-label","文件目录"),make("small","workspace-folder-count",papers.length+"份"));
+ const rootArrow=make("span","workspace-root-chevron");rootArrow.append(treeIcon("chevron-down"));
+ rootHead.append(rootArrow,make("span","workspace-folder-label","文件目录"),make("small","workspace-folder-count",papers.length+"份"));
  rootHead.onclick=()=>choose("");
  frag.append(rootHead);
  folders.forEach(f=>{

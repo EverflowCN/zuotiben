@@ -376,7 +376,7 @@ function renderOrder(){
     name=name||"未分类";if(groups.has(name))return groups.get(name);
     var group=document.createElement("div");group.className="outline-tree-group";
     var header=document.createElement("button");header.type="button";header.className="outline-tree-section";
-    var arrow=document.createElement("span");arrow.className="outline-tree-chevron";arrow.textContent=collapsedOutlineSections.has(name)?"›":"⌄";
+    var arrow=document.createElement("span");arrow.className="outline-tree-chevron";arrow.innerHTML='<svg class="ef-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
     var title=document.createElement("span");title.className="outline-tree-title";title.textContent=name;header.title=name;
     var count=document.createElement("small");count.textContent=state.questions.filter(function(q){return (q.section||"未分类")===name}).length;
     header.append(arrow,title,count);header.setAttribute("aria-expanded",String(!collapsedOutlineSections.has(name)));
@@ -384,7 +384,7 @@ function renderOrder(){
     var branch=document.createElement("div");branch.className="outline-tree-children";branch.hidden=collapsedOutlineSections.has(name);
     header.onclick=function(){
       if(collapsedOutlineSections.has(name))collapsedOutlineSections.delete(name);else collapsedOutlineSections.add(name);
-      branch.hidden=collapsedOutlineSections.has(name);arrow.textContent=branch.hidden?"›":"⌄";header.setAttribute("aria-expanded",String(!branch.hidden));
+      branch.hidden=collapsedOutlineSections.has(name);header.setAttribute("aria-expanded",String(!branch.hidden));
       try{sessionStorage.setItem("everflow-outline-folds",JSON.stringify([...collapsedOutlineSections]))}catch(e){}
     };
     group.append(header,branch);els.orderList.appendChild(group);groups.set(name,branch);return branch;
