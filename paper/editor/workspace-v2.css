@@ -126,10 +126,19 @@ body.editor-page .browser-toc-footer{position:absolute;bottom:16mm;left:22mm;rig
  body.editor-page .texpage-workbench{grid-template-columns:var(--navigator-w,235px) 6px minmax(270px,var(--editor-w,370px)) 6px minmax(315px,1fr)!important}
  body.editor-page .pane-resizer{width:6px!important}
 }
-@media(max-width:1179px){
- /* The existing tablet view uses a collapsible navigator drawer. */
- body.editor-page .texpage-workbench{display:flex!important;flex-direction:row!important}
+@media(min-width:768px) and (max-width:1179px){
+ /* Keep the original TWO-PANE tablet workbench (navigator is a drawer).
+    Do not turn this into flex or change physical paper geometry. */
+ body.editor-page .texpage-workbench{
+   display:grid!important;
+   grid-template-columns:minmax(270px,var(--editor-w,42vw)) 6px minmax(340px,1fr)!important;
+ }
+ body.editor-page .navigator-resizer{display:none!important}
+ body.editor-page .preview-resizer{display:block!important}
  body.editor-page .workspace-projects{max-height:calc(100% - 200px)!important}
+}
+@media(max-width:767px){
+ body.editor-page .texpage-workbench{display:block!important}
 }
 @media(max-width:767px){
  body.editor-page .workspace-projects{height:var(--workspace-h)!important;max-height:calc(100% - 200px)!important}
