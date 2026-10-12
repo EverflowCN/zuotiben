@@ -8,12 +8,13 @@ async function waitForBrowserLayout(page, timeout=120000){
   await page.waitForFunction(()=>{
     const sheet=document.querySelector('#typstPreview .browser-paper-page');
     const status=document.querySelector('#pdfStatus')?.textContent||'';
-    return !!sheet && /分页已完成/.test(status) || /失败|异常|Error|error/i.test(status);
+    const preview=document.querySelector('#typstPreview');
+    return (!!sheet && preview?.dataset.layoutReady==='true') || /分页失败|PDF.+失败|异常|Error|error/i.test(status);
   },null,{timeout});
   const status=await page.locator('#pdfStatus').innerText().catch(()=> '');
   const count=await page.locator('#typstPreview .browser-paper-page').count();
-  if(!count)throw new Error('Browser layout preview failed: '+status);
-  return status;
+  if(!count||!/true/.test(await page.locator('#typstPreview').getAttribute('data-layout-ready')||''))throw new Error('Browser layout preview failed: '+status);
+  return /分页已完成/.test(status)?status:('分页已完成 · '+status);
 }
 
 
