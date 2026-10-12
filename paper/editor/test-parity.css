@@ -1,0 +1,17 @@
+/* Everflow Test -> Formal mapping controls; default original template untouched. */
+.template-override-settings{
+ display:grid;gap:10px;padding:13px 0 12px;margin:12px 0 4px;
+ border-top:1px solid #e5ede7;border-bottom:1px solid #e5ede7;
+ color:#365646;font:12px/1.45 system-ui,sans-serif
+}
+.template-override-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.template-override-row label{display:grid;gap:6px}
+.template-override-row input{min-width:0;width:100%;border:1px solid #d4e2d7;border-radius:7px;
+ padding:8px 7px;background:#fdfefc;color:#2b473b;font-size:12px}
+.template-override-check{display:flex!important;gap:8px!important;align-items:center!important;font-weight:550}
+.template-override-check input{accent-color:#467b60}
+.template-override-settings p{margin:0;color:#82978a;font-size:10px;line-height:1.75}
+@media(max-width:530px){
+ .template-override-row{gap:7px}
+ .template-override-row input{font-size:11px}
+}
