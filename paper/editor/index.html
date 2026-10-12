@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../styles.css?v=20260921-fandol1">
   <link rel="stylesheet" href="./editor.css?v=20261012-layout5">
   <link rel="stylesheet" href="./redesign.css?v=20261012-layout1">
+  <link rel="stylesheet" href="./responsive-parity.css?v=20261013-unify1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -44,7 +45,7 @@
     </div>
 
     <button class="ghost-btn" id="saveProjectButton" type="button">保存项目</button>
-    <button class="primary-btn mobile-pdf-btn" id="mobileDownloadButton" type="button" aria-label="下载 PDF">PDF</button>
+    <button class="primary-btn mobile-pdf-btn" id="mobileDownloadButton" type="button" aria-label="使用当前预览打印或保存 PDF">PDF</button>
 
     <div class="mode-switch mobile-mode-switch" role="group" aria-label="手机编辑器模式">
       <button id="editModeButton" type="button" aria-pressed="true">编辑</button>
@@ -169,8 +170,8 @@
       </div>
 
       <div class="preview-toolbar-right">
-        <button class="viewer-btn exact-pdf-btn" id="printButton" type="button" title="使用现有 Typst 母版直接生成 PDF">精确 PDF</button>
-        <button class="primary-btn" id="browserPrintButton" type="button">浏览器打印</button>
+        <button class="viewer-btn exact-pdf-btn" id="printButton" type="button" title="复用当前预览的打印布局" hidden>PDF</button>
+        <button class="primary-btn" id="browserPrintButton" type="button" title="当前预览即为 PDF 打印内容">打印 / 保存 PDF</button>
       </div>
     </div>
 
@@ -211,6 +212,6 @@
 <script src="./save-manager.js?v=20260921-cnmode1"></script>
 <script src="./question-text.js?v=20261012-layout4"></script>
 <script src="./browser-layout.js?v=20261012-layout5"></script>
-<script src="./editor.js?v=20261012-layout4"></script>
+<script src="./editor.js?v=20261013-unify1"></script>
 </body>
 </html>
