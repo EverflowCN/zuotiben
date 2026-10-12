@@ -10,7 +10,7 @@ function loadScript(file,test){
  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=new URL('vendor/'+file,base).href;s.onload=function(){test()?resolve():reject(new Error('文字 PDF 组件初始化失败'))};s.onerror=function(){reject(new Error('文字 PDF 组件加载失败'))};document.head.append(s)});
 }
 function libraries(){
- if(!loading)loading=Promise.all([loadScript('pdf-lib.min.js',function(){return !!global.PDFLib}),loadScript('fontkit.umd.min.js',function(){return !!global.fontkit}),global.EverflowPreviewPdf.loadLibraries()]).catch(function(e){loading=null;throw e});
+ if(!loading)loading=Promise.all([loadScript('pdf-lib.min.js',function(){return !!global.PDFLib}),loadScript('fontkit.umd.min.js?v=cjk-fixed1',function(){return !!global.fontkit}),global.EverflowPreviewPdf.loadLibraries()]).catch(function(e){loading=null;throw e});
  return loading;
 }
 async function fontData(name){
