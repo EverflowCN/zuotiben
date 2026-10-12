@@ -621,12 +621,17 @@ async function refreshTypstPreview(){
     if(wantsLiveTypst()){
       els.typstPreview.hidden=false;els.paperStage.hidden=true;
     }
+    els.typstPreview.dataset.layoutReady="true";
+    els.typstPreview.dataset.revision=String(current);
     var adjusted=Object.keys(result.scales||{}).length;
     els.pdfStatus.textContent="分页已完成 · "+result.pageCount+" 页正文"+(adjusted?" · 自动缩放 "+adjusted+" 题":"")+"；预览与浏览器打印使用同一布局。";
   }catch(e){
     if(!suspendTypstPreview&&!(e&&e.name==="AbortError")){
       console.error(e);
-      browserLayoutResult=null;els.pdfStatus.textContent="浏览器分页失败："+(e.message||"未知错误");
+      browserLayoutResult=null;svgRevision=-1;els.typstPreview.dataset.layoutReady="false";
+      els.typstPreview.removeAttribute("data-revision");
+      els.typstPreview.replaceChildren();observePreviewPages();
+      els.pdfStatus.textContent="浏览器分页失败："+(e.message||"未知错误")+"；未生成可打印布局，请修正后重试。";
     }
   }finally{
     typstPreviewing=false;
@@ -781,16 +786,16 @@ async function browserPrint(){
   if(els.browserPrintButton){els.browserPrintButton.disabled=true;els.browserPrintButton.setAttribute("aria-busy","true")}
   try{
     if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
-      await refreshTypstPreview();
-      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,20000);
+      if(!typstPreviewing)await refreshTypstPreview();
+      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,12000);
     }
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")throw new Error("分页尚未完成，请稍后重试");
+    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"||els.typstPreview.dataset.revision!==String(revision)||els.typstPreview.dataset.layoutReady!=="true")throw new Error("当前预览尚未通过分页检查，禁止导出不一致的 PDF");
     if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
     document.body.classList.add("browser-print-active");
-    els.pdfStatus.textContent="正在打开浏览器打印窗口；请选择“另存为 PDF”。";
+    els.pdfStatus.textContent="同一份预览已交给系统打印；请选择“存储为 PDF”或“另存为 PDF”。";
     var cleanup=function(){
       document.body.classList.remove("browser-print-active");window.removeEventListener("afterprint",cleanup);
-      els.pdfStatus.textContent="分页已完成 · 浏览器打印窗口已关闭，当前预览仍可编辑。";
+      els.pdfStatus.textContent="分页已完成 · PDF 打印复用了预览的同一份分页布局。";
     };
     window.addEventListener("afterprint",cleanup,{once:true});
     window.print();
@@ -851,7 +856,9 @@ function init(){
   updatePreviewPageIndicator(1);
 
   els.editModeButton.onclick=function(){setMode(false)};els.previewModeButton.onclick=function(){setMode(true)};
-  els.printButton.onclick=downloadPdf;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
+  // All visible PDF actions use the exact same validated physical pages as preview.
+  // The legacy React PDF renderer is not called from the UI: it paginates independently.
+  els.printButton.onclick=browserPrint;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=browserPrint;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
     var current=state.questions.find(function(q){return q.id===selectedId});
