@@ -59,8 +59,13 @@ function makeItem(record){
  return article;
 }
 function fitPage(){
- // Use physical millimetres in the native layout; transform AFTER layout.
- // Applying CSS zoom to paper elements can trigger Safari text inflation.
+ // The browser pagination validator must inspect the untransformed physical
+ // page. Only scale visually AFTER pagination succeeds.
+ if(host.dataset.layoutReady!=="true"){
+   host.style.setProperty("--showcase-scale","1");
+   host.style.setProperty("--browser-preview-scale","1");
+   return;
+ }
  var nativeWidth=(mode==="cover"?210:cfg.widthMm)*(96/25.4);
  var nativeHeight=(mode==="cover"?297:cfg.heightMm)*(96/25.4);
  var width=Math.max(1,host.clientWidth-2),height=Math.max(1,host.clientHeight-2);
@@ -89,7 +94,7 @@ async function init(){
  if(mode==="cover"){
    // Original master uses A4 independent front matter for every Book mode.
    host.appendChild(createMasterCover());
-   fitPage();status.hidden=true;
+   host.dataset.layoutReady="true";fitPage();status.hidden=true;
    document.documentElement.dataset.previewReady="true";
    return;
  }
@@ -102,7 +107,7 @@ async function init(){
       createItem:makeItem,renderMath:function(root){window.EverflowSafeMath.render(root)}
    });
    if(!result.pageCount)throw Error("未生成试卷页面");
-   fitPage();status.hidden=true;
+   host.dataset.layoutReady="true";fitPage();status.hidden=true;
    document.documentElement.dataset.previewReady="true";
    window.parent.postMessage({type:"everflow:showcase-ready",mode:mode,pages:result.pageCount},"*");
  }catch(e){
