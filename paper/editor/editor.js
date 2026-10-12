@@ -285,8 +285,8 @@ function renderSectionManager(){
     var count=document.createElement("span");count.textContent=state.questions.filter(function(q){return q.section===name}).length+" 题";
     var rename=document.createElement("button");rename.type="button";rename.className="text-btn";rename.textContent="重命名";
     rename.onclick=function(){
-      var next=prompt("大题名称",name);next=cleanText(next||"");if(!next||next===name)return;
-      mutateState(function(){state.questions.forEach(function(q){if(q.section===name){q.section=next;assignDefaultOptions(q)}})},"已重命名大题");
+      var next=prompt("大纲章节名称",name);next=cleanText(next||"");if(!next||next===name)return;
+      mutateState(function(){state.questions.forEach(function(q){if(q.section===name){q.section=next;assignDefaultOptions(q)}})},"已重命名大纲章节");
     };
     var up=document.createElement("button");up.type="button";up.className="text-btn";up.textContent="↑";up.disabled=i===0;
     var down=document.createElement("button");down.type="button";down.className="text-btn";down.textContent="↓";down.disabled=i===sections.length-1;
@@ -300,17 +300,17 @@ function renderSectionManager(){
           else unsectioned.push(q);
         });
         state.questions=order.flatMap(function(n){return grouped[n]||[]}).concat(unsectioned);
-      },"已调整大题顺序");
+      },"已调整大纲顺序");
     }
     up.onclick=function(){moveSection(-1)};down.onclick=function(){moveSection(1)};
     row.append(label,count,rename,up,down);els.sectionList.appendChild(row);
   });
   if(!sections.length){
-    var empty=document.createElement("p");empty.className="section-empty";empty.textContent="还没有大题。";els.sectionList.appendChild(empty);
+    var empty=document.createElement("p");empty.className="section-empty";empty.textContent="还没有大纲章节。";els.sectionList.appendChild(empty);
   }
   if(els.batchSectionSelect){
     els.batchSectionSelect.replaceChildren();
-    var keep=document.createElement("option");keep.value="";keep.textContent="移动到大题…";els.batchSectionSelect.appendChild(keep);
+    var keep=document.createElement("option");keep.value="";keep.textContent="移动到章节…";els.batchSectionSelect.appendChild(keep);
     sections.forEach(function(name){var o=document.createElement("option");o.value=name;o.textContent=name;els.batchSectionSelect.appendChild(o)});
   }
 }
@@ -356,7 +356,11 @@ function renderOrder(){
     var h=document.createElement("span");h.className="drag-handle";h.textContent="⋮⋮";
     var n=document.createElement("span");n.className="order-num";n.textContent=i+1;
     var c=document.createElement("span");c.className="order-copy";c.tabIndex=0;c.setAttribute("role","button");
-    var b=document.createElement("b");b.textContent=clip(q.content,32)||"未命名题目";
+    var b=document.createElement("b");
+    b.textContent=clip(q.content,140)||"未命名题目";
+    // The source stays untouched: sidebar and graph display a readable formula
+    // rather than raw backslash commands where Temml can render it safely.
+    if(window.EverflowSafeMath)window.EverflowSafeMath.render(b);
     var s=document.createElement("small");s.textContent=(q.section?q.section+" · ":"")+q.type+(q.showOptions&&q.options.length?" · "+q.options.length+" 个选项":"");
     c.append(b,s);c.onclick=function(){selectedId=q.id;renderOrder();renderQuestionEditor()};
     c.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click()}};
@@ -839,7 +843,7 @@ function renderQuestionEditor(){
     var l=document.createElement("label");l.textContent=label;var input=document.createElement(kind||"input");input.value=q[key]||"";l.appendChild(input);root.appendChild(l);
     input.oninput=function(){q[key]=key==="gap"?Math.max(0,Math.min(100,Number(input.value)||0)):input.value;touch()};return input;
   }
-  var sectionInput=inputField("所属大题","section");
+  var sectionInput=inputField("所属大纲章节","section");
   sectionInput.title="名称包含「选择」时默认显示选项，其他大题默认不显示";
   sectionInput.addEventListener("input",function(){
     assignDefaultOptions(q);
