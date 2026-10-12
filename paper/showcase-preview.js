@@ -111,7 +111,18 @@ async function init(){
    document.documentElement.dataset.previewReady="true";
    window.parent.postMessage({type:"everflow:showcase-ready",mode:mode,pages:result.pageCount},"*");
  }catch(e){
-   console.error("Everflow showcase rendering failed",e);
+   var debug=[];
+   host.querySelectorAll(".browser-paper-column").forEach(function(column){
+     var rect=column.getBoundingClientRect();
+     debug.push({column:{scrollHeight:column.scrollHeight,clientHeight:column.clientHeight,width:rect.width,screen:[rect.left,rect.right]},
+       questions:[...column.querySelectorAll(".paper-layout-item")].map(function(q){
+          var r=q.getBoundingClientRect();
+          var parts=[...q.querySelectorAll(".question-body,.option-body,.tml-display")].map(function(el){var x=el.getBoundingClientRect();return {name:el.className,left:x.left,right:x.right,width:x.width}});
+          return {id:q.dataset.questionId,left:r.left,right:r.right,parts:parts};
+       })
+     });
+   });
+   console.error("Everflow showcase rendering failed",mode,e,JSON.stringify(debug).slice(0,6000));
    status.textContent="母版预览暂不可用，请打开正式编辑器查看";
    document.documentElement.dataset.previewReady="error";
  }
