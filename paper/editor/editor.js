@@ -604,6 +604,22 @@ function toggleNavigator(){
 }
 function bindPaneResizer(el,kind){
   if(!el)return;
+  function applyWidth(value){
+    var v=Number(value),name=kind==="navigator"?"--navigator-w":"--editor-w";
+    var min=kind==="navigator"?210:280,max=kind==="navigator"?470:900;
+    var n=Math.max(min,Math.min(max,v));
+    document.documentElement.style.setProperty(name,Math.round(n)+"px");
+    persistUiState(kind==="navigator"?{navigatorWidth:Math.round(n)}:{editorWidth:Math.round(n)});
+    requestAnimationFrame(applyPreviewZoom);
+  }
+  el.title="拖动改变分栏宽度；双击还原；方向键微调";
+  el.addEventListener("dblclick",function(){applyWidth(kind==="navigator"?265:440)});
+  el.addEventListener("keydown",function(e){
+    if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+    e.preventDefault();
+    var px=kind==="navigator"?els.navigatorPanel.getBoundingClientRect().width:els.editPane.getBoundingClientRect().width;
+    applyWidth(px+(e.key==="ArrowRight"?20:-20));
+  });
   el.addEventListener("pointerdown",function(e){
     if(window.matchMedia("(max-width:767px)").matches)return;
     if(kind==="navigator"&&window.matchMedia("(max-width:1179px)").matches)return;
