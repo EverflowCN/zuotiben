@@ -1,0 +1,82 @@
+<!doctype html><html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>学习打卡 · 彼时流年若水做题本</title><meta name="description" content="彼时流年若水做题本本机学习打卡，免费、开放且无需登录。">
+<style>
+:root{--ink:#273b3c;--sage:#426a64;--surface:#fff;--paper:#f7f8f5;--line:#e3eae5;--muted:#7b8b84}*{box-sizing:border-box}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--paper);color:var(--ink);margin:0}
+a{text-decoration:none;color:inherit}button{font:inherit;cursor:pointer}.shell{max-width:1150px;margin:auto;padding-inline:clamp(18px,4vw,42px)}
+.sitehead{height:76px;display:flex;align-items:center;border-bottom:1px solid var(--line);background:#fff}
+.headinner{display:flex;align-items:center;justify-content:space-between;width:100%;gap:18px}
+.brand{display:flex;gap:12px;align-items:center;font-size:15px;font-weight:800;letter-spacing:-.02em}.mark{display:grid;place-items:center;width:38px;height:38px;background:#27483e;color:#fff;border-radius:11px;font:bold 21px Georgia}
+.brand small{display:block;letter-spacing:.1em;color:var(--muted);font-weight:600;font-size:9px;margin-top:4px}
+nav{display:flex;gap:13px;align-items:center;color:#5c7168;font-size:12px}nav .goto{background:#fff;border:1px solid #d3dfd5;border-radius:8px;padding:10px 14px;color:#34534c;font-weight:750}
+main{padding-top:clamp(62px,11vh,124px);padding-bottom:80px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,.9fr);gap:clamp(25px,6vw,100px);align-items:center}
+.eyebrow{display:flex;align-items:center;gap:12px;font-size:10px;font-weight:800;letter-spacing:.18em;color:#537267}.eyebrow:before{content:"";display:block;width:28px;border-top:1px solid var(--sage)}
+h1{font-size:clamp(41px,5vw,72px);letter-spacing:-.07em;line-height:1.18;margin:28px 0 23px;font-weight:840}
+h1 em{font-style:normal;color:#3e7770}p.lead{max-width:480px;font-size:14px;line-height:2;color:#75887c;margin:0 0 30px}
+.acts{display:flex;gap:13px;align-items:center;flex-wrap:wrap}
+.primary{background:#3a6b61;color:#fff;border:0;border-radius:9px;padding:14px 26px;font-weight:750;font-size:13px}
+.primary:disabled{background:#b7c9c0;cursor:default}
+.secondary{background:#fff;border:1px solid var(--line);border-radius:9px;padding:13px 18px;font-weight:680;font-size:13px}
+.stats{display:flex;gap:17px;margin:20px 0 0;font-size:12px;color:#6d8577}
+.stats strong{font-size:15px;color:#34594e}
+.stage{border:1px solid #e4e9e6;background:#fff;border-radius:16px;box-shadow:0 20px 54px #3f61431a;overflow:hidden;padding:13px}
+.stagehead{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#567063;padding:6px 5px 14px}
+.paper{border:1px solid #e8ece7;aspect-ratio:210/297;background:#fff;position:relative;padding:12% 9%;font-family:"Songti SC",SimSun,serif;text-align:center}
+.paper .mast{font-size:11px;letter-spacing:.09em;color:#51635c}
+.paper h2{font-size:clamp(18px,2.3vw,29px);font-weight:750;margin:14% 0 5%;line-height:1.45}
+.paper .sub{font-size:13px;color:#71827a}.paper .rule{margin:14% auto 10%;border-top:1px solid #8fa397}
+.paper .statement{text-align:left;font-size:13px;line-height:2.4;color:#455e53}.paper .footer{position:absolute;bottom:6%;left:9%;right:9%;border-top:1px solid #d3e1d7;padding-top:13px;color:#91a097;text-align:left;font-size:11px}
+.stagefoot{text-align:center;font-size:11px;color:#9aa79d;padding:15px 2px 5px}
+.history{margin-top:90px;display:grid;grid-template-columns:1fr 1fr;gap:25px}
+.card{border:1px solid var(--line);background:white;border-radius:14px;padding:25px}
+.card h3{margin:0 0 6px;font-size:17px}.card p{font-size:12px;line-height:1.9;color:#8b9b90}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:22px}.day{padding:11px 0;border-radius:8px;background:#f0f3ee;text-align:center;font-size:11px;color:#819185;border:1px solid #e8ede8}.day.done{background:#e0f1e7;border-color:#a8d3b7;color:#285c40;font-weight:750}
+.notes{margin-top:20px;border-radius:10px;border:1px solid var(--line);background:#fafdfb;padding:14px}
+.notes textarea{width:100%;height:88px;resize:vertical;background:transparent;border:0;outline:0;font:13px/1.7 inherit;color:#32483d}
+.foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:23px;padding-bottom:28px;font-size:11px;color:#8a998f;gap:15px}
+@media(max-width:850px){.hero{grid-template-columns:1fr;gap:45px}.stage{max-width:500px;width:100%;margin:auto}.history{grid-template-columns:1fr;margin-top:50px}}
+@media(max-width:540px){.sitehead{height:66px}nav a:not(.goto){display:none}.brand{font-size:12px}.brand small{font-size:8px}.mark{width:31px;height:31px}.paper{padding:10% 9%}.history{gap:14px}.card{padding:19px}.stats{gap:12px;flex-wrap:wrap}h1{font-size:45px}}
+</style></head><body><header class="sitehead"><div class="shell headinner">
+<a href="../" class="brand"><span class="mark">E</span><span>彼时流年若水做题本<small>EVERFLOW · 免费开源</small></span></a>
+<nav><a href="../paper/">做题本</a><a href="../paper/test/">模板体验</a><a href="../" class="goto">GOTO 研库 ↗</a></nav>
+</div></header>
+<main class="shell"><section class="hero"><div>
+<div class="eyebrow">EVERFLOW · DAILY CHECK-IN</div><h1>每天一点，<br><em>积累成自己的答案。</em></h1>
+<p class="lead">把练过的试卷和错题记录下来，建立长期复盘的节奏。永久免费，无需登录；打卡日期和笔记只存于当前浏览器，不会自动上传云端。</p>
+<div class="acts"><button id="check" class="primary">✓ 今日打卡</button><a href="../paper/editor/" class="secondary">继续整理做题本 →</a></div>
+<div class="stats"><span>连续 <strong id="streak">0</strong> 天</span><span>累计 <strong id="total">0</strong> 天</span><span>最近打卡 <strong id="latest">—</strong></span></div>
+</div><div class="stage"><div class="stagehead"><span>● 做题本与打卡记录 · 示例</span><b>A4 · 210×297 mm</b></div>
+<div class="paper"><div class="mast">EVERFLOW · 彼时流年若水</div><h2>每日学习记录</h2><div class="sub" id="printDate"></div><div class="rule"></div><div class="statement">
+<p>今日学习主题：数学二 / 408</p><p>完成试题：__________</p><p>需要复盘：__________</p><p>下一步计划：__________</p></div>
+<div class="footer">彼时流年若水 · 学习记录 · 免费开放</div></div><div class="stagefoot">打卡页面视觉延续做题本的纸张、排版与字体风格</div></div></section>
+<section class="history"><div class="card"><h3>最近七天</h3><p>勾选表示当天已打卡。记录保存在本机，清除网站数据后无法恢复。</p><div class="days" id="days"></div></div>
+<div class="card"><h3>学习随记</h3><p>写下今天做过的试题、薄弱知识点或明天要复习的内容。自动保存到当前浏览器。</p><div class="notes"><textarea id="note" placeholder="例如：数学二完成1套模拟题；408需要回看操作系统进程同步……"></textarea></div><p id="status">本机自动保存</p></div></section>
+</main><footer class="shell foot"><span>© Everflow · 彼时流年若水做题本</span><span>本地数据由你自己掌控 · 适合个人做题、错题与复盘</span></footer>
+<script>
+(function(){
+"use strict";var KEY="everflow-local-checkin-v1",NOTE="everflow-checkin-notes-v1";
+function localDate(d){var n=d||new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
+function read(){try{var d=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(d)?d:[]}catch(e){return []}}
+function draw(){
+ var dates=[...new Set(read())].sort(),today=localDate(),done=dates.includes(today);
+ document.getElementById("check").textContent=done?"✓ 今日已打卡":"✓ 今日打卡";
+ document.getElementById("check").disabled=done;
+ document.getElementById("total").textContent=String(dates.length);
+ document.getElementById("latest").textContent=dates.at(-1)||"—";
+ var streak=0,day=new Date();while(dates.includes(localDate(day))){streak++;day.setDate(day.getDate()-1)}
+ document.getElementById("streak").textContent=streak;
+ var days=document.getElementById("days"),f=document.createDocumentFragment();
+ for(var i=6;i>=0;i--){
+  var day=new Date();day.setDate(day.getDate()-i);var key=localDate(day),cell=document.createElement("div");
+  cell.className="day"+(dates.includes(key)?" done":"");
+  cell.textContent=(day.getMonth()+1)+"/"+day.getDate()+(dates.includes(key)?" ✓":"");
+  f.append(cell);
+ }days.replaceChildren(f);
+}
+document.getElementById("check").onclick=function(){var dates=read();dates.push(localDate());localStorage.setItem(KEY,JSON.stringify([...new Set(dates)]));draw()};
+document.getElementById("printDate").textContent=new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric"});
+var note=document.getElementById("note");note.value=localStorage.getItem(NOTE)||"";note.oninput=function(){try{localStorage.setItem(NOTE,note.value);document.getElementById("status").textContent="本机自动保存 · "+new Date().toLocaleTimeString("zh-CN")}catch(e){document.getElementById("status").textContent="本机存储空间不足，请复制备份"}};draw();
+})();
+</script></body></html>
