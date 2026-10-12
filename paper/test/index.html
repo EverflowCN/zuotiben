@@ -72,7 +72,7 @@ var DEMO_META={"id":"everflow-demo","title":"数学二 · 排版体验卷（示�
 function msg(s){el('status').textContent=s}
 function ui(name,css,text){var e=document.createElement(name);if(css)e.className=css;if(text!==undefined)e.textContent=text;return e}
 function clearUrls(){state.urls.forEach(URL.revokeObjectURL);state.urls=[]}
-function resize(){var width=state.size==='a3'?1588:794;sid.style.zoom=innerWidth<=1080?String(Math.min(1,Math.max(.2,(innerWidth-28)/width))):String(state.zoom)}
+function resize(){var width=state.size==='a3'?1588:794;var room=Math.max(240,sid.parentElement.clientWidth-26);var fit=Math.min(1,room/width);var applied=Math.max(.2,Math.min(1.1,fit*state.zoom));sid.style.zoom=String(applied);el('zoomValue').textContent=Math.round(applied*100)+'%'}
 window.addEventListener('resize',resize);resize();
 function options(q){var o=q.options||{};return Array.isArray(o)?o.map(v=>String(typeof v==='object'?(v.text||v.content||''):v||'')):Object.keys(o).filter(k=>/^[A-H]$/.test(k)).sort().map(k=>String(o[k]||''))}
 function normalize(e,i){var q=e.question||e;return {id:q.id||i+1,n:Number(e.question_number)||i+1,section:e.section_title||'试题',content:String(q.stem_latex||q.stem||q.content||''),options:options(q),assets:q.assets||[],answer:String(q.correct_answer_latex||q.correct_answer||''),explanation:String(q.answer_explanation||q.explanation_latex||'')}}
