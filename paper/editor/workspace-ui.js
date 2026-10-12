@@ -218,6 +218,10 @@ async function initialize(){
    location.reload();
   }catch(e){toast("新增失败："+e.message)}
  };
+ document.addEventListener("everflow:archive-changed",()=>{
+   try{chosenFolder=localStorage.getItem("everflow-workspace-folder-v2")||""}catch(e){}
+   renderFolders().catch(e=>toast("刷新文件夹失败："+e.message));
+ });
  $("openPaperGraph").onclick=graphModal;
  $("openLocalHistory").onclick=historyModal;
  $("showAnswersToggle").onchange=()=>{
