@@ -109,7 +109,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     await waitForBrowserLayout(page);
     const previewMarkup=await page.locator('#typstPreview').innerHTML();
     await page.locator('#browserPrintButton').click();
-    await page.waitForFunction(()=>window.__PRINT_CALLED__===2);
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
     assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Print changed the already-paginated preview');
 
     // Chromium's print-to-PDF from that same DOM verifies actual PDF bytes.
@@ -154,7 +154,7 @@ async function waitForBrowserLayout(page, timeout=120000){
 
     // Printing from the edit tab must show the physical preview first.
     await page.locator('#mobileDownloadButton').click();
-    await page.waitForFunction(()=>window.__PRINT_CALLED__===3);
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===2);
     await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
