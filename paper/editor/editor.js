@@ -635,6 +635,7 @@ async function refreshTypstPreview(){
     });
     if(current!==revision){typstPreviewing=false;scheduleTypstPreview();return}
     browserLayoutResult=result;svgRevision=current;svgExportDate=snapshotState.exportDate;
+    els.typstPreview.classList.remove("is-stale-preview");
     observePreviewPages();requestAnimationFrame(applyPreviewZoom);
     if(wantsLiveTypst()){
       els.typstPreview.hidden=false;els.paperStage.hidden=true;
@@ -648,8 +649,25 @@ async function refreshTypstPreview(){
       console.error(e);
       browserLayoutResult=null;svgRevision=-1;els.typstPreview.dataset.layoutReady="false";
       els.typstPreview.removeAttribute("data-revision");
-      els.typstPreview.replaceChildren();observePreviewPages();
-      els.pdfStatus.textContent="浏览器分页失败："+(e.message||"未知错误")+"；未生成可打印布局，请修正后重试。";
+      var failedId=e&&e.questionId||(e&&e.questionIds&&e.questionIds[0]);
+      if(failedId&&state.questions.some(function(q){return q.id===failedId})){
+        selectedId=failedId;renderOrder();renderQuestionEditor();
+      }
+      var previewPages=els.typstPreview.querySelectorAll("section.browser-paper-page");
+      if(previewPages.length){
+        // Do not destroy the last valid visual reference. Disable export and label it stale.
+        els.typstPreview.classList.add("is-stale-preview");
+      }else{
+        var warning=document.createElement("div");warning.className="layout-error-card";
+        var h=document.createElement("strong");h.textContent="预览未生成，已定位需要修改的题目";
+        var p=document.createElement("p");p.textContent=e.message||"请检查公式、图片和题干长度。";
+        var b=document.createElement("button");b.type="button";b.textContent="打开问题题目进行编辑";
+        b.onclick=function(){if(window.matchMedia("(max-width:767px)").matches)setMode(false);els.questionEditor.scrollIntoView({behavior:"smooth",block:"start"})};
+        warning.append(h,p,b);els.typstPreview.replaceChildren(warning);
+      }
+      observePreviewPages();
+      var badNum=failedId?state.questions.findIndex(function(q){return q.id===failedId})+1:0;
+      els.pdfStatus.textContent="浏览器分页失败"+(badNum?" · 已定位第 "+badNum+" 题":"")+": "+(e.message||"未知错误")+"；保留上次预览作为参考，但禁止导出不完整 PDF。";
     }
   }finally{
     typstPreviewing=false;
