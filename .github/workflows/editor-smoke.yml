@@ -2,7 +2,7 @@ name: Editor browser and PDF verification
 on:
   push:
     branches: [main]
-    paths: ['paper/**', 'scripts/editor-smoke.cjs', 'scripts/paper-test-smoke.cjs', 'scripts/workspace-smoke.cjs', 'scripts/install-pdf-vendor.sh', '.github/workflows/editor-smoke.yml']
+    paths: ['paper/**', 'scripts/editor-smoke.cjs', 'scripts/paper-test-smoke.cjs', 'scripts/workspace-smoke.cjs', 'scripts/editor-math-ui-smoke.cjs', 'scripts/install-pdf-vendor.sh', '.github/workflows/editor-smoke.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,6 +36,7 @@ jobs:
           if [ "$BROWSER" = "chromium" ]; then
             node scripts/paper-test-smoke.cjs
             node scripts/workspace-smoke.cjs
+            node scripts/editor-math-ui-smoke.cjs
           fi
           if [ "$BROWSER" = "chromium" ]; then
             command -v pdftotext >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
