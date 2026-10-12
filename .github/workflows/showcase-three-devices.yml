@@ -1,0 +1,40 @@
+name: Showcase desktop tablet Safari mobile verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper/book-showcase.css'
+      - 'paper/book-showcase.js'
+      - 'paper/index.html'
+      - 'paper/showcase-preview.html'
+      - 'paper/showcase-preview.js'
+      - 'scripts/showcase-three-devices.cjs'
+      - '.github/workflows/showcase-three-devices.yml'
+permissions:
+  contents: read
+concurrency:
+  group: showcase-three-devices-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bash scripts/install-pdf-vendor.sh
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Check 3-device geometry with Chromium and WebKit
+        run: |
+          mkdir -p test-results
+          python3 -m http.server 8765 &
+          node scripts/showcase-three-devices.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: showcase-desktop-ipad-phone
+          path: test-results/
