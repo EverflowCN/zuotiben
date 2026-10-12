@@ -1,0 +1,16 @@
+/* Everflow Test mother-style approximation.
+ * Formal editor remains the source of truth for physical PDF output.
+ */
+.sheet{color:#17211f!important;box-shadow:0 8px 26px #34574a1d!important;font-family:"Everflow Song","FandolSong","Songti SC",serif!important}
+.sheet .head{height:22mm!important;border-bottom:.5pt solid #87958c!important}
+.sheet .head .test-paper-kicker{font-family:"Everflow Kai","KaiTi",serif;color:#56685c;font-size:8pt;letter-spacing:.06em;margin:0 0 3mm}
+.sheet .head h3{font-size:14pt!important;line-height:1.5!important;color:#1c2622;margin:0 0 1.3mm!important}
+.sheet .head p:last-child{color:#5d7063;font-size:8.5pt!important}
+.sheet .body{padding-top:6mm!important}
+.sheet .body .section{font-size:10.7pt!important;margin:5mm 0 3.5mm!important}
+.sheet .question{line-height:1.6!important}
+.sheet .foot{height:11mm!important;border-top:.4pt solid #ccc!important;font-family:"Everflow Kai","KaiTi",serif}
+.sheet .options{margin-top:2mm!important}
+body[data-paper-mode="book"] .sheet .head{height:21mm!important}
+@media(max-width:1080px){.sheet{box-shadow:0 4px 15px #20392b1b!important}}
+@media print{.sheet{box-shadow:none!important}}
