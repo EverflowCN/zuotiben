@@ -1,0 +1,31 @@
+
+/* Everflow homepage v3 — local, free and open-source workbook identity */
+.ps-brand-copy b{font-weight:800;letter-spacing:-.03em}
+.ps-brand-copy small{font-size:9px}
+.ps-header-links{gap:14px}
+.ps-header-cta{font-weight:750}
+.ps-hero h1{letter-spacing:-.056em}
+.ps-lead{max-width:660px;line-height:1.95}
+.ps-smallnote{flex-wrap:wrap}
+.ps-smallnote span{color:#537063}
+.paste-workspace{margin-top:20px;border-top:1px solid #e4ebe8;padding-top:17px;display:grid;gap:11px}
+.paste-workspace label{display:grid;gap:4px}
+.paste-workspace label strong{font-size:13px}
+.paste-workspace label small{color:#75847d;font-size:11px;line-height:1.6}
+.paste-workspace textarea{resize:vertical;max-width:100%;width:100%;min-height:105px;border:1px solid #d3e0da;border-radius:10px;background:#fff;padding:12px 13px;outline:none;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#293f39}
+.paste-workspace textarea:focus{border-color:#789d8c;box-shadow:0 0 0 3px #e7f1ea}
+.paste-workspace button{justify-self:start;padding:11px 15px}
+.ai-modal-backdrop{position:fixed;inset:0;z-index:9000;background:#14242180;display:grid;place-items:center;padding:17px;backdrop-filter:blur(3px)}
+.ai-modal-backdrop[hidden]{display:none!important}
+.ai-modal{width:min(550px,100%);border:1px solid #d8e6dc;border-radius:17px;box-shadow:0 23px 80px #111d1959;background:#fff;padding:24px;color:#273b33}
+.ai-modal-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ai-modal-top small{letter-spacing:.12em;font-size:10px;color:#799788}
+.ai-modal-top h2{margin:5px 0 0;font-size:23px;letter-spacing:-.035em}
+.ai-modal-top>button{background:#f4f7f5;border:1px solid #e0e8e3;border-radius:9px;width:35px;height:35px;cursor:pointer;font-size:22px}
+.ai-modal>p{color:#71837a;line-height:1.9;font-size:12px;margin:17px 0}
+.ai-platforms{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ai-platforms button{padding:15px 7px;border:1px solid #bed6c8;border-radius:11px;background:#eff6f1;color:#315d48;font:700 13px "PingFang SC",system-ui;cursor:pointer}
+.ai-platforms button:hover{background:#dbede2}
+.ai-modal-tip{margin-top:16px;font-size:11px;line-height:1.75;color:#789187}
+@media(max-width:850px){.ps-header-links a[href="./checkin/"]{display:none}.ps-brand-copy b{font-size:13px}.ps-brand-copy small{font-size:9px}}
+@media(max-width:560px){.ps-brand-copy b{font-size:12px}.ps-header-links{gap:7px}.ps-header-cta{padding:7px!important;font-size:10px!important}.ai-platforms{grid-template-columns:1fr}}
