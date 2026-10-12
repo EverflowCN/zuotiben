@@ -1,0 +1,31 @@
+/* Identical vector PDF + preview: CSS changes only the VIEW, never PDF layout.
+ * Each canvas is drawn by PDF.js from the very PDF bytes offered to download.
+ */
+.typst-preview.browser-paper-preview > section.typst-page.everflow-vector-page{
+  position:relative!important;display:block!important;flex:0 0 auto!important;
+  width:var(--paper-width)!important;
+  min-width:var(--paper-width)!important;
+  max-width:none!important;
+  height:var(--paper-height)!important;
+  min-height:var(--paper-height)!important;
+  padding:0!important;margin:0 auto!important;
+  border:0!important;border-radius:0!important;overflow:hidden!important;
+  background:white!important;
+  zoom:var(--browser-preview-scale,1)!important;
+  box-shadow:0 11px 29px #25372a2b!important;
+}
+.typst-preview.browser-paper-preview > section.everflow-vector-page canvas.everflow-vector-canvas{
+  display:block!important;width:100%!important;height:100%!important;
+  border:0!important;margin:0!important;padding:0!important;
+  border-radius:0!important;background:white!important;
+  max-width:none!important;object-fit:fill!important;
+  image-rendering:auto;
+}
+.typst-preview.browser-paper-preview > section.everflow-vector-page[data-painted="false"]{background:white!important}
+@media(max-width:767px){
+  .texpage-preview-pane .typst-preview.browser-paper-preview > section.everflow-vector-page{
+    width:var(--paper-width)!important;
+    min-width:var(--paper-width)!important;
+    max-width:none!important;
+  }
+}
