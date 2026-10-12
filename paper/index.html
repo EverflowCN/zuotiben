@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
-  <link rel="stylesheet" href="./quick-flow.css?v=20261013-quick1">
+  <link rel="stylesheet" href="./quick-flow.css?v=20261013-home-clean2">
   <link rel="stylesheet" href="./book-showcase.css?v=20261013-display-v6">
 </head>
 <body class="paper-home">
@@ -22,7 +22,7 @@
     </a>
     <nav class="ps-header-links" aria-label="页面导航">
       <span class="ps-signal ps-status-hide">浏览器本地处理</span>
-      <a href="#workbench">开始使用</a>
+      <a href="#quickFlow">开始使用</a>
       <a href="./test/" title="独立测试环境，本地导入试卷">模板体验</a>
       <a href="../checkin/" title="本机学习打卡和连续天数">学习打卡</a>
       <button id="themeToggle" type="button" aria-label="切换深色或浅色主题">◐ 主题</button>
@@ -34,7 +34,7 @@
         <span>菜单</span>
       </summary>
       <nav class="ps-mobile-nav-popover" aria-label="移动端菜单">
-        <a href="#workbench">开始使用</a>
+        <a href="#quickFlow">开始使用</a>
         <a href="./test/">展示体验</a>
         <a href="../checkin/">学习打卡</a>
         <button type="button" id="psMobileThemeToggle">◐ 切换主题</button>
@@ -54,6 +54,7 @@
         <button class="ps-button secondary" id="continueButton" type="button" hidden>继续上次编辑 →</button>
         <button class="ps-button secondary" id="openProjectButton" type="button">打开已有项目</button>
       </div>
+      <input id="fileInput" type="file" accept=".md,.markdown,.json,.everflow,text/markdown,application/json" hidden aria-label="选择本地试卷项目文件">
       <div class="ps-smallnote"><span>永久免费</span><span>项目开源</span><span>本机历史版本</span><span>PDF 直接下载</span></div>
     </div>
     <div class="ps-document-frame ps-book-showcase ps-book-showcase--template" aria-label="三种做题本排版展示">
@@ -80,41 +81,6 @@
         <button data-book-dot="2" type="button" aria-label="单题横版" aria-current="false"></button>
       </div>
       <p class="ps-books-note">在电脑、平板或手机上均可切换浏览；正式排版请进入编辑器查看。</p>
-    </div>
-  </section>
-
-  <section class="ps-section ps-shell" id="workbench">
-    <div class="ps-section-head">
-      <div><span class="ps-section-label">GET STARTED</span><h2>从这里开始制作</h2></div>
-      <p>第一次使用可以直接创建示例工程。已有题目时，导入本地文件即可进入三栏编辑器。</p>
-    </div>
-    <div class="ps-task-grid">
-      <article class="ps-task-card">
-        <h3>导入你的题目</h3>
-        <p>支持 Everflow Markdown（.md）、JSON 和 .everflow 项目；导入后自动进入编辑器。</p>
-        <div class="ps-dropzone" id="dropZone">
-          <div class="ps-drop-icon" aria-hidden="true">⇧</div>
-          <strong>将题目文件拖放到这里</strong>
-          <small>或点击下方按钮选择文件（最大 8 MB）</small>
-          <button class="ps-button primary" id="importButton" type="button">选择本地文件</button>
-        </div>
-        <input id="fileInput" type="file" accept=".md,.markdown,.json,.everflow,text/markdown,application/json" hidden>
-        <div class="ps-microcopy">仅支持上述结构化文本格式。暂不直接识别 PDF、Word、ZIP 或扫描图片；数学公式可以使用 LaTeX 语法。</div>
-      </article>
-      <article class="ps-task-card">
-        <h3>没有整理好的题目？</h3>
-        <p>先生成一份规范题目文件，也可以直接从内置示例进入编辑器体验。</p>
-        <div class="ps-helper-list">
-          <div class="ps-helper-row"><span class="ps-helper-number">01</span><div class="ps-helper-text"><strong>用 AI 整理</strong><small>复制转录规则，粘贴给 AI 并提供原始题目。</small></div><button id="copyPromptButton" type="button">选择 AI ↗</button></div>
-          <div class="ps-helper-row"><span class="ps-helper-number">02</span><div class="ps-helper-text"><strong>查看导入示例</strong><small>下载标准 Markdown 示例，按格式补充题目。</small></div><button id="downloadTemplateButton" type="button">下载示例</button></div>
-          <div class="ps-helper-row"><span class="ps-helper-number">03</span><div class="ps-helper-text"><strong>了解格式与限制</strong><small>查看题干、选项和公式的导入约定。</small></div><button id="howButton" type="button">格式说明</button></div>
-        </div>
-        <div class="paste-workspace">
-          <label for="pasteMarkdown"><strong>直接粘贴 Markdown</strong><small>把豆包或 DeepSeek 返回的完整 Markdown 粘贴到这里，一键转为可编辑试卷。</small></label>
-          <textarea id="pasteMarkdown" rows="5" placeholder="# 数学二试卷\n\n## 一、选择题\n\n### 1\n题干……\nA. ……\nB. ……"></textarea>
-          <button class="ps-button secondary" id="pasteImportButton" type="button">一键转换并进入编辑器 →</button>
-        </div>
-      </article>
     </div>
   </section>
 
@@ -191,8 +157,20 @@
       <div class="ps-flow-tip"><span class="ps-flow-tip-icon" aria-hidden="true">ⓘ</span><div><strong>排版与打印建议：优先使用电脑 + A4 竖版</strong>
         <p>目前 A4 竖版的排版与打印效果相对稳定。<b>A3、横向及混排</b>在部分浏览器或系统打印时可能出现分页、缩放、边距异常；建议在电脑端操作，并在正式打印前逐页核对预览和下载的 PDF。</p>
       </div></div>
-      <a href="#workbench" class="ps-flow-back">已有 Markdown？返回上方粘贴导入 ↑</a>
+      
     </div>
+    <details class="ps-flow-import" id="manualImport">
+      <summary><span class="ps-flow-import-icon" aria-hidden="true">↳</span><span><strong>已有 Markdown？直接粘贴导入</strong><small>无需重复上传或重新整理，展开后粘贴即可转换</small></span><span class="ps-flow-import-chevron" aria-hidden="true">⌄</span></summary>
+      <div class="ps-flow-import-body">
+        <label for="pasteMarkdown">将整理好的 Markdown 文本粘贴在这里，完成后进入正式编辑器。</label>
+        <textarea id="pasteMarkdown" rows="5" spellcheck="false" placeholder="# 考研数学二&#10;&#10;## 一、选择题&#10;&#10;### 1&#10;设函数 $f(x)$ …&#10;A. …&#10;B. …"></textarea>
+        <div class="ps-flow-import-actions">
+          <button class="ps-flow-action ps-flow-action-main" id="pasteImportButton" type="button">转换并进入编辑器 →</button>
+          <button class="ps-flow-action ps-flow-action-outline" id="downloadTemplateButton" type="button">下载示例</button>
+          <button class="ps-flow-action ps-flow-action-outline" id="howButton" type="button">格式说明</button>
+        </div>
+      </div>
+    </details>
     <p class="ps-flow-disclaimer">提示：AI 转录可能遗漏小问、插图或识别错误的公式，请对照原稿核查；文档上传到豆包等第三方 AI 时，请遵守其隐私规则。Everflow 不会代替你上传原始文件。</p>
   </section>
 
@@ -226,7 +204,7 @@
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./editor/local-projects.js?v=20261013-workspace2"></script>
-<script src="./app.js?v=20261013-quick1"></script>
+<script src="./app.js?v=20261013-home-clean2"></script>
 <script src="./book-showcase.js?v=20261013-display-v6"></script>
 </body>
 </html>
