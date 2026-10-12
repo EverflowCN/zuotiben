@@ -6,6 +6,24 @@
  var dots=Array.from(document.querySelectorAll("[data-book-dot]"));
  var titles=["封面展示","密集排版","单题横版"];
  var selected=0;
+ var MM=96/25.4;
+ function fitFrames(){
+   cards.forEach(function(card,i){
+     var w=(i===2?200:210)*MM,h=(i===2?150:297)*MM;
+     var availableWidth=Math.max(1,card.clientWidth);
+     var availableHeight=Math.max(1,card.clientHeight);
+     var scale=Math.max(.08,Math.min(1,availableWidth/w,availableHeight/h));
+     card.style.setProperty("--book-native-width",w+"px");
+     card.style.setProperty("--book-native-height",h+"px");
+     card.style.setProperty("--book-scale",String(scale));
+   });
+ }
+ if(typeof ResizeObserver==="function"){
+   var observer=new ResizeObserver(fitFrames);
+   cards.forEach(function(card){observer.observe(card)});
+ }
+ window.addEventListener("resize",fitFrames,{passive:true});
+ requestAnimationFrame(fitFrames);
  function update(index,focus){
    selected=(index+cards.length)%cards.length;
    cards.forEach(function(card,i){
