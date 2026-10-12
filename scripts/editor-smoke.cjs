@@ -99,8 +99,8 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.notEqual(await page.locator('#previewZoomLabel').innerText(),'适宽');
     await page.locator('#previewFitButton').click();
     assert.equal(await page.locator('#previewZoomLabel').innerText(),'适宽');
-    await page.locator('#browserPrintButton').click();
-    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
+    assert.equal(await page.locator('#browserPrintButton').count(),0);
+    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
     await page.screenshot({path:'test-results/editor-desktop-texpage.png',fullPage:true});
 
     // Navigator collapse on wide desktop.
@@ -131,9 +131,9 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Direct download changed preview DOM');
     console.log('DIRECT PDF',pdfBytes.byteLength,'preview pages',expectedPages);
 
-    // Printing is a separate explicit action.
-    await page.locator('#browserPrintButton').click();
-    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
+    // The editor exposes only direct download.
+    assert.equal(await page.locator('#browserPrintButton').count(),0);
+    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
     assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Printing changed the existing preview pages');
 
     // Chromium print-to-PDF cross-check uses those same physical DOM pages.

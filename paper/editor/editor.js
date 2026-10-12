@@ -21,7 +21,7 @@ var state={
 };
 var selectedId=null,selectedIds=new Set(),previewMode=false,pdfExporting=false,typstPreviewing=false,suspendTypstPreview=false,previewCompileTimer=null,revision=0,pdfRevision=-1,pdfExportDate="",pdfBlob=null,svgRevision=-1,svgExportDate="";
 var previewZoom=1,previewFit=true,currentPreviewPage=1,previewPageCount=0,previewObserver=null;
-var browserLayoutController=null,browserLayoutResult=null,browserPrintBusy=false;
+var browserLayoutController=null,browserLayoutResult=null;
 var undoStack=[],redoStack=[],historyTimer=null,els={};
 
 function byId(id){return document.getElementById(id)}
@@ -1140,36 +1140,6 @@ async function downloadPdf(){
     if(mobileButton){mobileButton.disabled=false;mobileButton.removeAttribute("aria-busy")}
   }
 }
-async function browserPrint(){
-  if(browserPrintBusy)return;
-  browserPrintBusy=true;
-  if(els.browserPrintButton){els.browserPrintButton.disabled=true;els.browserPrintButton.setAttribute("aria-busy","true")}
-  try{
-    // The mobile edit tab hides the preview host; measurement must run in a visible host.
-    // Switch to preview before any validation, otherwise hidden DOM has zero-sized boxes.
-    if(!wantsLiveTypst())await setMode(true);
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"){
-      if(!typstPreviewing)await refreshTypstPreview();
-      if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready")await waitForBrowserLayoutRevision(revision,12000);
-    }
-    if(svgRevision!==revision||!browserLayoutResult||browserLayoutResult.status!=="ready"||els.typstPreview.dataset.revision!==String(revision)||els.typstPreview.dataset.layoutReady!=="true")throw new Error("当前预览尚未通过分页检查，禁止导出不一致的 PDF");
-    if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
-    document.body.classList.add("browser-print-active");
-    els.pdfStatus.textContent="同一份预览已交给系统打印；请选择“存储为 PDF”或“另存为 PDF”。";
-    var cleanup=function(){
-      document.body.classList.remove("browser-print-active");window.removeEventListener("afterprint",cleanup);
-      els.pdfStatus.textContent="分页已完成 · PDF 打印复用了预览的同一份分页布局。";
-    };
-    window.addEventListener("afterprint",cleanup,{once:true});
-    window.print();
-  }catch(error){
-    document.body.classList.remove("browser-print-active");
-    console.error(error);els.pdfStatus.textContent="浏览器打印准备失败："+(error.message||"未知错误");
-  }finally{
-    browserPrintBusy=false;
-    if(els.browserPrintButton){els.browserPrintButton.disabled=false;els.browserPrintButton.removeAttribute("aria-busy")}
-  }
-}
 function waitForBrowserLayoutRevision(targetRevision,timeout){
   return new Promise(function(resolve,reject){
     var started=Date.now();
@@ -1312,7 +1282,7 @@ function init(){
   };
   // Download: locally rasterize exactly the validated preview pages into a PDF.
   // Print: separately invoke the system print dialog using the same physical preview DOM.
-  els.printButton.onclick=downloadPdf;if(els.browserPrintButton)els.browserPrintButton.onclick=browserPrint;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
+  els.printButton.onclick=downloadPdf;if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
     var current=state.questions.find(function(q){return q.id===selectedId});

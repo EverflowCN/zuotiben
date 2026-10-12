@@ -26,6 +26,22 @@ async function ratio(page,index=1){
     return box.width/box.height;
   });
 }
+async function verifyDirectPdf(page,label){
+  const markup=await page.locator('#typstPreview').innerHTML();
+  const dims=await page.locator('#typstPreview > section.browser-paper-page').evaluateAll(pages=>pages.map(p=>[parseFloat(p.style.getPropertyValue('--paper-width')),parseFloat(p.style.getPropertyValue('--paper-height'))]));
+  const downloadPromise=page.waitForEvent('download',{timeout:120000});
+  await page.locator('#printButton').click();
+  const download=await downloadPromise;
+  const path=await download.path();
+  const bytes=fs.readFileSync(path);
+  assert.equal(bytes.subarray(0,5).toString(),'%PDF-');
+  const boxes=[...bytes.toString('latin1').matchAll(/\/MediaBox\s*\[0 0 ([\d.]+) ([\d.]+)\]/g)].map(m=>[Number(m[1]),Number(m[2])]);
+  assert.equal(boxes.length,dims.length,label+' exported page count differs');
+  boxes.forEach((box,i)=>box.forEach((pt,j)=>assert.ok(Math.abs(pt-dims[i][j]*72/25.4)<.1,label+' exported paper dimensions differ')));
+  assert.equal(await page.locator('#typstPreview').innerHTML(),markup,label+' export changed preview');
+  assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
+  console.log('PASS DIRECT PDF',label,dims.length,'pages',bytes.length,'bytes');
+}
 function near(actual,expected,t=.035){
   assert.ok(Math.abs(actual-expected)<=t,`aspect ${actual} != ${expected}`);
 }
@@ -37,6 +53,7 @@ function near(actual,expected,t=.035){
     const errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.addInitScript(()=>{
+      window.__PRINT_CALLED__=0;window.print=()=>{window.__PRINT_CALLED__++};
       localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({
         title:'物理版式验证',coverTitle:'物理版式验证',template:'exam',layout:'a4',
         questions:[
@@ -48,6 +65,7 @@ function near(actual,expected,t=.035){
     await page.goto('http://127.0.0.1:8765/paper/editor/',{waitUntil:'domcontentloaded',timeout:120000});
     await waitForSettled(page);
 
+    await verifyDirectPdf(page,'A4');
     const initialRatio=await ratio(page,1);
     near(initialRatio,210/297);
     assert.ok(await page.locator('.browser-paper-column [data-question-id="q2"] math[display="block"]').count());
@@ -79,6 +97,7 @@ function near(actual,expected,t=.035){
       const size=await page.locator('#pageSizeChip').innerText();
       console.log('MODE GEOMETRY',label,layout,'ratio',actual,'expected',expected,'chip',size);
       near(actual,expected);
+      await verifyDirectPdf(page,label);
       console.log('PASS MODE',label);
     }
     // A3 two-column stress test with the eight Math-II demonstration questions.

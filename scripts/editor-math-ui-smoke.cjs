@@ -36,7 +36,7 @@ const assert=require('node:assert/strict');
     const st=getComputedStyle(el);return {borderLeft:st.borderLeftColor,shadow:st.boxShadow};
   });
   assert.ok(colors.shadow==='none'||!colors.shadow.includes('inset'),'selection still has colored inset bar');
-  assert.ok(await page.locator('#browserPrintButton .ef-icon').count()===1,'print SVG icon missing');
+  assert.equal(await page.locator('#browserPrintButton').count(),0,'system print control should be removed');
   assert.ok(await page.locator('#printButton .ef-icon').count()===1,'download SVG icon missing');
   const topbar=await page.locator('.texpage-topbar').evaluate(el=>getComputedStyle(el).backgroundColor);
   assert.ok(topbar.includes('252, 253, 251')||topbar.includes('255, 255, 255'),'top bar not restyled: '+topbar);
@@ -45,7 +45,7 @@ const assert=require('node:assert/strict');
     await page.setViewportSize(size);
     if(size.width===390)await page.locator('#previewModeButton').click();
     await page.screenshot({path:'test-results/editor-math-ui-'+size.width+'.png',fullPage:false});
-    assert.equal(await page.locator('#browserPrintButton').isVisible(),true);
+    assert.equal(await page.locator('#printButton').isVisible(),true);
   }
   assert.deepEqual(failures,[],'browser errors: '+failures.join('; '));
   console.log('PASS safe math rendering + no ParseError + unchanged source + neutral selection + free icons');
