@@ -59,8 +59,8 @@ main{padding:29px min(4vw,40px) 60px;min-width:0}.topline{display:flex;justify-c
 <div class="setting-group"><label class="setting-inline-toggle"><input type="checkbox" id="coverToggle" checked> 使用 Everflow 母版封面（默认开启）</label></div>
 <div class="setting-group"><label class="setting-label" for="titleField"><b>试卷标题</b><small>可修改</small></label>
 <input class="setting-input" id="titleField" maxlength="110" value="数学二 · 排版体验卷（示例题）"></div>
-<div class="setting-group"><label class="setting-label" for="fontSize"><b>正文字号</b><small id="fontNumber">10 pt</small></label><input id="fontSize" type="range" min="9" max="12" step=".5" value="10"></div>
-<div class="setting-group"><label class="setting-label" for="gapSize"><b>题间距</b><small id="gapNumber">13 px</small></label><input id="gapSize" type="range" min="6" max="26" step="1" value="13"></div>
+<div class="setting-group"><label class="setting-label" for="fontSize"><b>正文字号</b><small id="fontNumber">9 pt</small></label><input id="fontSize" type="range" min="9" max="12" step=".5" value="9"></div>
+<div class="setting-group"><label class="setting-label" for="gapSize"><b>题间距</b><small id="gapNumber">8 px</small></label><input id="gapSize" type="range" min="4" max="26" step="1" value="8"></div>
 <div class="setting-group"><div class="setting-label"><b>预览缩放</b><small id="zoomValue">100%</small></div>
 <div class="zoom-row"><button type="button" id="zoomDown">− 缩小</button><button type="button" id="zoomUp">＋ 放大</button></div></div>
 <div class="setting-foot"><div><b id="pageStats">— 页 · — 题</b><small>母版尺寸 · 本机预览</small></div><button id="demoButton" type="button">体验示例题 ↗</button></div>
@@ -76,7 +76,7 @@ main{padding:29px min(4vw,40px) 60px;min-width:0}.topline{display:flex;justify-c
 <script>
 (function(){
 'use strict';
-var el=id=>document.getElementById(id), state={zip:null,docs:[],current:null,raw:null,urls:[],loading:false,size:'a4',mode:'exam',zoom:1,baseTitle:'',source:'demo',packKey:null,historyTimer:null,restoring:false};
+var el=id=>document.getElementById(id), state={zip:null,docs:[],current:null,raw:null,urls:[],loading:false,size:'a4',mode:'exam',zoom:1,baseTitle:'',source:'demo',packKey:null,historyTimer:null,restoring:false,fontTouched:false,gapTouched:false};
 var initFile=el('file'),sid=el('sheets');
 var DEMO_META={"id":"everflow-demo","title":"数学二 · 排版体验卷（示例题）","provider":"Everflow 示例","series":"原创演示","year":2027,"count":8,"demo":true};
 function msg(s){el('status').textContent=s}
@@ -121,7 +121,7 @@ var archive=window.EverflowTestArchive;
 function historyConfig(){
  return {size:state.size,mode:state.mode,zoom:state.zoom,title:el('titleField').value,
   fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),
-  cover:el('coverToggle').checked,showAnswers:el('ansToggle').checked,
+  cover:el('coverToggle').checked,fontTouched:state.fontTouched,gapTouched:state.gapTouched,showAnswers:el('ansToggle').checked,
   printAnswers:el('ansPrint').checked};
 }
 function scheduleHistorySave(){
@@ -171,8 +171,9 @@ async function restoreHistory(entry){
    state.size=entry.config?.size==='a3'?'a3':'a4';
    state.mode=entry.config?.mode==='book'?'book':'exam';
    state.zoom=Math.max(.6,Math.min(1.1,Number(entry.config?.zoom)||1));
-   el('fontSize').value=String(Math.min(12,Math.max(9,Number(entry.config?.fontPt)||10)));
-   el('gapSize').value=String(Math.min(26,Math.max(6,Number(entry.config?.gapPx)||13)));
+   state.fontTouched=!!entry.config?.fontTouched;state.gapTouched=!!entry.config?.gapTouched;
+   el('fontSize').value=String(Math.min(12,Math.max(9,Number(entry.config?.fontPt)||9)));
+   el('gapSize').value=String(Math.min(26,Math.max(4,Number(entry.config?.gapPx)||8)));
    el('coverToggle').checked=entry.config?.cover!==false;
    el('ansToggle').checked=!!entry.config?.showAnswers;
    el('ansPrint').checked=!!entry.config?.printAnswers;
@@ -367,13 +368,16 @@ document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
    state.mode=b.dataset.mode;
+   if(!state.fontTouched)el('fontSize').value=state.mode==='book'?'10.5':'9';
+   if(!state.gapTouched)el('gapSize').value=state.mode==='book'?'9':'8';
    if(state.mode==='book'&&state.size==='a3'){
      state.size='a4';
      msg('做题本母版为 A4 单题单页，已经将尺寸调整为 A4。');
    }
    rerender()
  });
-['fontSize','gapSize'].forEach(id=>el(id).onchange=rerender);
+el('fontSize').onchange=()=>{state.fontTouched=true;rerender()};
+el('gapSize').onchange=()=>{state.gapTouched=true;rerender()};
 el('demoButton').onclick=()=>select(DEMO_META);
 el('demoTop').onclick=()=>{select(DEMO_META);el('sidebar').classList.remove('open')};
 el('titleField').onchange=()=>{if(!state.current)return;state.current.title=el('titleField').value.trim()||state.baseTitle;el('title').textContent=state.current.title;rerender()};
