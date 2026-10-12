@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
   <link rel="stylesheet" href="./quick-flow.css?v=20261013-quick1">
-  <link rel="stylesheet" href="./book-showcase.css?v=20261013-display-v5">
+  <link rel="stylesheet" href="./book-showcase.css?v=20261013-display-v6">
 </head>
 <body class="paper-home">
 <header class="ps-header">
@@ -28,6 +28,19 @@
       <button id="themeToggle" type="button" aria-label="切换深色或浅色主题">◐ 主题</button>
       <a href="/library/" class="ps-header-cta" title="前往旧版研库资源页">GOTO 研库 ↗</a>
     </nav>
+    <details class="ps-header-mobile-menu" id="psMobileMenu">
+      <summary aria-label="打开导航菜单">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span>菜单</span>
+      </summary>
+      <nav class="ps-mobile-nav-popover" aria-label="移动端菜单">
+        <a href="#workbench">开始使用</a>
+        <a href="./test/">展示体验</a>
+        <a href="../checkin/">学习打卡</a>
+        <button type="button" id="psMobileThemeToggle">◐ 切换主题</button>
+        <a href="/library/">GOTO 研库 ↗</a>
+      </nav>
+    </details>
   </div>
 </header>
 <main>
@@ -214,6 +227,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./editor/local-projects.js?v=20261013-workspace2"></script>
 <script src="./app.js?v=20261013-quick1"></script>
-<script src="./book-showcase.js?v=20261013-display-v5"></script>
+<script src="./book-showcase.js?v=20261013-display-v6"></script>
 </body>
 </html>
