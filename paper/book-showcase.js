@@ -1,10 +1,10 @@
-/* Book showcase: accessible 3-card rotation, no external dependencies. */
+/* Book showcase: two genuine Everflow Book physical-page previews. */
 (function(){
  "use strict";
  var stage=document.getElementById("psBooksStage");if(!stage)return;
  var cards=Array.from(stage.querySelectorAll(".ps-book-card"));
  var dots=Array.from(document.querySelectorAll("[data-book-dot]"));
- var titles=["ExamA4 · 数学二母版封面","ExamA4 · 数学二标准试卷","Book · 数学二单题留空"];
+ var titles=["Book · A4 紧凑做题本","Book · PAD 竖版做题本"];
  var selected=0;
  function update(index,focus){
    selected=(index+cards.length)%cards.length;
@@ -12,12 +12,14 @@
      var rel=(i-selected+cards.length)%cards.length;
      card.classList.toggle("is-centered",rel===0);
      card.classList.toggle("is-next",rel===1);
-     card.classList.toggle("is-prev",rel===cards.length-1);
+     card.classList.toggle("is-prev",cards.length>2&&rel===cards.length-1);
      card.setAttribute("aria-current",String(rel===0));
      card.tabIndex=rel===0?0:-1;
    });
    dots.forEach(function(dot,i){dot.setAttribute("aria-current",String(i===selected))});
    document.getElementById("psBookLabel").textContent=titles[selected];
+   var badge=document.getElementById("psBookModeBadge");
+   if(badge)badge.textContent=selected===0?"Book compact · A4":"Book padp · 200×250 mm";
    if(focus)cards[selected].focus({preventScroll:true});
  }
  cards.forEach(function(card,i){
