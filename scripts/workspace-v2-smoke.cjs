@@ -53,7 +53,7 @@ const assert=require('node:assert/strict');
   // Folders are persistent, do not replace or delete active paper.
   await page.locator('#newLocalFolder').click();
   await page.locator('#workspaceDialogContent input.workspace-input').fill('27 数学二模拟卷');
-  await page.getByRole('button',{name:'创建文件夹',exact:true}).click();
+  await page.locator('#workspaceDialog').getByRole('button',{name:'创建文件夹',exact:true}).click();
   await page.locator('.workspace-folder-label').filter({hasText:'27 数学二模拟卷'}).waitFor();
   const folderId=await page.evaluate(async()=> (await EverflowArchive.listFolders())[0].id);
   assert.ok(folderId.startsWith('folder-'));
