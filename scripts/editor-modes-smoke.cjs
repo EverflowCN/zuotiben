@@ -11,7 +11,7 @@ async function waitForSettled(page,timeout=120000){
 async function choose(page,label,layout){
   const before=await page.locator('#typstPreview').innerHTML();
   await page.locator('#templateButton').click();
-  await page.locator('.template-option').filter({hasText:label}).click();
+  await page.locator('.template-option').filter({has:page.getByText(label,{exact:true})}).click();
   await page.waitForFunction(expectedLayout=>document.body.dataset.layout===expectedLayout,layout,{timeout:30000});
   await page.waitForFunction(oldHtml=>{
     const status=document.querySelector('#pdfStatus')?.textContent||'';
