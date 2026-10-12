@@ -45,6 +45,14 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   await page.mouse.move(split.x+split.width/2,split.y+150);
   await page.mouse.down();await page.mouse.move(split.x+split.width/2+80,split.y+150,{steps:8});await page.mouse.up();
   const wider=await page.locator('#navigatorPanel').boundingBox();
+  const geometryDebug=await page.evaluate(()=>({
+    navStyle:document.documentElement.style.getPropertyValue('--navigator-w'),
+    editorStyle:document.documentElement.style.getPropertyValue('--editor-w'),
+    grid:getComputedStyle(document.getElementById('workbench')).gridTemplateColumns,
+    navComputed:getComputedStyle(document.getElementById('navigatorPanel')).position,
+    source:document.elementFromPoint(0,0)?.id
+  }));
+  console.log('SPLITTER_DIAG',JSON.stringify({original:orig.width,updated:wider.width,geometryDebug}));
   assert.ok(wider.width>orig.width+35,'navigator splitter not draggable '+orig.width+' -> '+wider.width);
   const paneBefore=await page.locator('#editPane').boundingBox();
   const center=await page.locator('#previewResizer').boundingBox();
