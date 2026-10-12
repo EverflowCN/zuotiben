@@ -82,3 +82,30 @@ body.paper-home.dark .ps-book-showcase--template .ps-books-stage{
 @media(prefers-reduced-motion:reduce){
  .ps-book-showcase--template .ps-book-card{transition:none!important}
 }
+/* Three-device refinements: keep showcase readable on iPad in both rotations.
+   A physical page is scaled inside the frame, never reflowed into phone width. */
+@media(min-width:981px) and (max-width:1199px){
+ .ps-hero{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)!important;gap:clamp(24px,3vw,38px)!important}
+ .ps-book-showcase--template .ps-books-stage{height:clamp(394px,41vw,462px)}
+ .ps-book-showcase--template .ps-book-card{width:clamp(215px,54%,270px)}
+}
+@media(min-width:761px) and (max-width:980px){
+ .ps-hero{grid-template-columns:minmax(0,1fr)!important;gap:22px!important;padding-top:42px!important}
+ .ps-hero-copy{max-width:670px}
+ .ps-book-showcase--template{width:min(100%,680px)!important;max-width:680px!important;justify-self:center;box-sizing:border-box}
+ .ps-book-showcase--template .ps-books-stage{height:455px}
+ .ps-book-showcase--template .ps-book-card{width:clamp(225px,50%,288px)}
+}
+@media(max-width:760px){
+ .ps-book-showcase--template{box-sizing:border-box!important}
+ .ps-book-showcase--template .ps-books-stage{height:clamp(340px,94vw,410px)}
+ .ps-book-showcase--template .ps-book-card{width:clamp(185px,58%,263px)}
+ .ps-book-showcase--template .ps-books-control{gap:6px}
+ .ps-book-showcase--template .ps-books-caption span{font-size:10px;line-height:1.45}
+ .ps-book-showcase--template .ps-document-top span{font-size:10px}
+ .ps-book-showcase--template .ps-books-note{max-width:320px;margin:0 auto}
+}
+@media(max-width:360px){
+ .ps-book-showcase--template .ps-books-stage{height:322px}
+ .ps-book-showcase--template .ps-book-card{width:184px}
+}
