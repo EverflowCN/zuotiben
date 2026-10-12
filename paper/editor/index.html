@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="../assets/fonts/fandol/fonts.css?v=20260921-fandol1">
   <link rel="stylesheet" href="../assets/vendor/temml/Temml-Local.css?v=20260921-local1">
   <link rel="stylesheet" href="../styles.css?v=20260921-fandol1">
-  <link rel="stylesheet" href="./editor.css?v=20260921-direct1">
-  <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
+  <link rel="stylesheet" href="./editor.css?v=20261012-layout1">
+  <link rel="stylesheet" href="./redesign.css?v=20261012-layout1">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -157,7 +157,7 @@
         <span class="preview-chip" id="pageSizeChip">210×297 mm</span>
       </div>
 
-      <div class="preview-toolbar-center" role="group" aria-label="PDF 预览控制">
+      <div class="preview-toolbar-center" role="group" aria-label="分页预览控制">
         <button class="viewer-btn" id="previewPrevPageButton" type="button" title="上一页">‹</button>
         <span class="page-indicator" id="previewPageIndicator">— / —</span>
         <button class="viewer-btn" id="previewNextPageButton" type="button" title="下一页">›</button>
@@ -169,12 +169,13 @@
       </div>
 
       <div class="preview-toolbar-right">
-        <button class="primary-btn" id="printButton" type="button">下载 PDF</button>
+        <button class="viewer-btn exact-pdf-btn" id="printButton" type="button" title="使用现有 Typst 母版直接生成 PDF">精确 PDF</button>
+        <button class="primary-btn" id="browserPrintButton" type="button">浏览器打印</button>
       </div>
     </div>
 
     <div class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></div>
-    <div id="typstPreview" class="typst-preview" aria-label="浏览器端 Typst PDF 分页预览"></div>
+    <div id="typstPreview" class="typst-preview browser-paper-preview" aria-label="Everflow 浏览器分页预览"></div>
 
     <div class="paper-stage" id="paperStage" hidden aria-hidden="true">
       <article class="paper-sheet cover-sheet" id="coverSheet">
@@ -208,6 +209,7 @@
 <script defer src="../assets/vendor/temml/temml.min.js?v=20260921-local1"></script>
 <script src="./template-modes.js?v=20260921-mother5"></script>
 <script src="./save-manager.js?v=20260921-cnmode1"></script>
-<script src="./editor.js?v=20260921-direct1"></script>
+<script src="./browser-layout.js?v=20261012-layout1"></script>
+<script src="./editor.js?v=20261012-layout1"></script>
 </body>
 </html>

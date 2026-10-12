@@ -5,7 +5,7 @@ async function waitForSettled(page,timeout=120000){
   await page.waitForFunction(()=>{
     const s=document.querySelector('#pdfStatus')?.textContent||'';
     const pages=document.querySelectorAll('#typstPreview .typst-page');
-    return pages.length>=2 && /已更新|已是最新/.test(s) && !/正在/.test(s);
+    return pages.length>=2 && /分页已完成/.test(s) && !/正在/.test(s);
   },null,{timeout});
 }
 async function choose(page,label,layout){
@@ -16,16 +16,12 @@ async function choose(page,label,layout){
   await page.waitForFunction(oldHtml=>{
     const status=document.querySelector('#pdfStatus')?.textContent||'';
     const current=document.querySelector('#typstPreview')?.innerHTML||'';
-    return current!==oldHtml && /已更新|已是最新/.test(status) && !/正在/.test(status);
+    return current!==oldHtml && /分页已完成/.test(status) && !/正在/.test(status);
   },before,{timeout:120000});
 }
 async function ratio(page,index=1){
   return page.locator('#typstPreview > section.typst-page').nth(index).evaluate(wrap=>{
-    const svg=wrap.querySelector('svg');
-    if(!svg)throw new Error('missing svg in Typst page');
-    const vb=(svg.getAttribute('viewBox')||'').trim().split(/[ ,]+/).map(Number);
-    if(vb.length===4&&vb[2]>0&&vb[3]>0)return vb[2]/vb[3];
-    const box=svg.getBoundingClientRect();
+    const box=wrap.getBoundingClientRect();
     return box.width/box.height;
   });
 }

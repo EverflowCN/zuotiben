@@ -4,15 +4,15 @@ const browserType=playwright[browserName];
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
-async function waitForTypst(page, timeout=120000){
+async function waitForBrowserLayout(page, timeout=120000){
   await page.waitForFunction(()=>{
-    const svg=document.querySelector('#typstPreview svg');
+    const sheet=document.querySelector('#typstPreview .browser-paper-page');
     const status=document.querySelector('#pdfStatus')?.textContent||'';
-    return !!svg || /失败|异常|Error|error/i.test(status);
+    return !!sheet && /分页已完成/.test(status) || /失败|异常|Error|error/i.test(status);
   },null,{timeout});
   const status=await page.locator('#pdfStatus').innerText().catch(()=> '');
-  const count=await page.locator('#typstPreview svg').count();
-  if(!count)throw new Error('Typst preview failed: '+status);
+  const count=await page.locator('#typstPreview .browser-paper-page').count();
+  if(!count)throw new Error('Browser layout preview failed: '+status);
   return status;
 }
 
@@ -27,6 +27,8 @@ async function waitForTypst(page, timeout=120000){
     page.on('console',m=>{if(m.type()==='error')console.log('BROWSER:',m.text())});
 
     await page.addInitScript(()=>{
+      window.__PRINT_CALLED__=0;
+      window.print=()=>{window.__PRINT_CALLED__+=1;window.dispatchEvent(new Event('afterprint'))};
       if(!localStorage.getItem('zuotiben-local-paper-v1')){
         localStorage.setItem('zuotiben-local-paper-v1',JSON.stringify({
         title:'编辑器验证试卷',
@@ -65,8 +67,8 @@ async function waitForTypst(page, timeout=120000){
 
     await page.locator('#questionEditor textarea').fill('修改后的题干 $x^2$');
     assert.match(await page.locator('#activeQuestionLabel').innerText(),/第 1 题/);
-    const firstTypstStatus=await waitForTypst(page);
-    assert.match(firstTypstStatus,/Typst|实时|精确预览/);
+    const firstTypstStatus=await waitForBrowserLayout(page);
+    assert.match(firstTypstStatus,/分页已完成/);
     assert.ok((await page.locator('#typstPreview > section.typst-page').count())>=1);
     assert.notEqual(await page.locator('#previewPageIndicator').innerText(),'— / —');
 
@@ -74,7 +76,7 @@ async function waitForTypst(page, timeout=120000){
     await page.locator('#templateButton').click();
     await page.locator('.template-option').filter({hasText:'标准版'}).click();
     await page.waitForFunction(()=>document.body.dataset.template==='book'&&document.body.dataset.layout==='standard',{},{timeout:30000});
-    await waitForTypst(page);
+    await waitForBrowserLayout(page);
 
     // Structure/settings act like the left project panel.
     await page.locator('#settingsTabButton').click();
@@ -88,6 +90,8 @@ async function waitForTypst(page, timeout=120000){
     assert.notEqual(await page.locator('#previewZoomLabel').innerText(),'适宽');
     await page.locator('#previewFitButton').click();
     assert.equal(await page.locator('#previewZoomLabel').innerText(),'适宽');
+    await page.locator('#browserPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
     await page.screenshot({path:'test-results/editor-desktop-texpage.png',fullPage:true});
 
     // Navigator collapse on wide desktop.
@@ -114,7 +118,7 @@ async function waitForTypst(page, timeout=120000){
     // Tablet: navigator becomes drawer; editor and preview stay split.
     await page.setViewportSize({width:834,height:1112});
     await page.waitForTimeout(180);
-    await waitForTypst(page);
+    await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     await page.locator('#navigatorToggleButton').click();
@@ -142,7 +146,7 @@ async function waitForTypst(page, timeout=120000){
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),false);
 
     await page.locator('#previewModeButton').click();
-    await waitForTypst(page);
+    await waitForBrowserLayout(page);
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -154,7 +158,7 @@ async function waitForTypst(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),true);
 
     assert.deepEqual(errors,[]);
-    console.log('PASS ['+browserName+']: TeXPage-style desktop/tablet/mobile editor, live Typst preview, local PDF download');
+    console.log('PASS ['+browserName+']: responsive editor, browser pagination/print, and exact local PDF download');
   }finally{
     await browser.close();
   }

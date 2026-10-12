@@ -1,3 +1,7 @@
+@font-face{font-family:"Everflow Termes";src:url("../assets/vendor/typst/fonts/TeXGyreTermesX-Regular.otf") format("opentype");font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:"Everflow Termes";src:url("../assets/vendor/typst/fonts/TeXGyreTermesX-Bold.otf") format("opentype");font-style:normal;font-weight:700;font-display:swap}
+@font-face{font-family:"Everflow Kai";src:url("../assets/vendor/typst/fonts/FandolKai-Regular.otf") format("opentype");font-style:normal;font-weight:400;font-display:swap}
+
 html,body{min-height:100%}
 body.editor-page{overflow-x:hidden;background:#f1f2f4}
 body.editor-page.dark{background:#090a0c}
@@ -962,7 +966,7 @@ body.preview-mode .paper-stage{display:none!important}
 }
 
 
-/* Exact Typst pagination: one rendered SVG page per paper card */
+/* Legacy Typst SVG card rules retained for compatibility with older saved previews. */
 .typst-preview{
   display:flex;
   flex-direction:column;
@@ -1899,4 +1903,118 @@ body.is-resizing-panes *{
   }
   .texpage-topbar .mobile-pdf-btn{width:38px!important;min-width:38px!important;max-width:38px!important}
   .texpage-topbar .mobile-mode-switch{min-width:88px!important}
+}
+
+/* 2026-10-12 browser pagination engine: ExamA4 / Book share one physical DOM. */
+.paper-measurement-layer{
+  position:fixed;left:-30000px;top:0;z-index:-1;box-sizing:border-box;
+  visibility:hidden;pointer-events:none;background:#fff;color:#111;
+  contain:layout style;font-family:"Everflow Termes","Everflow Song",serif;
+}
+.browser-paper-preview{
+  display:flex!important;flex-direction:column;align-items:center;gap:22px;
+  overflow:auto;min-height:calc(100dvh - 112px);padding:30px 22px 64px;
+  background:#e9ece7;
+}
+.browser-paper-preview[hidden]{display:none!important}
+.browser-paper-page{
+  position:relative;display:block;flex:0 0 auto;box-sizing:border-box;
+  width:var(--paper-width,210mm)!important;max-width:none!important;
+  height:var(--paper-height,297mm)!important;min-height:var(--paper-height,297mm)!important;
+  margin:0!important;overflow:hidden;background:#fff;color:#111;border:1px solid #d7ded8;border-radius:2px;
+  box-shadow:0 12px 35px #25372a20;zoom:var(--browser-preview-scale,1);
+  font-family:"Everflow Termes","Everflow Song",serif;font-size:var(--paper-font,9.03374pt);line-height:var(--paper-leading,1.56);
+  font-synthesis:none;print-color-adjust:exact;-webkit-print-color-adjust:exact;
+  page:everflow-content;
+}
+.browser-paper-columns{
+  position:absolute;top:var(--paper-top);right:var(--paper-right);
+  bottom:var(--paper-bottom);left:var(--paper-left);
+  display:grid;gap:var(--paper-column-gap);align-items:stretch;
+}
+.browser-paper-column{position:relative;min-width:0;overflow:hidden}
+.paper-layout-item{position:relative;box-sizing:border-box;min-width:0;overflow:visible;cursor:pointer}
+.paper-layout-item .question{margin:0!important;padding:0!important;break-inside:avoid;outline:0!important}
+.paper-layout-item .question-line{display:grid;grid-template-columns:2.25em minmax(0,1fr);column-gap:.55em;align-items:start}
+.paper-layout-item .question-number{font-weight:400;text-align:right;white-space:nowrap}
+.paper-layout-item .question-body{min-width:0;overflow-wrap:anywhere}
+.paper-layout-item .question-body p{margin:0}
+.paper-layout-item .question-body .semantic-row{display:grid;grid-template-columns:2.2em minmax(0,1fr);column-gap:.38em}
+.paper-layout-item .question-body .semantic-row.subq{grid-template-columns:2.5em minmax(0,1fr);column-gap:.6em}
+.paper-layout-item .question-body .semantic-label{text-align:right;white-space:nowrap}
+.paper-layout-item .options{
+  display:grid;margin:var(--master-choice-before,2.25mm) 0 0 calc(2.25em + .55em);
+  row-gap:.22em;column-gap:1.2em;break-inside:avoid;
+}
+.paper-layout-item .options.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.paper-layout-item .options.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.paper-layout-item .options.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.paper-layout-item .options.cols-1{grid-template-columns:minmax(0,1fr)}
+.paper-layout-item .option{display:grid;grid-template-columns:2.25em minmax(0,1fr);min-width:0}
+.paper-layout-item .option-label{white-space:nowrap}.paper-layout-item .option-body{min-width:0;overflow-wrap:anywhere}
+.paper-layout-item .paper-section-heading{
+  margin:2ex 0 1ex;font-family:"Everflow Hei",sans-serif;font-size:inherit;font-weight:700;line-height:inherit;text-align:left;
+}
+body[data-template="book"] .paper-layout-item .paper-section-heading{
+  margin:2pt 0 4pt;text-align:center;font-size:12.045pt;font-weight:400;line-height:1.56;
+}
+.question-answer-space{position:relative;box-sizing:border-box;min-height:0}
+.browser-gap-handle{
+  position:absolute;z-index:8;left:2.8em;right:0;bottom:0;height:7px;padding:0;border:0;border-top:1px dashed transparent;
+  background:transparent;color:#315d4d;cursor:ns-resize;opacity:0;transition:opacity .15s,border-color .15s;
+}
+.paper-layout-item:hover .browser-gap-handle,.browser-gap-handle:focus-visible,.is-adjusting-paper-gap .browser-gap-handle{opacity:1;border-color:#78a38d}
+.browser-gap-handle:before{position:absolute;left:50%;top:-4px;width:26px;height:7px;border-radius:99px;background:#78a38d;content:"";transform:translateX(-50%)}
+.browser-gap-handle span{position:absolute;right:0;top:-17px;padding:1px 5px;border-radius:4px;background:#edf4ef;font:8px/1.4 system-ui,sans-serif;white-space:nowrap}
+.paper-question-fragment-window{position:relative;overflow:hidden}
+.paper-question-fragment-body{position:relative;min-height:0;will-change:transform}
+.browser-running-header{
+  position:absolute;top:calc(var(--paper-top) - var(--paper-header));right:var(--paper-right);left:var(--paper-left);height:var(--paper-header);
+  display:grid;grid-template-columns:1fr minmax(0,1.4fr) 1fr;align-items:start;border-bottom:.4pt solid #777;
+  font-family:"Everflow Song",serif;font-size:10pt;font-weight:700;line-height:1.2;
+}
+.browser-running-header span:nth-child(2){text-align:center}.browser-running-header span:last-child{text-align:right}
+.browser-paper-footer{
+  position:absolute;right:var(--paper-right);bottom:var(--paper-footer);left:var(--paper-left);height:4.5mm;
+  display:flex;align-items:start;justify-content:center;border:0;color:#222;
+  font-family:"Everflow Kai","Everflow Song",serif;font-size:9pt;line-height:1.2;
+}
+.browser-paper-footer.is-column-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--paper-column-gap)}
+.browser-paper-footer.is-column-footer span{text-align:center}
+body[data-template="book"] .browser-paper-footer{bottom:4.2mm;height:4.2mm;font-family:"Everflow Song",serif}
+.browser-paper-watermark{
+  position:absolute;right:13mm;bottom:30mm;z-index:0;width:auto;height:34mm;opacity:.09;object-fit:contain;pointer-events:none;
+}
+.browser-paper-qr{position:absolute;left:3mm;bottom:5.8mm;width:15mm;display:grid;justify-items:center;gap:.4mm;color:#555;font:5.8pt/1 "Everflow Song",serif}
+.browser-paper-qr img{display:block;width:13mm;height:13mm}.browser-paper-footer{z-index:2}.browser-paper-columns{z-index:1}
+.browser-cover-page{width:210mm!important;height:297mm!important;min-height:297mm!important;font-family:"Everflow Song",serif;page:everflow-cover}
+.browser-cover-title{position:absolute;left:18mm;right:18mm;top:120.9mm;text-align:center;font-family:"Everflow Hei",sans-serif;font-size:24.7871pt;font-weight:700;line-height:30pt}
+.browser-cover-signature{position:absolute;left:18mm;right:18mm;top:148.05mm;text-align:center;font-size:18.3313pt;font-weight:700;line-height:18pt}
+.browser-cover-line{position:absolute;left:18mm;top:266mm;width:50mm;border-top:.4pt solid #111}
+.browser-cover-brand{position:absolute;left:19.3mm;top:270.55mm;font-size:9.4645pt;font-weight:700;line-height:12pt}
+.browser-cover-date{position:absolute;left:19.3mm;top:277.15mm;color:#f00;font-size:8.9664pt;font-weight:700;line-height:11pt}
+body[data-template="book"] .browser-cover-title{font-size:21.9178pt}
+body[data-template="book"] .browser-cover-date{color:#24272b}
+.exact-pdf-btn{min-width:68px!important;font-size:11px!important}
+
+@media(max-width:767px){
+  .browser-paper-preview{gap:10px;padding:10px 6px calc(75px + env(safe-area-inset-bottom))!important}
+  .browser-paper-page{max-width:none!important}
+  .preview-toolbar-right .exact-pdf-btn{display:none!important}
+}
+
+@media print{
+  html,body{width:auto!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important}
+  body.browser-print-active *{visibility:hidden!important}
+  body.browser-print-active #typstPreview,body.browser-print-active #typstPreview *{visibility:visible!important}
+  body.browser-print-active #typstPreview{
+    position:absolute!important;left:0!important;top:0!important;display:block!important;width:auto!important;height:auto!important;
+    min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important;
+  }
+  body.browser-print-active .browser-paper-page{
+    display:block!important;zoom:1!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+    break-after:page;page-break-after:always;
+  }
+  body.browser-print-active .browser-paper-page:last-child{break-after:auto;page-break-after:auto}
+  body.browser-print-active .browser-gap-handle{display:none!important}
 }
