@@ -18,7 +18,7 @@
  outline-offset:4px;transform-origin:center center;
  transition:transform .4s cubic-bezier(.22,.72,.2,1),opacity .4s,box-shadow .4s;
 }
-.ps-book-showcase--template .ps-book-card[data-book-index="1"]{aspect-ratio:200/250}
+.ps-book-showcase--template .ps-book-card[data-book-index="2"]{aspect-ratio:200/150}
 .ps-book-showcase--template .ps-book-card.is-centered{
  transform:translate(-56%,-50%) scale(1);z-index:5;opacity:1;
  box-shadow:0 13px 34px #183b271f!important
