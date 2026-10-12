@@ -1,6 +1,6 @@
 /* Everflow Paper Studio tri-device layout, October 2026.
    Rendering stays at physical mm; only preview zoom changes on screen. */
-body.editor-page .exact-pdf-btn{display:none!important}
+body.editor-page .preview-toolbar .exact-pdf-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:73px!important;min-height:35px!important;height:35px!important;padding:0 10px!important;font-size:11px!important;background:#f1f6fc!important;border:1px solid #c9d8eb!important;color:#244f84!important}
 body.editor-page .editor-topbar button,
 body.editor-page .preview-toolbar button{white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb;min-width:0}
 body.editor-page .editor-topbar .brand,
@@ -182,4 +182,32 @@ body.editor-page .browser-paper-page{transform:none!important}
    zoom:1!important;transform:none!important;box-shadow:none!important;border:0!important;
    page-break-inside:avoid!important;break-inside:avoid!important;
  }
+}
+
+/* Two separate actions, never two print destinations. */
+body.editor-page .preview-toolbar-right{display:flex!important;align-items:center!important;gap:7px!important}
+body.editor-page .preview-toolbar-right #browserPrintButton{min-width:52px!important}
+body.editor-page .preview-toolbar-right #printButton[aria-busy="true"]{opacity:.6;pointer-events:none}
+@media(max-width:1179px) and (min-width:768px){
+ body.editor-page .preview-toolbar-right #printButton{min-width:68px!important;padding:0 7px!important}
+ body.editor-page .preview-toolbar-right #browserPrintButton{min-width:48px!important;padding:0 8px!important}
+}
+@media(max-width:767px){
+ body.editor-page .preview-toolbar-left{min-width:0!important}
+ body.editor-page .preview-toolbar-left strong{max-width:calc(100vw - 205px)!important}
+ body.editor-page .preview-toolbar-right{gap:5px!important;flex:0 0 auto!important}
+ body.editor-page .preview-toolbar-right #printButton{
+   display:inline-flex!important;min-width:68px!important;height:34px!important;min-height:34px!important;
+   font-size:10px!important;padding:0 6px!important;
+ }
+ body.editor-page .preview-toolbar-right #browserPrintButton{
+   min-width:44px!important;height:34px!important;min-height:34px!important;
+   padding:0 9px!important;font-size:10px!important;
+ }
+}
+@media(max-width:359px){
+ body.editor-page .preview-toolbar-left .preview-status-dot{display:none!important}
+ body.editor-page .preview-toolbar-left strong{max-width:calc(100vw - 182px)!important}
+ body.editor-page .preview-toolbar-right #printButton{min-width:60px!important;padding:0 4px!important}
+ body.editor-page .preview-toolbar-right #browserPrintButton{min-width:42px!important;padding:0 5px!important}
 }
