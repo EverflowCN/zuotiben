@@ -5,21 +5,30 @@
  */
 (function(global){
 "use strict";
+// Resolve dependencies relative to THIS script rather than the current page:
+ // /paper/test/ and /paper/editor/ share the same export module.
+var scriptBase=new URL(".",document.currentScript&&document.currentScript.src||global.location.href);
 var urls={
-  snapshot:"./vendor/html-to-image.js",
-  fallback:"./vendor/html2canvas.min.js",
-  pdf:"./vendor/jspdf.umd.min.js"
+  snapshot:new URL("vendor/html-to-image.js",scriptBase).href,
+  fallback:new URL("vendor/html2canvas.min.js",scriptBase).href,
+  pdf:new URL("vendor/jspdf.umd.min.js",scriptBase).href
 };
 var loads={};
 function scriptOnce(key,test){
   if(test())return Promise.resolve();
   if(loads[key])return loads[key];
   loads[key]=new Promise(function(resolve,reject){
-    var element=document.createElement("script");element.src=urls[key];element.async=true;
-    element.onload=function(){if(test())resolve();else reject(new Error("PDF 库 "+key+" 初始化失败"))};
-    element.onerror=function(){reject(new Error("PDF 导出依赖加载失败，请检查网络："+key))};
+    var element=document.createElement("script");
+    element.src=urls[key];element.async=true;element.crossOrigin="anonymous";
+    element.onload=function(){
+      if(test())resolve();
+      else reject(new Error("PDF 组件未正确初始化："+key+"，资源地址："+urls[key]));
+    };
+    element.onerror=function(){
+      reject(new Error("PDF 组件加载失败："+key+"，请检查资源地址是否可访问："+urls[key]));
+    };
     document.head.appendChild(element);
-  });
+  }).catch(function(error){delete loads[key];throw error});
   return loads[key];
 }
 async function libraries(){
