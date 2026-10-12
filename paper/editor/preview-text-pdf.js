@@ -3,7 +3,7 @@
  */
 (function(global){
 'use strict';
-var base=new URL('.',document.currentScript.src),fontBase=new URL('../assets/vendor/typst/fonts/',base);
+var base=new URL('.',document.currentScript.src),fontBase=new URL('vendor/pdf-fonts/',base);
 var loading=null,bytesCache=new Map();
 function loadScript(file,test){
  if(test())return Promise.resolve();
@@ -14,7 +14,7 @@ function libraries(){
  return loading;
 }
 async function fontData(name){
- if(!bytesCache.has(name))bytesCache.set(name,fetch(new URL(name+'.otf',fontBase)).then(function(r){if(!r.ok)throw new Error('字体加载失败：'+name);return r.arrayBuffer()}).then(function(b){return new Uint8Array(b)}).catch(function(e){bytesCache.delete(name);throw e}));
+ if(!bytesCache.has(name))bytesCache.set(name,fetch(new URL(name+'.ttf',fontBase)).then(function(r){if(!r.ok)throw new Error('字体加载失败：'+name);return r.arrayBuffer()}).then(function(b){return new Uint8Array(b)}).catch(function(e){bytesCache.delete(name);throw e}));
  return bytesCache.get(name);
 }
 function fontName(style,char){

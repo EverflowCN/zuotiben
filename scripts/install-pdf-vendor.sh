@@ -15,3 +15,6 @@ for file in paper/editor/vendor/*.js; do
   if [ ! -s "$file" ]; then echo "Missing PDF runtime: $file" >&2;exit 1;fi
   sha256sum "$file"
 done
+
+python3 -m pip install --quiet fonttools==4.61.1
+python3 scripts/build-pdf-fonts.py
