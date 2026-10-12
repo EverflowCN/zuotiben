@@ -655,6 +655,9 @@ async function setMode(preview){
   els.editModeButton.setAttribute("aria-pressed",String(!previewMode));
   els.previewModeButton.setAttribute("aria-pressed",String(previewMode));
   syncViewportMode();
+  // Mobile editing hides the preview; its old zoom may belong to tablet width.
+  // Recalculate immediately after making the physical paper host visible.
+  if(previewMode)applyPreviewZoom();
   if(wantsLiveTypst()){
     var today=localDate();
     if(svgRevision!==revision||svgExportDate!==today)await refreshTypstPreview();
