@@ -69,7 +69,7 @@ body.editor-page #previewPane .typst-preview{box-sizing:border-box!important;max
 body.editor-page #previewPane[data-pane-size="compact"] .preview-toolbar,
 body.editor-page #previewPane[data-pane-size="narrow"] .preview-toolbar{
   display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
-  grid-template-rows:auto auto!important;height:auto!important;min-height:89px!important;
+  grid-template-rows:auto auto auto!important;height:auto!important;min-height:114px!important;
   flex:0 0 auto!important;gap:3px 8px!important;padding:6px 8px!important;align-content:center!important
 }
 body.editor-page #previewPane[data-pane-size="compact"] .preview-toolbar-left,
@@ -99,7 +99,9 @@ body.editor-page #previewPane[data-pane-size="narrow"] .preview-toolbar-center{
 }
 body.editor-page #previewPane[data-pane-size="compact"] .preview-toolbar-extra,
 body.editor-page #previewPane[data-pane-size="narrow"] .preview-toolbar-extra{
-  display:none!important
+  display:flex!important;grid-column:1 / -1!important;grid-row:3!important;
+  gap:13px!important;justify-self:start!important;min-height:22px!important;
+  white-space:nowrap!important;font-size:10px!important
 }
 /* Do not hide answers settings permanently; small preview panes use settings UI.
    On tablets the viewport is wider but right pane can still be narrow. */
