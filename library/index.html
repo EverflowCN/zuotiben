@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <base href="/">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="研库 - 考研学习资源、经验与勘误索引" />
+  <meta name="theme-color" content="#f6f0e5" />
+  <title>研库 · 考研资源库</title>
+  <link rel="stylesheet" href="./styles.css?v=20260920-icon1" />
+</head>
+<body>
+  <canvas id="bitstreamBackground" class="bitstream-background" aria-hidden="true"></canvas>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/library/" aria-label="研库首页">
+        <span class="brand-symbol" aria-hidden="true">研</span>
+        <span id="brandName" class="brand-name">研库</span>
+      </a>
+
+      <button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="打开导航" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
+        </svg>
+        <input id="searchInput" type="search" placeholder="搜索资源、科目、版本或关键词" autocomplete="off" />
+        <kbd>/</kbd>
+      </label>
+
+      <div class="theme-switcher" role="group" aria-label="页面主题">
+        <button class="theme-option" type="button" data-theme-option="white" aria-pressed="false">白色</button>
+        <button class="theme-option" type="button" data-theme-option="warm" aria-pressed="true">暖白</button>
+        <button class="theme-option" type="button" data-theme-option="dark" aria-pressed="false">暗黑</button>
+      </div>
+
+      <div class="site-domain">zuotiben.top</div>
+    </div>
+  </header>
+
+  <div id="mobileDrawerBackdrop" class="mobile-drawer-backdrop" hidden></div>
+
+  <main class="shell">
+    <aside id="mobileSidebar" class="sidebar">
+      <div class="mobile-drawer-head">
+        <div class="mobile-drawer-brand">
+          <span class="brand-symbol" aria-hidden="true">研</span>
+          <div>
+            <strong id="mobileBrandName">研库</strong>
+            <small id="mobileBrandSubtitle">资源导航</small>
+          </div>
+        </div>
+        <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="关闭导航">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <div id="sidebarColumnsTitle" class="sidebar-title">栏目</div>
+        <nav id="sectionNav" class="section-nav" aria-label="站点栏目"></nav>
+      </div>
+
+      <div id="categorySection" class="sidebar-section">
+        <div id="sidebarSubjectsTitle" class="sidebar-title">科目</div>
+        <nav id="categoryNav" class="category-nav" aria-label="资料分类"></nav>
+      </div></aside>
+
+    <section class="content">
+      <div class="content-head">
+        <div>
+          <div id="eyebrow" class="eyebrow">RESOURCE LIBRARY</div>
+          <h1 id="pageTitle">全部资源</h1>
+          <p id="contentDesc" class="content-desc">书籍、讲义、真题、做题本与打印版本统一索引；同一资源可以提供多个版本和多个获取入口。</p>
+          <div id="breadcrumb" class="breadcrumb">
+            <span id="currentSubject">全部科目</span>
+            <span class="crumb-sep">›</span>
+            <span id="currentResourceType">全部资源</span>
+          </div>
+        </div>
+        <div id="resourceCount" class="result-count"></div>
+      </div>
+<section id="overviewView" class="overview-view" hidden>
+        <button id="overviewNotice" class="overview-notice" type="button" data-announcement-index="0">
+          <span class="overview-notice-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+          </span>
+          <span class="overview-notice-copy">
+            <span><b>公告</b><time id="overviewNoticeDate">2026-09-19</time></span>
+            <strong id="overviewNoticeTitle">资源中心持续整理中</strong>
+            <small id="overviewNoticeBody">资源版本、下载入口与勘误会持续补充。</small>
+          </span>
+          <span class="overview-notice-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <section id="communityInfo" class="community-info" aria-label="站点说明">
+          <article id="freeInfoCard" class="community-card">
+            <span class="community-icon free-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"/><rect x="3" y="7" width="18" height="4" rx="1"/></svg>
+            </span>
+            <span><strong id="freeInfoTitle">全部资源免费公开</strong><small id="freeInfoBody">本站收录与整理的资源均免费公开，不设置付费门槛。</small></span>
+          </article>
+          <article id="qqInfoCard" class="community-card qq-card">
+            <span class="community-icon qq-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.395 15.035a40 40 0 0 0-.803-2.264l-1.079-2.695c.001-.032.014-.562.014-.836C19.526 4.632 17.351 0 12 0S4.474 4.632 4.474 9.241c0 .274.013.804.014.836l-1.08 2.695a39 39 0 0 0-.802 2.264c-1.021 3.283-.69 4.643-.438 4.673.54.065 2.103-2.472 2.103-2.472 0 1.469.756 3.387 2.394 4.771-.612.188-1.363.479-1.845.835-.434.32-.379.646-.301.778.343.578 5.883.369 7.482.189 1.6.18 7.14.389 7.483-.189.078-.132.132-.458-.301-.778-.483-.356-1.233-.646-1.846-.836 1.637-1.384 2.393-3.302 2.393-4.771 0 0 1.563 2.537 2.103 2.472.251-.03.581-1.39-.438-4.673"/></svg>
+            </span>
+            <span class="community-copy"><strong id="qqInfoTitle">更多资料在 QQ 群</strong><small id="qqInfoBody">更多资料、更新与交流可加入 QQ 群。</small><b id="qqNumber">1032998814</b></span>
+            <span class="community-actions">
+              <button id="copyQqButton" class="community-action" type="button">复制群号</button>
+              <button id="joinQqButton" class="community-action primary" type="button" hidden>加入群</button>
+            </span>
+          </article>
+          <article id="progressInfoCard" class="community-card">
+            <span class="community-icon progress-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+            </span>
+            <span><strong id="progressInfoTitle">功能持续添加中</strong><small id="progressInfoBody">资料、经验贴、勘误与更多实用功能会持续补充与完善。</small></span>
+          </article>
+        </section>
+
+        <div class="overview-metrics">
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16"/></svg></span><span><small id="metricResourcesLabel">已收录资料</small><strong id="metricResources">0</strong><em id="metricResourcesNote">查看全部资源</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span><span><small id="metricVersionsLabel">资源版本</small><strong id="metricVersions">0</strong><em id="metricVersionsNote">标准版 / 打印版等</em></span></button>
+          <button class="metric-card" type="button" data-go="experience"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span><small id="metricExperienceLabel">经验贴</small><strong id="metricExperience">0</strong><em id="metricExperienceNote">备考经验整理</em></span></button>
+          <button class="metric-card" type="button" data-go="resources"><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h10v14H4Z"/><path d="M7 9h4M7 13h4"/><circle cx="17" cy="16" r="3"/><path d="m19.2 18.2 2 2"/></svg></span><span><small id="metricErrataLabel">公开勘误</small><strong id="metricErrata">0</strong><em id="metricErrataNote">随对应版本查看</em></span></button>
+        </div>
+
+        <div class="overview-grid balanced">
+          <section class="overview-card">
+            <div class="overview-card-head"><div><span>RECENT</span><h2 id="recentTitle">最近更新</h2></div><button id="recentAction" type="button" data-go="resources">查看全部</button></div>
+            <div id="recentResources" class="overview-list"></div>
+          </section>
+          <section class="overview-card">
+            <div class="overview-card-head"><div><span>MAINTENANCE</span><h2 id="maintenanceTitle">资源维护</h2></div><button id="maintenanceAction" type="button" data-open-announcements="true">使用说明</button></div>
+            <div class="maintenance-list">
+              <button class="maintenance-row" type="button" data-go="resources"><span id="maintenanceEntryLabel">获取入口</span><strong id="maintenanceEntryTitle">网盘 · 直链 · 打印</strong><small id="maintenanceEntryBody">按具体版本分别提供</small></button>
+              <button class="maintenance-row" type="button" data-open-errata-submit="true"><span id="maintenanceErrataLabel">勘误提交</span><strong id="maintenanceErrataTitle">发现问题可申请提交</strong><small id="maintenanceErrataBody">提交入口开放后可直接在这里反馈</small></button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="resourceView">
+        <div class="filterbar" aria-label="资源筛选">
+          <div class="filterbar-controls">
+            <div id="subjectPicker" class="combobox">
+              <button id="subjectPickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/>
+                  <path d="M4 5.5v16"/>
+                </svg>
+                <span class="filter-trigger-label">科目</span>
+                <span id="subjectPickerText" class="filter-trigger-value">全部科目</span>
+                <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m6 8 4 4 4-4"/>
+                </svg>
+              </button>
+              <div id="subjectDropdown" class="command-popover subject-popover" hidden>
+                <label class="command-search">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/>
+                  </svg>
+                  <input id="subjectSearchInput" type="search" placeholder="搜索科目…" autocomplete="off" />
+                </label>
+                <div id="subjectOptions" class="command-list" role="listbox"></div>
+              </div>
+            </div>
+
+            <div id="resourceTypePicker" class="combobox">
+              <button id="resourceTypePickerButton" class="filter-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <svg class="trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 6h6l2 2h8v11H4Z"/>
+                  <path d="M4 6V5h6l2 2"/>
+                </svg>
+                <span class="filter-trigger-label">类型</span>
+                <span id="resourceTypePickerText" class="filter-trigger-value">全部资源</span>
+                <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m6 8 4 4 4-4"/>
+                </svg>
+              </button>
+              <div id="resourceTypeDropdown" class="command-popover type-popover" hidden>
+                <div id="resourceTypeOptions" class="command-list" role="listbox"></div>
+              </div>
+            </div>
+
+            <button id="clearFiltersButton" class="clear-filters" type="button" hidden>清除筛选</button>
+          </div>
+          <div id="filterHint" class="filterbar-hint">支持搜索</div>
+        </div>
+
+        <div class="toolbar">
+          <div id="toolbarSort" class="toolbar-sort">最近更新</div>
+          <div id="viewNote" class="view-note">资源 · 版本 · 渠道</div>
+        </div>
+
+        <div id="resourceList" class="resource-list" aria-live="polite"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <div id="resourceEmptyTitle" class="empty-title">暂时没有收录资源</div>
+          <p id="resourceEmptyBody">有内容后才会显示对应分类。</p>
+        </div>
+      </section>
+
+      <section id="experienceView" class="secondary-view" hidden>
+        <div class="section-summary">
+          <div class="section-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 4h14v16H5Z"/>
+              <path d="M8 8h8M8 12h8M8 16h5"/>
+            </svg>
+          </div>
+          <div>
+            <h2 id="experienceSectionTitle">经验贴</h2>
+            <p id="experienceSectionBody">后续可按院校、专业、初试、复试、择校、时间规划等维度整理真实经验内容。</p>
+          </div>
+        </div>
+        <div id="experienceList" class="experience-list" aria-live="polite"></div>
+        <div id="experienceEmptyState" class="empty-state">
+          <div id="experienceEmptyTitle" class="empty-title">暂未收录经验贴</div>
+          <p id="experienceEmptyBody">后续可以从公开经验贴中筛选、整理并注明来源，不会先堆空分类。</p>
+        </div>
+      </section>
+      <section id="aboutView" class="about-view" hidden>
+        <header class="about-local-head">
+          <span>ABOUT</span>
+          <h1>关于研库</h1>
+        </header>
+        <div class="about-lead">
+          <p>研库是一个用于整理、索引和分发考研学习资料的小型社区项目。它希望把“资料在哪里、现在是什么版本、怎么获取、哪里有错误”这些事情说明白一点。</p>
+          <p>这里的很多内容并不是一个人完成的。资料补充、失效链接提醒、排版建议、功能建议和问题反馈，都在让这个站点变得更完整。</p>
+        </div>
+
+        <section class="about-section">
+          <div class="about-section-label">感谢</div>
+          <div class="about-section-body">
+            <h2>感谢每一位愿意分享的人</h2>
+            <p>特别感谢群友们提供学习资料、补充资源来源、提出使用建议，以及在发现错误时愿意花时间反馈。很多看起来很小的提醒，最后都会变成更清楚的版本信息、更可靠的下载入口，或者一次实际的修正。</p>
+            <p>也感谢 QQ 群 <strong>1032998814</strong> 中参与交流和维护的群友。没有被单独列出的每一次帮助，同样重要。</p>
+          </div>
+        </section>
+
+        <section class="about-section">
+          <div class="about-section-label">贡献</div>
+          <div class="about-contributions">
+            <div class="about-contribution-row"><strong>资料提供</strong><p>分享做题本、讲义、真题、整理资料，以及补充更完整或更新的版本。</p></div>
+            <div class="about-contribution-row"><strong>建议与反馈</strong><p>提出页面、搜索、分类、下载流程和使用体验方面的建议，帮助减少不必要的步骤。</p></div>
+            <div class="about-contribution-row"><strong>校对与维护</strong><p>反馈失效链接、版本错误、内容问题和排版问题，让公开资料保持可用、可追溯。</p></div>
+          </div>
+        </section>
+
+        <section class="about-section">
+          <div class="about-section-label">原则</div>
+          <div class="about-principles">
+            <p><strong>免费公开。</strong>本站整理和维护的资料索引保持免费公开，不设置付费门槛。</p>
+            <p><strong>版本清楚。</strong>尽量标明版本、发布日期和获取入口，避免不同文件混在一起。</p>
+            <p><strong>有错就改。</strong>发现错误后保留勘误和修正记录，而不是让问题悄悄消失。</p>
+          </div>
+        </section>
+
+        <section class="about-section about-join">
+          <div class="about-section-label">一起完善</div>
+          <div class="about-section-body">
+            <h2>继续把它做得更好</h2>
+            <p>如果你手里有可以公开分享的资料，或者发现链接失效、版本不对、页面不好用，都欢迎继续提出建议。</p>
+            <div class="about-actions">
+              <button type="button" class="about-action primary" data-copy-qq>复制 QQ 群号</button>
+              <button type="button" class="about-action" data-go="resources">返回资料库</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+<section id="siteNoteSection" class="site-note">
+        <h2 id="siteNoteTitle">说明</h2>
+        <p id="siteNoteBody">本站用于整理和索引公开学习资源、经验与勘误。涉及第三方内容时，请遵守相应版权、授权与平台规则。</p>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="footerLeft">研库 · 考研学习资源索引与分发</span>
+    <span id="footerRight">zuotiben.top</span>
+  </footer>
+
+  <div id="unifiedModalBackdrop" class="unified-modal-backdrop" hidden></div>
+  <section id="unifiedModal" class="unified-modal" hidden role="dialog" aria-modal="true" aria-labelledby="unifiedModalTitle">
+    <header class="unified-modal-head">
+      <div><span id="unifiedModalKicker">DETAIL</span><h2 id="unifiedModalTitle">详情</h2></div>
+      <button id="unifiedModalClose" class="unified-modal-close" type="button" aria-label="关闭"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div id="unifiedModalBody" class="unified-modal-body"></div>
+    <footer id="unifiedModalActions" class="unified-modal-actions"></footer>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">已复制</div>
+  <script src="./app.js?v=20260920-icon1"></script>
+</body>
+</html>
