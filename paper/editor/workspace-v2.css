@@ -1,0 +1,144 @@
+/* Everflow workspace v2: three adjustable panes + resizable project/outline
+ * and actual file tree. Colors follow previous calm editor UI.
+ */
+:root{--workspace-h:250px}
+body.editor-page .workspace-projects{
+ box-sizing:border-box!important;flex:0 0 var(--workspace-h)!important;
+ height:var(--workspace-h)!important;min-height:135px!important;max-height:calc(100% - 245px)!important;
+ padding:10px 11px 7px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+body.editor-page .workspace-heading{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;gap:8px}
+body.editor-page .workspace-heading b{font-size:12px}
+body.editor-page .workspace-subtitle{color:#899c90;font-size:9px}
+body.editor-page .workspace-project-toolbar{display:grid;grid-template-columns:1fr 1fr 1.13fr;gap:5px;flex:0 0 auto;margin:10px 0 8px}
+body.editor-page .workspace-project-toolbar button{
+ border:1px solid #cadfd2;border-radius:9px;color:#315d46;background:#fff;
+ font-size:10px;font-weight:700;min-width:0;padding:8px 3px;cursor:pointer;white-space:nowrap;
+}
+body.editor-page .workspace-project-toolbar button:hover{background:#e7f3ea;border-color:#a4c4ae}
+body.editor-page .workspace-project-toolbar button:disabled{opacity:.55;cursor:progress}
+body.editor-page .workspace-paper-list{
+ display:block;flex:1 1 auto;min-height:38px;max-height:none!important;
+ overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;
+ margin:0!important;padding:2px!important;
+}
+body.editor-page .workspace-folder-head{display:flex;align-items:center;min-height:31px;border-radius:8px;gap:4px;margin-top:3px}
+body.editor-page .workspace-folder-name,body.editor-page .workspace-folder-root{
+ display:flex;align-items:center;gap:7px;padding:7px 8px;min-width:0;flex:1;
+ width:100%;border:1px solid transparent;text-align:left;border-radius:8px;
+ background:none;cursor:pointer;color:#526c5b;font-size:11px;font-weight:700;
+}
+body.editor-page .workspace-folder-name:hover,body.editor-page .workspace-folder-root:hover{background:#eff6f0}
+body.editor-page .workspace-folder-name.is-selected,body.editor-page .workspace-folder-root.is-selected{
+ border-color:#b8d9c0;background:#e9f3ed;color:#265c40;
+}
+body.editor-page .workspace-folder-label{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+body.editor-page .workspace-folder-icon{color:#668f76;font-size:14px;flex:0 0 auto}
+body.editor-page .workspace-folder-count{font-size:9px;color:#8da395;white-space:nowrap}
+body.editor-page .workspace-folder-menu{
+ flex:0 0 auto;border:1px solid transparent;background:none;color:#748977;
+ border-radius:7px;font-size:18px;cursor:pointer;width:24px;height:28px
+}
+body.editor-page .workspace-folder-menu:hover{background:#e9f4eb;border-color:#d6e6d9}
+body.editor-page .workspace-folder-children{padding-left:10px;border-left:1px solid #dceade;margin-left:11px}
+body.editor-page .workspace-folder-empty{display:block;padding:8px 6px;color:#a2afa5;font-size:10px;line-height:1.6}
+body.editor-page .workspace-file-row{display:grid;grid-template-columns:minmax(0,1fr) 60px;align-items:center;gap:3px;
+ border-radius:8px;margin:2px 0;padding:2px 1px}
+body.editor-page .workspace-file-row:hover{background:#f1f8f2}
+body.editor-page .workspace-file-row.is-active{background:#e9f4ed}
+body.editor-page .workspace-file-row .workspace-paper{
+ width:100%;min-height:34px!important;grid-template-columns:16px minmax(0,1fr) auto!important;
+ padding:6px 4px!important;gap:5px!important;margin:0!important
+}
+body.editor-page .workspace-paper-name{font-size:10px!important;line-height:1.35}
+body.editor-page .workspace-paper-count{font-size:9px!important}
+body.editor-page .workspace-file-move{
+ display:block;width:100%;padding:4px 2px;min-width:0;border:1px solid #d5e4d8;
+ border-radius:6px;color:#708b78;background:#fff;font-size:9px;cursor:pointer
+}
+body.editor-page .workspace-mini-actions{margin-top:7px!important;gap:6px!important;flex:0 0 auto}
+body.editor-page .workspace-mini-actions button{min-height:29px!important;padding:5px 3px!important}
+body.editor-page .workspace-help{font-size:9px!important;line-height:1.4!important;
+ margin:6px 0 0!important;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+body.editor-page .workspace-height-resizer{
+ flex:0 0 9px;height:9px;display:grid;place-items:center;position:relative;
+ background:#f0f5f0;border-top:1px solid #e0e9e0;border-bottom:1px solid #e0e9e0;
+ cursor:row-resize;touch-action:none;z-index:11;outline-offset:2px;
+}
+body.editor-page .workspace-height-resizer span{width:39px;height:3px;background:#a8bdac;border-radius:20px;pointer-events:none}
+body.editor-page .workspace-height-resizer:hover,body.editor-page .workspace-height-resizer.is-dragging{background:#e2efe5}
+body.editor-page .workspace-height-resizer:hover span,body.editor-page .workspace-height-resizer.is-dragging span{background:#5e9471}
+body.editor-page .navigator-tabs{flex:0 0 auto!important}
+body.editor-page .navigator-panel{flex:1 1 auto!important;min-height:0!important}
+body.editor-page .order-toolbar .text-btn{font-size:11px!important}
+body.editor-page #sectionPanel{max-height:38%;overflow:auto}
+body.editor-page .toc-switch{display:flex!important;align-items:center;gap:7px;flex-wrap:wrap;
+ padding:10px 12px;color:#416b50;font-size:11px;font-weight:700;line-height:1.5}
+body.editor-page .toc-switch input{width:14px!important;height:14px!important;accent-color:#418463!important;
+ margin:0!important;flex:0 0 14px}
+body.editor-page .toc-switch small{color:#92a195;font-size:10px;font-weight:400;padding-left:22px}
+body.editor-page .outline-nav{display:flex;gap:5px;flex-wrap:nowrap;padding:7px 8px;
+ overflow-x:auto;overflow-y:hidden;flex:0 0 auto;max-width:100%;min-height:39px;
+ border-bottom:1px solid #ebf1ec;background:#fcfdfb;scrollbar-width:thin
+}
+body.editor-page .outline-section-chip{display:inline-flex;align-items:center;gap:7px;max-width:160px;
+ border:1px solid #dae8df;background:white;color:#456f54;border-radius:9px;
+ padding:6px 8px;font-size:10px;white-space:nowrap;cursor:pointer;min-width:0}
+body.editor-page .outline-section-chip span{min-width:0;max-width:105px;overflow:hidden;text-overflow:ellipsis}
+body.editor-page .outline-section-chip small{color:#9bafa0;font-size:9px}
+body.editor-page .outline-section-chip:hover{background:#eaf4ed;border-color:#badbc4}
+body.editor-page .outline-empty{white-space:nowrap;line-height:25px;color:#9aab9e;font-size:10px}
+body.editor-page .workspace-input{display:block;box-sizing:border-box;width:100%;padding:11px 12px;
+ border:1px solid #cddfd3;border-radius:9px;background:#fff;color:#2b4534;font-size:12px;margin:8px 0}
+body.editor-page .workspace-dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;
+ margin:12px 0;flex-wrap:wrap}
+body.editor-page .workspace-action.danger{color:#964d43;border-color:#e7c8c0}
+body.editor-page .workspace-import-preview{max-height:205px;overflow:auto;padding:9px;
+ background:#f5f9f5;border:1px solid #e2ebe3;border-radius:9px;margin:13px 0;scrollbar-width:thin}
+body.editor-page .workspace-import-preview-item{display:flex;justify-content:space-between;gap:10px;
+ padding:6px 7px;border-bottom:1px solid #e9f0ea;color:#486451;font-size:11px}
+body.editor-page .workspace-import-preview-item:last-child{border-bottom:0}
+body.editor-page .workspace-import-label{display:block;font-size:12px;font-weight:700;color:#4b6d59;margin:12px 0}
+body.editor-page .workspace-import-warning{display:block;font-size:11px;color:#a25f46;padding:6px 9px}
+body.editor-page .workspace-graph-math{overflow-wrap:anywhere;word-break:normal;line-height:1.65}
+body.editor-page .pane-resizer{width:7px!important;background:#e3eae3!important;touch-action:none!important;cursor:col-resize!important}
+body.editor-page .pane-resizer:after{content:"";position:absolute;inset:0 -5px;cursor:col-resize}
+body.editor-page .pane-resizer:hover,body.editor-page .pane-resizer.is-dragging{background:#a8ccb0!important}
+body.editor-page .texpage-workbench{
+ grid-template-columns:var(--navigator-w,260px) 7px minmax(280px,var(--editor-w,435px)) 7px minmax(350px,1fr)!important
+}
+/* Printed ToC is a true A4 physical page and is shared by preview, PDF and print. */
+body.editor-page .browser-toc-page{width:210mm!important;height:297mm!important;min-height:297mm!important;page:everflow-cover!important;
+ font-family:"Everflow Song",serif!important}
+body.editor-page .browser-toc-brand{position:absolute;top:36mm;left:22mm;right:22mm;
+ text-align:center;color:#465b4e;font-size:9pt;letter-spacing:.08em}
+body.editor-page .browser-toc-page>h1{position:absolute;top:56mm;left:20mm;right:20mm;text-align:center;
+ font-size:24pt;font-family:"Everflow Song",serif;font-weight:700;letter-spacing:.15em;margin:0}
+body.editor-page .browser-toc-page>p{position:absolute;top:73mm;left:20mm;right:20mm;text-align:center;
+ font-size:9pt;color:#7b8a80;letter-spacing:.04em;margin:0}
+body.editor-page .browser-toc-lines{position:absolute;top:95mm;left:28mm;right:28mm;display:flex;flex-direction:column;gap:4.7mm}
+body.editor-page .browser-toc-line{display:flex;align-items:baseline;min-width:0;gap:5mm;font-size:10.5pt;line-height:1.5}
+body.editor-page .browser-toc-line span:first-child{min-width:0;max-width:105mm;overflow-wrap:anywhere}
+body.editor-page .browser-toc-dots{flex:1;min-width:6mm;border-bottom:1px dotted #a5ada4;transform:translateY(-1.5mm)}
+body.editor-page .browser-toc-line b{font-size:10pt;font-weight:500}
+body.editor-page .browser-toc-footer{position:absolute;bottom:16mm;left:22mm;right:22mm;text-align:center;font-size:9pt;color:#727f74}
+@media(max-width:1250px){
+ body.editor-page .texpage-workbench{grid-template-columns:var(--navigator-w,235px) 6px minmax(270px,var(--editor-w,370px)) 6px minmax(315px,1fr)!important}
+ body.editor-page .pane-resizer{width:6px!important}
+}
+@media(max-width:1179px){
+ /* The existing tablet view uses a collapsible navigator drawer. */
+ body.editor-page .texpage-workbench{display:flex!important;flex-direction:row!important}
+ body.editor-page .workspace-projects{max-height:calc(100% - 200px)!important}
+}
+@media(max-width:767px){
+ body.editor-page .workspace-projects{height:var(--workspace-h)!important;max-height:calc(100% - 200px)!important}
+ body.editor-page .workspace-project-toolbar{gap:4px!important}
+ body.editor-page .workspace-project-toolbar button{font-size:10px!important}
+ body.editor-page .workspace-folder-children{padding-left:7px!important;margin-left:9px!important}
+ body.editor-page .workspace-file-row{grid-template-columns:minmax(0,1fr) 56px}
+ body.editor-page .workspace-projects .workspace-paper-list{max-height:none!important}
+ body.editor-page .outline-nav{min-height:40px!important}
+}
+/* Prevent splitter drag selection from leaking across the 3 panes. */
+body.is-resizing-panes,body.is-resizing-panes *{user-select:none!important;cursor:col-resize!important}
