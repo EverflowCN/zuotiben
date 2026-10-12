@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./redesign.css?v=20261009-v2">
   <link rel="stylesheet" href="./home-studio.css?v=20261013-workspace2">
   <link rel="stylesheet" href="./home-cover.css?v=20261013-cover4">
+  <link rel="stylesheet" href="./quick-flow.css?v=20261013-quick1">
 </head>
 <body class="paper-home">
 <header class="ps-header">
@@ -89,6 +90,84 @@
     </div>
   </section>
 
+  <section class="ps-shell ps-quick-guide" id="quickFlow" aria-labelledby="quickFlowTitle">
+    <div class="ps-flow-header">
+      <div>
+        <span class="ps-section-label">QUICK START · 四步制作</span>
+        <h2 id="quickFlowTitle">一份文档，快速变成<span>自己的做题本。</span></h2>
+        <p>不用重新打字、整理公式或手动调整选项。把原题交给 AI 转录，复制生成的 Markdown，再回到 Everflow 排版即可。</p>
+      </div>
+      <span class="ps-flow-time"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg> 简单四步 · 新手也能上手</span>
+    </div>
+
+    <div class="ps-flow-grid" aria-label="做题本快速制作流程">
+      <article class="ps-flow-card" data-step="01">
+        <div class="ps-flow-step-head"><span>STEP 01</span><span class="ps-flow-arrow" aria-hidden="true">→</span></div>
+        <div class="ps-flow-graphic ps-flow-graphic-ai">
+          <div class="ps-ai-app">
+            <img src="https://lf-flow-web-cdn.doubao.com/obj/flow-doubao/doubao/chat/favicon-doubao.png" alt="" width="45" height="45" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true">
+            <span class="ps-ai-logo-fallback" aria-hidden="true">豆</span>
+            <span><strong>豆包</strong><small>Doubao · AI 转录</small></span>
+          </div>
+          <div class="ps-mini-document" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h7"/></svg><span>PDF / Word / 图片</span></div>
+        </div>
+        <h3>先把文档交给 AI</h3>
+        <p>打开豆包，将自己的试卷、题目截图或文档上传到对话中。也可以使用支持相应文件格式的其他 AI。</p>
+        <a class="ps-flow-action ps-flow-action-outline" href="https://www.doubao.com/chat/" target="_blank" rel="noopener noreferrer" aria-label="打开豆包官方网站（新窗口）">
+          打开豆包 <span aria-hidden="true">↗</span>
+        </a>
+      </article>
+
+      <article class="ps-flow-card" data-step="02">
+        <div class="ps-flow-step-head"><span>STEP 02</span><span class="ps-flow-arrow" aria-hidden="true">→</span></div>
+        <div class="ps-flow-graphic ps-flow-graphic-rule" aria-hidden="true">
+          <div class="ps-flow-code-sheet"><span>AI 转录规则</span><i>✓ 原题完整保留</i><i>✓ 数学公式转 LaTeX</i><i>✓ 题号、选项按规范输出</i></div>
+          <span class="ps-flow-graphic-badge">COPY</span>
+        </div>
+        <h3>一键复制转录规则</h3>
+        <p>点击复制，把规则粘贴到同一段 AI 对话里，让它按 Everflow 的 Markdown 格式逐题转录，尽量不漏题、不改题意。</p>
+        <button id="quickCopyRulesButton" class="ps-flow-action ps-flow-action-main" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+          一键复制 AI 规则
+        </button>
+      </article>
+
+      <article class="ps-flow-card" data-step="03">
+        <div class="ps-flow-step-head"><span>STEP 03</span><span class="ps-flow-arrow" aria-hidden="true">→</span></div>
+        <div class="ps-flow-graphic ps-flow-graphic-md" aria-hidden="true">
+          <div class="ps-md-window"><div class="ps-md-window-head"><span>● ● ●</span><b>试题.md</b></div>
+            <code><em>#</em> 考研数学二<br><em>##</em> 一、选择题<br><em>###</em> 1<br>设函数 <strong>$f(x)$</strong> …<br>A. …　B. …</code>
+          </div>
+        </div>
+        <h3>复制 AI 生成的 Markdown</h3>
+        <p>让 AI 直接输出纯 Markdown，复制完整文本；回到本页，可直接粘贴，也可以点击下方按钮读取剪贴板并生成试卷。</p>
+        <button id="quickPasteClipboardButton" class="ps-flow-action ps-flow-action-outline" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="5" width="12" height="17" rx="2"/><path d="M9 5a3 3 0 0 1 6 0M9 11h6M9 15h6"/></svg>
+          从剪贴板生成做题本
+        </button>
+      </article>
+
+      <article class="ps-flow-card" data-step="04">
+        <div class="ps-flow-step-head"><span>STEP 04</span><span class="ps-flow-done" aria-hidden="true">✓</span></div>
+        <div class="ps-flow-graphic ps-flow-graphic-paper" aria-hidden="true">
+          <div class="ps-finished-sheet"><small>EVERFLOW · 彼时流年若水</small><strong>我的做题本</strong><i></i><i></i><i></i><b>PDF</b></div>
+          <span class="ps-finished-check">✓ 已完成</span>
+        </div>
+        <h3>预览、微调，一键下载</h3>
+        <p>进入正式编辑器后可选择 A4 试卷或做题本，调整封面、显示答案解析，核对题目与公式后再下载 PDF。</p>
+        <a class="ps-flow-action ps-flow-action-outline" href="./editor/">进入正式编辑器 <span aria-hidden="true">↗</span></a>
+      </article>
+    </div>
+
+    <div class="ps-flow-bottom">
+      <div class="ps-flow-tip"><span class="ps-flow-tip-icon" aria-hidden="true">ⓘ</span><div><strong>排版与打印建议：优先使用电脑 + A4 竖版</strong>
+        <p>目前 A4 竖版的排版与打印效果相对稳定。<b>A3、横向及混排</b>在部分浏览器或系统打印时可能出现分页、缩放、边距异常；建议在电脑端操作，并在正式打印前逐页核对预览和下载的 PDF。</p>
+      </div></div>
+      <a href="#workbench" class="ps-flow-back">已有 Markdown？返回上方粘贴导入 ↑</a>
+    </div>
+    <p class="ps-flow-disclaimer">提示：AI 转录可能遗漏小问、插图或识别错误的公式，请对照原稿核查；文档上传到豆包等第三方 AI 时，请遵守其隐私规则。Everflow 不会代替你上传原始文件。</p>
+  </section>
+
   <section class="ps-shell ps-about" aria-label="功能说明">
     <article><strong>01 / 本地排版</strong><p>项目编辑和 PDF 编译运行在当前浏览器中。注意及时导出项目备份，清理浏览器存储可能丢失草稿。</p></article>
     <article><strong>02 / 多种纸张</strong><p>支持 A4、A3 双栏、混排及多种做题本模式。特殊分页和复杂数学公式请检查最终 PDF。</p></article>
@@ -119,6 +198,6 @@
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./editor/local-projects.js?v=20261013-workspace2"></script>
-<script src="./app.js?v=20261013-cover4"></script>
+<script src="./app.js?v=20261013-quick1"></script>
 </body>
 </html>
