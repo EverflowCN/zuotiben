@@ -25,6 +25,16 @@ function normalizeQuestion(raw,index){
     answer:cleanText(raw.answer||raw.correct_answer||""),explanation:cleanText(raw.explanation||raw.analysis||"")
   };
 }
+function cleanAIMarkdown(raw){
+  var text=cleanText(raw);
+  // AI chat "copy code" often yields fenced Markdown. Unwrap it without changing
+  // formula delimiters ($...$, $...$) or any original question lines.
+  var full=text.match(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$/i);
+  if(full)return cleanText(full[1]);
+  var embedded=text.match(/```(?:markdown|md)\s*\n([\s\S]*?)\n```/i);
+  if(embedded&&/^#\s+\S/m.test(embedded[1]))return cleanText(embedded[1]);
+  return text;
+}
 function parseMarkdown(text,fileName){
  var title=(fileName||"").replace(/\.(md|markdown)$/i,"")||"本地试卷",
      section="",questions=[],current=null,mode="stem";
@@ -41,7 +51,7 @@ function parseMarkdown(text,fileName){
      questions.push(current);
    }current=null;
  }
- cleanText(text).split("\n").forEach(function(raw){
+ cleanAIMarkdown(text).split("\n").forEach(function(raw){
    const line=raw.trim(),top=line.match(/^#\s+(.+)$/);
    if(top&&!questions.length&&!current){title=cleanText(top[1]);return}
    const sectionHead=line.match(/^##\s+((?:[一二三四五六七八九十]+[、．.]|第[一二三四五六七八九十]+部分).+)$/);
@@ -125,17 +135,51 @@ function aiPrompt(){
     "1. 不修改题意，不总结，不润色，不自行补题；",
     "2. 按原文保留全部题目、选项、小问和符号；",
     "3. 数学公式统一使用 LaTeX：行内公式使用 $...$，独立公式使用 $$...$$；",
-    "4. 每道题必须以“## 1”“## 2”这种二级标题开始；",
+    "4. 第一行用“# 试卷名称”；每个大题用“## 一、选择题”“## 二、填空题”等标题；每道题用“### 1”“### 2”独占一行。若没有大题，则用“## 1”“## 2”也可以；",
     "5. 选择题选项统一为“A. …”“B. …”“C. …”“D. …”；",
     "6. (1)(2)(3)、I/II/III、①②③必须保留并分行；",
     "7. 不输出答案、解析或额外说明，除非原文中本来就有；",
     "8. 无法确认的字符使用【待核对：原位置】标记；",
-    "9. 输出前核对积分上下限、根号、分式、矩阵、上下标、正负号、≤/≥。"
+    "9. 输出前核对积分上下限、根号、分式、矩阵、上下标、正负号、≤/≥；",
+    "10. 仅输出一份完整 Markdown 文本，不使用 ```markdown 代码围栏，不输出开场白、总结或额外解释；",
+    "11. 如原稿自带答案与解析，可另起行用“答案：”“解析：”保存，不要凭空编造。"
   ].join("\n");
 }
 async function copyPrompt(){
   try{await navigator.clipboard.writeText(aiPrompt());toast("AI 转录提示词已复制")}
   catch(e){var t=document.createElement("textarea");t.value=aiPrompt();document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();toast("AI 转录提示词已复制")}
+}
+async function copyTextWithFallback(value){
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(value);return true;
+    }
+  }catch(e){}
+  try{
+    var element=document.createElement("textarea");
+    element.value=value;element.style.position="fixed";element.style.opacity="0";
+    document.body.appendChild(element);element.focus();element.select();
+    var copied=document.execCommand("copy");element.remove();
+    return !!copied;
+  }catch(e){return false}
+}
+function moveToMarkdown(){
+  var target=byId("pasteMarkdown");
+  document.getElementById("workbench").scrollIntoView({behavior:"smooth",block:"start"});
+  target.focus({preventScroll:true});
+}
+function importPastedMarkdown(markdown){
+  if(!markdown.trim()){toast("请先粘贴 AI 返回的 Markdown");return}
+  var cleaned=cleanAIMarkdown(markdown);
+  if(!/^\s*#{1,3}\s+\S/m.test(cleaned)&&!/^\s*\d+[.、．]\s+\S/m.test(cleaned)){
+    byId("pasteMarkdown").value=markdown;
+    toast("尚未发现题目标题，请让 AI 按规则输出 Markdown");
+    moveToMarkdown();return;
+  }
+  var parsed=parseMarkdown(cleaned,"AI 转录题目.md");
+  if(!parsed.questions.length){toast("未找到试题，请核对题目格式");moveToMarkdown();return}
+  // One click builds the same .everflow payload as importing a local file.
+  saveAndOpen(parsed,"网页粘贴 Markdown").catch(function(e){toast("转换失败："+e.message)});
 }
 function downloadTemplate(){
   var text=["# 2026 数学模拟卷","","## 1","设函数 $f(x)=x^2$，则 $f'(x)=$","","A. $x$","B. $2x$","C. $x^2$","D. $2$","","## 2","设矩阵 $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}$，求：","","(1) 求 $\\det A$；","(2) 求 $A^{-1}$。"].join("\n");
@@ -197,11 +241,28 @@ function init(){
     };
   });
   $("pasteImportButton").onclick=function(){
-    var markdown=$("pasteMarkdown").value;
-    if(!markdown.trim()){toast("先粘贴 Markdown 内容");return}
-    var parsed=parseMarkdown(markdown,"粘贴的题目.md");
-    if(!parsed.questions.length){toast("未找到可导入的题目，请核对标题格式");return}
-    saveAndOpen(parsed,"网页粘贴 Markdown").catch(e=>toast("转换失败："+e.message));
+    importPastedMarkdown($("pasteMarkdown").value);
+  };
+  $("quickCopyRulesButton").onclick=async function(){
+    var message="请在上传试卷或截图后，严格按照以下规则将题目转录为完整 Markdown：\n\n"+aiPrompt();
+    if(await copyTextWithFallback(message)){
+      toast("规则已复制！回到豆包对话框粘贴即可");
+    }else{
+      toast("当前浏览器不允许自动复制，可使用上方「选择 AI」按钮");
+      $("copyPromptButton").click();
+    }
+  };
+  $("quickPasteClipboardButton").onclick=async function(){
+    try{
+      if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error("clipboard-unavailable");
+      var text=await navigator.clipboard.readText();
+      if(!text.trim()){toast("剪贴板为空，请先在豆包复制 Markdown");return}
+      $("pasteMarkdown").value=text;
+      importPastedMarkdown(text);
+    }catch(error){
+      moveToMarkdown();
+      toast("浏览器未授权读取剪贴板，请按 Ctrl+V 粘贴后点「一键转换」");
+    }
   };
   els.downloadTemplateButton.onclick=downloadTemplate;
   els.howButton.onclick=function(){showModal(true)};
