@@ -131,7 +131,7 @@ body.editor-page .browser-toc-footer{position:absolute;bottom:16mm;left:22mm;rig
     Do not turn this into flex or change physical paper geometry. */
  body.editor-page .texpage-workbench{
    display:grid!important;
-   grid-template-columns:minmax(270px,var(--editor-w,42vw)) 6px minmax(340px,1fr)!important;
+   grid-template-columns:minmax(320px,var(--editor-w,42vw)) 6px minmax(340px,1fr)!important;
  }
  body.editor-page .navigator-resizer{display:none!important}
  body.editor-page .preview-resizer{display:block!important}
