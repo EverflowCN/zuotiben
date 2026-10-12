@@ -59,9 +59,14 @@ function makeItem(record){
  return article;
 }
 function fitPage(){
- var px=cfg.widthMm*(96/25.4),innerWidth=host.clientWidth;
- var scale=Math.max(.12,Math.min(1,innerWidth/px));
- host.style.setProperty("--browser-preview-scale",String(scale));
+ // Use physical millimetres in the native layout; transform AFTER layout.
+ // Applying CSS zoom to paper elements can trigger Safari text inflation.
+ var nativeWidth=(mode==="cover"?210:cfg.widthMm)*(96/25.4);
+ var nativeHeight=(mode==="cover"?297:cfg.heightMm)*(96/25.4);
+ var width=Math.max(1,host.clientWidth-2),height=Math.max(1,host.clientHeight-2);
+ var scale=Math.max(.08,Math.min(1,width/nativeWidth,height/nativeHeight));
+ host.style.setProperty("--showcase-scale",String(scale));
+ host.style.setProperty("--browser-preview-scale","1");
 }
 function createMasterCover(){
  // These elements and mm coordinates are the Book cover positions defined in
