@@ -116,7 +116,7 @@ body.editor-page .browser-toc-page>h1{position:absolute;top:56mm;left:20mm;right
  font-size:24pt;font-family:"Everflow Song",serif;font-weight:700;letter-spacing:.15em;margin:0}
 body.editor-page .browser-toc-page>p{position:absolute;top:73mm;left:20mm;right:20mm;text-align:center;
  font-size:9pt;color:#7b8a80;letter-spacing:.04em;margin:0}
-body.editor-page .browser-toc-lines{position:absolute;top:95mm;left:28mm;right:28mm;display:flex;flex-direction:column;gap:4.7mm}
+body.editor-page .browser-toc-lines{position:absolute;top:95mm;left:28mm;right:28mm;display:flex;flex-direction:column;gap:3.5mm}
 body.editor-page .browser-toc-line{display:flex;align-items:baseline;min-width:0;gap:5mm;font-size:10.5pt;line-height:1.5}
 body.editor-page .browser-toc-line span:first-child{min-width:0;max-width:105mm;overflow-wrap:anywhere}
 body.editor-page .browser-toc-dots{flex:1;min-width:6mm;border-bottom:1px dotted #a5ada4;transform:translateY(-1.5mm)}
