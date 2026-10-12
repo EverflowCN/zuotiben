@@ -45,7 +45,7 @@ const assert=require('node:assert/strict');
     await page.setViewportSize(size);
     if(size.width===390)await page.locator('#previewModeButton').click();
     await page.screenshot({path:'test-results/editor-math-ui-'+size.width+'.png',fullPage:false});
-    assert.equal(await page.locator('#printButton').isVisible(),true);
+    assert.equal(await page.locator(size.width===390?'#mobileDownloadButton':'#printButton').isVisible(),true);
   }
   assert.deepEqual(failures,[],'browser errors: '+failures.join('; '));
   console.log('PASS safe math rendering + no ParseError + unchanged source + neutral selection + free icons');
