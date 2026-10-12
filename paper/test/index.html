@@ -116,8 +116,152 @@ var displayPages=page+(el('coverToggle').checked?1:0);
 el('subtitle').textContent=p.provider+' · '+p.year+' 年 · '+qs.length+' 道题 · '+displayPages+' 页（含封面）';msg('已完成 '+qs.length+' 道题、'+displayPages+' 页预览。'+(oversize?'有 '+oversize+' 处整题超出页面，导出前请检查。':'未检测到整题越界。'));state.loading=false;resetActions(false);sid.dataset.layoutReady=oversize?'false':'true';if(oversize){el('downloadPdf').disabled=true;el('print').disabled=true;}el('answers').hidden=!el('ansToggle').checked;el('pageStats').textContent=displayPages+' 页 · '+qs.length+' 题';
 el('subtitle').textContent=qs.length+' 道题 · '+displayPages+' 页（含'+(el('coverToggle').checked?'封面':'正文')+'） · '+(state.size==='a3'?'A3 双栏':'A4 竖版')+' · '+(state.mode==='book'?'做题本':'试卷');
 scheduleHistorySave();}
-async function select(p){state.current=p;el('title').textContent=p.title;el('titleField').value=p.title;state.baseTitle=p.title;list();el('sidebar').classList.remove('open');resetActions(true);try{var entry=state.zip&&!p.demo&&state.zip.file('bbkaoyan_data/raw/papers/'+p.id+'.json');if(!p.demo&&!entry){throw Error('需要先导入 bbkaoyan_data.zip 才能预览该模拟卷。可直接体验示例题。')}state.raw=p.demo?await (await fetch('./example.json?v=20261013-3')).json():JSON.parse(await entry.async('string'));await render()}catch(e){sid.replaceChildren(ui('div','empty','无法读取本卷：'+e.message));msg('本地题库内容缺失或损坏：'+e.message)}}
-async function importFile(file){if(!file)return;resetActions(true);el('uploadStatus').textContent='正在解析：'+file.name;try{if(!window.JSZip)throw Error('ZIP 组件未加载，请检查网络后刷新');if(!file.name.toLowerCase().endsWith('.zip')){throw Error('当前测试页需要你上传完整 bbkaoyan_data.zip')};var zip=await JSZip.loadAsync(file),entry=zip.file('bbkaoyan_data/raw/papers.json');if(!entry)throw Error('ZIP 缺少 bbkaoyan_data/raw/papers.json');var cat=JSON.parse(await entry.async('string'));state.zip=zip;state.docs=[DEMO_META].concat((cat.items||[]).filter(x=>x.subject==='math2'&&x.kind==='mock').map(x=>({id:x.id,title:x.title,provider:x.provider?.name||x.source||'其他',series:x.series?.name||'',year:x.year||'',count:x.question_count||0})).sort((a,b)=>b.year-a.year||a.provider.localeCompare(b.provider,'zh-CN')));if(state.docs.length===1)throw Error('没有找到数学二模拟卷');setupFilters();list();el('uploadStatus').textContent='已从本地文件识别 '+state.docs.length+' 套数学二模拟卷；数据未上传。';msg('导入成功，选择左侧试卷即可进行 A4 预览。');await select(state.docs[1])}catch(e){el('uploadStatus').textContent='导入失败：'+e.message;msg('请使用原始 bbkaoyan_data.zip：'+e.message)}}
+
+var archive=window.EverflowTestArchive;
+function historyConfig(){
+ return {size:state.size,mode:state.mode,zoom:state.zoom,title:el('titleField').value,
+  fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),
+  cover:el('coverToggle').checked,showAnswers:el('ansToggle').checked,
+  printAnswers:el('ansPrint').checked};
+}
+function scheduleHistorySave(){
+ if(state.restoring||!state.current||!state.raw||!archive)return;
+ clearTimeout(state.historyTimer);
+ state.historyTimer=setTimeout(()=>saveHistory(false).catch(error=>{
+    console.warn('Template local autosave failed:',error);
+    el('historyCount').textContent='保存失败，请导出工程';
+ }),1300);
+}
+async function saveHistory(version){
+ if(!archive||!state.current||!state.raw)return;
+ clearTimeout(state.historyTimer);
+ const record=await archive.save({
+   meta:state.current,raw:state.raw,
+   source:state.source||'demo',packKey:state.packKey,config:historyConfig()
+ },{version:!!version});
+ updateHistoryCount().catch(()=>{});
+ if(version)msg('已将这份试卷及当前模板设置保存为本机历史快照。');
+ return record;
+}
+async function updateHistoryCount(){
+ if(!archive)return;
+ const rows=await archive.list();
+ el('historyCount').textContent=rows.length+' 份记录 ↗';
+}
+async function restoreHistory(entry){
+ if(!entry||!entry.raw)return;
+ if(state.raw&&!state.restoring)await saveHistory(false);
+ state.restoring=true;
+ try{
+   state.zip=null;state.packKey=entry.packKey||null;state.source=entry.source||'history';
+   if(entry.packKey){
+     const stored=await archive.getPack(entry.packKey);
+     if(stored?.data){
+       if(window.JSZip)state.zip=await JSZip.loadAsync(stored.data);
+       else msg('ZIP 预览需要联网加载解包模块。题目文本和模板设置已恢复。');
+     }else msg('原始 ZIP 未保存在本机；试题文本仍可预览，相关图片需重新导入 ZIP。');
+   }
+   state.current=JSON.parse(JSON.stringify(entry.meta));
+   state.raw=JSON.parse(JSON.stringify(entry.raw));
+   state.size=entry.config?.size==='a3'?'a3':'a4';
+   state.mode=entry.config?.mode==='book'?'book':'exam';
+   state.zoom=Math.max(.6,Math.min(1.1,Number(entry.config?.zoom)||1));
+   el('fontSize').value=String(Math.min(12,Math.max(9,Number(entry.config?.fontPt)||10)));
+   el('gapSize').value=String(Math.min(26,Math.max(6,Number(entry.config?.gapPx)||13)));
+   el('coverToggle').checked=entry.config?.cover!==false;
+   el('ansToggle').checked=!!entry.config?.showAnswers;
+   el('ansPrint').checked=!!entry.config?.printAnswers;
+   el('titleField').value=entry.meta?.title||'本机试卷';
+   state.baseTitle=entry.meta?.title||'本机试卷';
+   el('title').textContent=state.baseTitle;
+   // Recover without depending on a ZIP listing that might have been lost.
+   if(!state.docs.some(p=>p.id===state.current.id)){
+     state.docs=[DEMO_META,...state.docs.filter(p=>p.id!==DEMO_META.id),state.current];
+   }
+   setupFilters();list();updateSettings();
+   await render();
+   el('sidebar').classList.remove('open');
+ }finally{state.restoring=false}
+ scheduleHistorySave();
+}
+function openHistory(){
+ el('historyModal').hidden=false;
+ const host=el('historyList');host.replaceChildren(ui('p','history-info','正在读取本机历史…'));
+ archive.list().then(records=>{
+   const frag=document.createDocumentFragment();
+   records.forEach((record)=>{
+      const row=ui('div','history-item'),details=ui('div');
+      details.append(ui('strong','',record.meta?.title||'未命名试卷'),
+                     ui('small','',new Date(record.savedAt).toLocaleString('zh-CN')+' · '+record.questionCount+' 题 · '+
+                        (record.isVersion?'手动快照':'自动记录')+' · '+(record.config?.mode==='book'?'做题本':'试卷')));
+      const button=ui('button','','恢复到预览');
+      button.type='button';
+      button.onclick=async()=>{button.disabled=true;try{
+        await restoreHistory(record);
+        el('historyModal').hidden=true;
+        msg('已恢复本机保存的试卷及设置。仍可一键导入正式编辑器。');
+       }catch(error){msg('恢复历史失败：'+error.message)}
+       finally{button.disabled=false}
+      };
+      row.append(details,button);frag.append(row);
+   });
+   host.replaceChildren(frag);
+   if(!records.length)host.textContent='暂时没有历史记录。可以先体验示例题，再点击保存快照。';
+ }).catch(e=>host.textContent='历史记录读取失败：'+e.message);
+}
+async function select(p){
+ state.current=p;state.source=p.demo?'demo':(p.localRaw?'json':'zip');
+ if(!p.demo&&!p.localRaw&&!state.zip){msg('无法找到本机题库 ZIP，可从历史记录恢复或重新导入。');return}
+ el('title').textContent=p.title;
+ el('titleField').value=p.title;state.baseTitle=p.title;
+ list();el('sidebar').classList.remove('open');resetActions(true);
+ try{
+   var entry=state.zip&&!p.demo&&!p.localRaw&&state.zip.file('bbkaoyan_data/raw/papers/'+p.id+'.json');
+   if(!p.demo&&!p.localRaw&&!entry)throw Error('题库没有该套试卷的完整数据，请重新导入 ZIP');
+   state.raw=p.demo?await (await fetch('./example.json?v=20261013-3')).json():
+     p.localRaw||JSON.parse(await entry.async('string'));
+   await render();
+ }catch(e){
+   sid.replaceChildren(ui('div','empty','无法读取本卷：'+e.message));
+   msg('本地题库内容缺失或损坏：'+e.message);
+ }
+}
+async function importFile(file){
+ if(!file)return;
+ resetActions(true);el('uploadStatus').textContent='正在解析：'+file.name;
+ try{
+   const isZip=/\.zip$/i.test(file.name),isJson=/\.(json|everflow)$/i.test(file.name);
+   if(!isZip&&!isJson)throw Error('支持 ZIP / JSON / .everflow 项目');
+   if(!isZip){
+     const parsed=JSON.parse(await file.text());
+     const raw=Array.isArray(parsed)?{questions:parsed}:parsed;
+     if(!Array.isArray(raw.questions)||!raw.questions.length)throw Error('JSON 中没有 questions 数组');
+     const meta={id:'local-'+Date.now().toString(36),title:raw.title||file.name.replace(/\.[^.]+$/,''),provider:'本地 JSON',series:'个人题目',year:new Date().getFullYear(),count:raw.questions.length,localRaw:raw};
+     state.zip=null;state.packKey=null;state.docs=[DEMO_META,meta];state.source='json';
+     setupFilters();list();
+     el('uploadStatus').textContent='已读取本地 JSON / .everflow 的 '+raw.questions.length+' 题，试题不会上传。';
+     await select(meta);return;
+   }
+   if(!window.JSZip)throw Error('ZIP 解包组件尚未加载，请刷新页面或检查网络');
+   const zip=await JSZip.loadAsync(file),catalog=zip.file('bbkaoyan_data/raw/papers.json');
+   if(!catalog)throw Error('ZIP 缺少 bbkaoyan_data/raw/papers.json');
+   const cat=JSON.parse(await catalog.async('string'));
+   const entries=(cat.items||[]).filter(x=>x.subject==='math2'&&x.kind==='mock')
+     .map(x=>({id:x.id,title:x.title,provider:x.provider?.name||x.source||'其他',series:x.series?.name||'',year:x.year||'',count:x.question_count||0}))
+     .sort((a,b)=>b.year-a.year||a.provider.localeCompare(b.provider,'zh-CN'));
+   if(!entries.length)throw Error('没有找到数学二模拟卷');
+   state.zip=zip;state.docs=[DEMO_META].concat(entries);state.source='zip';
+   state.packKey='pack-'+Date.now().toString(36);
+   try{await archive.storePack(state.packKey,file)}
+   catch(error){state.packKey=null;msg('ZIP 可在当前页面使用，但存储空间不足；重开后图片需要重新导入。')}
+   setupFilters();list();
+   el('uploadStatus').textContent='已加载 '+entries.length+' 套数学二模拟卷；本机保存文件和历史，未上传服务器。';
+   await select(entries[0]);
+ }catch(e){
+   el('uploadStatus').textContent='导入失败：'+e.message;
+   msg('请检查文件内容：'+e.message);
+ }
+}
 function everflow(){var p=state.current,qs=state.raw.questions.map(normalize);return {version:2,type:'everflow-local-paper',template:state.mode==='book'?'book':'exam',layout:state.mode==='book'?'single':state.size,title:p.title,coverTitle:p.title,header:'',testVisualConfig:{fontPt:Number(el('fontSize').value),gapPx:Number(el('gapSize').value),withCover:el('coverToggle').checked},questions:qs.map(q=>({id:'bb-'+p.id+'-'+q.id,content:q.content,options:q.options,section:q.section,type:q.section.includes('选择')?'选择题':q.section.includes('填空')?'填空题':'解答题',showOptions:q.section.includes('选择')&&q.options.length>0,answer:q.answer,explanation:q.explanation,gap:0,breakBefore:false})),originalIds:qs.map(q=>'bb-'+p.id+'-'+q.id)}}
 function download(name,text){var url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'})),a=ui('a');a.href=url;a.download=name.replace(/[\\/:*?"<>|]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 el('file').onchange=e=>{var f=e.target.files[0];if(f)importFile(f);e.target.value=''};
