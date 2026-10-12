@@ -5,6 +5,9 @@ on:
     paths:
       - 'paper/editor/**'
       - 'scripts/editor-modes-smoke.cjs'
+      - 'scripts/check-text-pdf.py'
+      - 'scripts/build-pdf-fonts.py'
+      - 'scripts/install-pdf-vendor.sh'
       - '.github/workflows/editor-modes-smoke.yml'
   workflow_dispatch:
 permissions:
