@@ -198,7 +198,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),true);
     await page.waitForFunction(()=>document.querySelector('#navigatorPanel').getBoundingClientRect().left>=-1,null,{timeout:5000});
     const drawer=await page.locator('#navigatorPanel').boundingBox();
-    assert.ok(drawer.width>360&&drawer.left>=-1,'mobile drawer does not fill phone workspace: '+JSON.stringify(drawer));
+    assert.ok(drawer.width>360&&drawer.x>=-1,'mobile drawer does not fill phone workspace: '+JSON.stringify(drawer));
     await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),false);
 
