@@ -99,7 +99,7 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.notEqual(await page.locator('#previewZoomLabel').innerText(),'适宽');
     await page.locator('#previewFitButton').click();
     assert.equal(await page.locator('#previewZoomLabel').innerText(),'适宽');
-    assert.equal(await page.locator('#browserPrintButton').count(),0);
+    assert.equal(await page.locator('#browserPrintButton').isVisible(),true);
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
     await page.screenshot({path:'test-results/editor-desktop-texpage.png',fullPage:true});
 
