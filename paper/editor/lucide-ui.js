@@ -58,7 +58,7 @@ var icons={
  previewPrevPageButton:["left",true],previewNextPageButton:["right",true],
  previewZoomOutButton:["minus",true],previewZoomInButton:["plus",true],
  previewFitButton:["maximize",false],printButton:["download",false],textPdfButton:["text",false],mobileTextDownloadButton:["text",false],
- browserPrintButton:["printer",false],resetOrderButton:["history",false]
+ browserPrintButton:["printer",false],mobileSystemPrintButton:["printer",false],resetOrderButton:["history",false]
 };
 for(var key of Object.keys(icons))apply(key,icons[key][0],icons[key][1]);
 })();
