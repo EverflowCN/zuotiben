@@ -29,7 +29,30 @@ async function ratio(page,index=1){
     return box.width/box.height;
   });
 }
+async function verifyTypography(page,label){
+  const report=await page.evaluate(()=>{
+    const paper=[...document.querySelectorAll('#typstPreview > .browser-paper-page')]
+      .find(p=>p.querySelector('.paper-layout-item .question'));
+    if(!paper)return null;
+    const root=paper.querySelector('.paper-layout-item');
+    const body=root.querySelector('.question-body');
+    const options=root.querySelector('.option-body');
+    const formulas=[...paper.querySelectorAll('.paper-layout-item .math-safe-rendered > math')];
+    const px=e=>e?parseFloat(getComputedStyle(e).fontSize):null;
+    return {page:px(paper),item:px(root),question:px(root.querySelector('.question')),
+      body:px(body),option:px(options),math:formulas.map(px),
+      zoom:parseFloat(root.style.zoom||'1'),count:formulas.length};
+  });
+  assert.ok(report&&report.count>=1,label+' missing rendered MathML');
+  for(const key of ['item','question','body','option']){
+    assert.ok(Math.abs(report[key]-report.page)<0.2,label+' '+key+' font size differs from body: '+JSON.stringify(report));
+  }
+  for(const size of report.math)assert.ok(Math.abs(size-report.page)<0.2,
+    label+' MathML glyph size differs from Chinese body: '+JSON.stringify(report));
+  console.log('PASS SHARED TYPE SCALE',label,report);
+}
 async function verifyDirectPdf(page,label,textMode=false){
+  if(!textMode)await verifyTypography(page,label);
   const markup=await page.locator('#typstPreview').innerHTML();
   const dims=await page.locator('#typstPreview > section.browser-paper-page').evaluateAll(pages=>pages.map(p=>[parseFloat(p.style.getPropertyValue('--paper-width')),parseFloat(p.style.getPropertyValue('--paper-height'))]));
   const downloadPromise=page.waitForEvent('download',{timeout:120000});
