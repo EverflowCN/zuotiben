@@ -1096,6 +1096,48 @@ async function createLatestPdf(){
     if(wantsLiveTypst()&&(svgRevision!==revision||svgExportDate!==localDate()))scheduleTypstPreview();
   }
 }
+var systemPrinting=false;
+async function systemPrint(){
+  if(systemPrinting||pdfExporting)return;
+  systemPrinting=true;
+  var buttons=[els.browserPrintButton,els.mobileSystemPrintButton].filter(Boolean);
+  buttons.forEach(function(button){button.disabled=true;button.setAttribute("aria-busy","true")});
+  var cleanupTimer=null,armed=false;
+  function cleanup(){
+    if(cleanupTimer)clearTimeout(cleanupTimer);
+    window.removeEventListener("afterprint",cleanup);
+    document.body.classList.remove("browser-print-active");
+    buttons.forEach(function(button){button.disabled=false;button.removeAttribute("aria-busy")});
+    systemPrinting=false;armed=false;
+  }
+  try{
+    if(!wantsLiveTypst())await setMode(true);
+    var current=revision;
+    if(svgRevision!==current||!browserLayoutResult||browserLayoutResult.status!=="ready"){
+      if(!typstPreviewing)await refreshTypstPreview();
+      if(svgRevision!==current||!browserLayoutResult||browserLayoutResult.status!=="ready")
+        await waitForBrowserLayoutRevision(current,20000);
+    }
+    if(current!==revision||svgRevision!==current||
+      els.typstPreview.dataset.revision!==String(current)||
+      els.typstPreview.dataset.layoutReady!=="true")
+      throw new Error("分页尚未完成，不能使用系统打印");
+    if(window.EverflowBrowserLayout)await window.EverflowBrowserLayout.waitForResources(els.typstPreview,null);
+    closeNavigatorDrawer();
+    els.pdfStatus.textContent="系统打印：请核对纸张尺寸、边距为零、缩放 100%；复杂混排优先使用「下载 PDF」。";
+    document.body.classList.add("browser-print-active");
+    window.addEventListener("afterprint",cleanup,{once:true});
+    // iOS/Safari may not fire afterprint after dismissing the share sheet.
+    cleanupTimer=setTimeout(cleanup,30000);
+    armed=true;
+    window.print();
+  }catch(err){
+    console.error(err);
+    els.pdfStatus.textContent="系统打印无法开始："+(err&&err.message||"未知错误")+"。可以使用「下载 PDF」。";
+  }finally{
+    if(!armed)cleanup();
+  }
+}
 async function downloadPdf(kind){
   var textMode=kind==="text";
   if(pdfExporting)return;
@@ -1170,7 +1212,7 @@ async function exportProject(){
 function init(){
   ["toast","paperName","questionCount","sourceName","orderList","paperSheet","coverSheet","paperStage","paperQuestions","previewTitle","previewMeta",
    "previewPageCurrent","previewPageTotal","editModeButton","previewModeButton","typstPreview","pdfStatus","questionEditor","titleInput","coverTitleInput",
-   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","textPdfButton","mobileTextDownloadButton",
+   "headerInput","testFontPt","testGapMm","formalCoverToggle","templateButton","templateButtonLabel","templatePopover","templateMenu","templateSummary","pageSizeChip","bookHeaderLabel","printButton","browserPrintButton","textPdfButton","mobileTextDownloadButton","mobileSystemPrintButton",
    "saveProjectButton","resetOrderButton","clearButton","undoButton","redoButton","saveState","exportDateDisplay","coverPreviewTitle","coverPreviewDate","addQuestionButton","sectionManageButton","sectionPanel","addSectionButton","sectionList","batchBar","batchCount","batchGapInput","batchGapApplyButton","batchGapResetButton","batchSectionSelect","batchMoveSectionButton","batchClearButton","mobileDownloadButton","navigatorToggleButton","outlineTabButton","settingsTabButton","outlinePanel","settingsPanel","navigatorPanel","navigatorResizer","previewResizer","workspaceHeightResizer","workspaceProjects","outlineNav","tocEnabledToggle","tocEnabledSettings","workbench","editPane","previewPane","workbenchBackdrop","activeQuestionLabel","focusStemButton","focusOptionsButton","previewPrevPageButton","previewNextPageButton","previewPageIndicator","previewZoomOutButton","previewZoomInButton","previewZoomLabel","previewFitButton","prevQuestionButton","nextQuestionButton","questionNavPickerButton","questionNavCounter","questionNavPopover","questionNavMenu","selectAllQuestionsButton","selectChapterButton","clearQuestionSelectionButton","outlineSelectionSummary","editorGuideButton","editorGuideDialog","closeEditorGuideButton","finishEditorGuideButton","hideEditorGuideHint"
   ].forEach(function(id){els[id]=byId(id)});
   if(!load()){location.replace("../");return}
@@ -1288,7 +1330,7 @@ function init(){
   };
   // Download: locally rasterize exactly the validated preview pages into a PDF.
   // Print: separately invoke the system print dialog using the same physical preview DOM.
-  els.printButton.onclick=function(){downloadPdf("image")};if(els.textPdfButton)els.textPdfButton.onclick=function(){downloadPdf("text")};if(els.mobileTextDownloadButton)els.mobileTextDownloadButton.onclick=function(){downloadPdf("text")};if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=downloadPdf;els.saveProjectButton.onclick=exportProject;
+  els.printButton.onclick=function(){downloadPdf("image")};if(els.textPdfButton)els.textPdfButton.onclick=function(){downloadPdf("text")};if(els.mobileTextDownloadButton)els.mobileTextDownloadButton.onclick=function(){downloadPdf("text")};if(els.mobileDownloadButton)els.mobileDownloadButton.onclick=function(){downloadPdf("image")};if(els.browserPrintButton)els.browserPrintButton.onclick=systemPrint;if(els.mobileSystemPrintButton)els.mobileSystemPrintButton.onclick=systemPrint;els.saveProjectButton.onclick=exportProject;
   els.undoButton.onclick=undo;els.redoButton.onclick=redo;
   els.addQuestionButton.onclick=function(){
     var current=state.questions.find(function(q){return q.id===selectedId});
