@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="./pane-autofit.css?v=20261013-autofit1">
 <link rel="stylesheet" href="./calm-ui.css?v=20261013-download-finish1">
 <link rel="stylesheet" href="./math-typography.css?v=20261013-math-normalized1">
+<link rel="stylesheet" href="./mobile-print-ui.css?v=20261013-mobileprint2">
 </head>
 <body class="editor-page">
 <header class="editor-topbar texpage-topbar">
@@ -63,8 +64,9 @@
     </button>
       </div>
     </details>
-    <button class="primary-btn mobile-pdf-btn" id="mobileDownloadButton" type="button" aria-label="PDF（图像）稳定版">图像 PDF</button>
-    <button class="primary-btn mobile-pdf-btn" id="mobileTextDownloadButton" type="button" aria-label="PDF（文字）快速版">文字 PDF</button>
+    <button class="primary-btn mobile-pdf-btn" id="mobileDownloadButton" type="button" aria-label="直接下载 PDF">下载 PDF</button>
+    <button class="ghost-btn mobile-pdf-btn" id="mobileSystemPrintButton" type="button" title="使用系统打印（请核对纸张设置）" aria-label="系统打印">打印</button>
+    <button class="primary-btn mobile-pdf-btn" id="mobileTextDownloadButton" type="button" aria-label="PDF（文字）快速版（暂不启用）" hidden disabled>文字 PDF</button>
 
     <div class="mode-switch mobile-mode-switch" role="group" aria-label="手机编辑器模式">
       <button id="editModeButton" type="button" aria-pressed="true">编辑</button>
@@ -237,8 +239,9 @@
         <label><input type="checkbox" id="showExplanationsToggle"> 解析</label>
       </div>
       <div class="preview-toolbar-right">
-        <button class="primary-btn exact-pdf-btn" id="printButton" type="button" title="逐页取自当前预览，不调用系统打印；保留页面外观">PDF（图像）稳定版</button>
-        <button class="viewer-btn exact-pdf-btn" id="textPdfButton" type="button" title="正文可搜索复制；沿用预览分页及位置，复杂公式和图像保留预览效果">PDF（文字）快速版</button>
+        <button class="primary-btn exact-pdf-btn" id="printButton" type="button" title="直接下载与当前预览对应的 PDF，不调用系统打印">下载 PDF</button>
+        <button class="viewer-btn exact-pdf-btn" id="browserPrintButton" type="button" title="使用系统打印；请核对纸张、缩放和边距">系统打印</button>
+        <button class="viewer-btn exact-pdf-btn" id="textPdfButton" type="button" title="PDF（文字）快速版（暂不启用）" hidden disabled>文字 PDF</button>
       </div>
     </div>
 
@@ -288,7 +291,7 @@
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="56" height="35" rx="5"/><path d="M23 7v35M43 7v35M18 25l4-4 4 4M38 25l4-4 4 4"/></svg></div><strong>01 · 拖动分栏</strong><p>把鼠标移到左、中、右区域之间的细竖线，左右拖动即可分配空间；双击分割线恢复默认。左侧上下分界也能拖动。</p></article>
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="7" width="44" height="34" rx="5"/><path d="M20 18l4 4 8-9M36 18h11M20 31h27"/></svg></div><strong>02 · 查看与勾选不同</strong><p>点击题干进入编辑，不会自动批量选中；点击左侧方框多选。支持「全选」「选本章」「清除」，勾选后使用批量移动等操作。</p></article>
       <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 24l-8 0m8 0-5-5m5 5-5 5M47 24l8 0m-8 0 5-5m-5 5 5 5"/><rect x="20" y="12" width="24" height="24" rx="5"/><path d="M27 23h10M27 28h7"/></svg></div><strong>03 · 快速跳转</strong><p>编辑栏顶部的 ‹ › 切换上一题、下一题，点击题号即可打开大纲选择器。键盘快捷键：Alt + ↑ / ↓（输入框外有效）。</p></article>
-      <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18v22h48V18H8zM14 8h20l5 10H14zM47 20v13m-5-5 5 5 5-5"/></svg></div><strong>04 · 预览即 PDF</strong><p>右侧提供「PDF（图像）稳定版」与「PDF（文字）快速版」两种直接下载。二者均使用当前预览的分页，不调用系统打印；图像版保证外观，文字版正文可搜索复制，数学公式和图片仍按预览保留。</p></article>
+      <article><div class="guide-illustration"><svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18v22h48V18H8zM14 8h20l5 10H14zM47 20v13m-5-5 5 5 5-5"/></svg></div><strong>04 · 预览即 PDF</strong><p>选择「下载 PDF」可直接保存与预览一致的图像型 PDF，不调用系统打印；「系统打印」将打开浏览器打印设置，建议核对纸张、边距与缩放。文字版 PDF 暂不开放。</p></article>
     </div>
     <footer><label><input type="checkbox" id="hideEditorGuideHint"> 已了解操作方式</label><button id="finishEditorGuideButton" type="button">开始编辑 <span aria-hidden="true">→</span></button></footer>
   </section>
@@ -307,9 +310,9 @@
 <script src="./preview-text-pdf.js?v=20261013-text4"></script>
 <script src="./local-projects.js?v=20261013-unlimited1"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="./editor.js?v=20261013-text1"></script>
+<script src="./editor.js?v=20261013-mobileprint2"></script>
 <script src="./workspace-ui.js?v=20261013-text1"></script>
 <script src="./workspace-zip.js?v=20261013-unlimited1"></script>
-<script src="./lucide-ui.js?v=20261013-dual-pdf1"></script>
+<script src="./lucide-ui.js?v=20261013-mobileprint2"></script>
 </body>
 </html>
