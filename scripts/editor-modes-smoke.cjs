@@ -55,11 +55,24 @@ async function verifyDirectPdf(page,label,textMode=false){
   if(!textMode)await verifyTypography(page,label);
   const markup=await page.locator('#typstPreview').innerHTML();
   const dims=await page.locator('#typstPreview > section.browser-paper-page').evaluateAll(pages=>pages.map(p=>[parseFloat(p.style.getPropertyValue('--paper-width')),parseFloat(p.style.getPropertyValue('--paper-height'))]));
-  const downloadPromise=page.waitForEvent('download',{timeout:120000});
-  await page.locator(textMode?'#textPdfButton':'#printButton').click();
-  const download=await downloadPromise;
-  const path=await download.path();
-  const bytes=fs.readFileSync(path);
+  let bytes;
+  if(textMode){
+    // Experimental text export remains covered by tests, but has no active UI.
+    assert.equal(await page.locator('#textPdfButton').isVisible(),false);
+    const data=await page.evaluate(async()=>{
+      const blob=await EverflowPreviewTextPdf.exportPreview({
+        host:document.querySelector('#typstPreview'),isStale:()=>false
+      });
+      return Array.from(new Uint8Array(await blob.arrayBuffer()));
+    });
+    bytes=Buffer.from(data);
+  }else{
+    const downloadPromise=page.waitForEvent('download',{timeout:120000});
+    await page.locator('#printButton').click();
+    const download=await downloadPromise;
+    const path=await download.path();
+    bytes=fs.readFileSync(path);
+  }
   assert.equal(bytes.subarray(0,5).toString(),'%PDF-');
   const parsed=await PDFDocument.load(bytes);
   const boxes=parsed.getPages().map(p=>[p.getWidth(),p.getHeight()]);
