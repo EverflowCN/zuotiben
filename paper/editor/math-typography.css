@@ -1,0 +1,37 @@
+/* The physical paper, its offscreen measurement clone, and both PDF exporters
+   must resolve exactly one body-font size.  The old .question {font-size:10.5pt}
+   from styles.css accidentally overrode ExamA4's 9.03374pt master size.
+   Keep headings/cover sizes intentional; restore inheritance only for body text. */
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .question,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .question-line,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .question-body,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .question-body p,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .options,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .option,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .option-body,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .paper-inline-solution {
+  font-size: inherit !important;
+}
+
+/* Mathematical glyphs use the same em-size as nearby Chinese text.  Never
+   apply this to descendants (msub, mfrac, mroot, etc.): scripts/fractions
+   are supposed to use their own smaller mathstyle as in LaTeX. */
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-rendered {
+  font-size: inherit !important;
+}
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-rendered > math,
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item math:not(.math-safe-rendered math) {
+  font-size: 1em !important;
+  font-family: "Everflow Termes Math", "STIX Two Math", "Cambria Math", math;
+  font-size-adjust: none;
+}
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item math mtext {
+  font-family: "Everflow Termes", "Everflow Song", "Songti SC", serif;
+}
+
+/* Inline math inherits from the line rather than an editor-control style;
+   only \displaystyle/block formulas change layout, not base glyph size. */
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-display > math {
+  font-size: 1em !important;
+}
