@@ -130,28 +130,14 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),beforeDownloadPrintCalls,'Direct download unexpectedly called system print');
     assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Direct download changed preview DOM');
     console.log('DIRECT PDF',pdfBytes.byteLength,'preview pages',expectedPages);
-    // Native-text export must work without a print dialog on Chromium,
-    // Firefox and WebKit and preserve the same DOM/paper geometry.
-    assert.equal(await page.locator('#textPdfButton').isVisible(),true);
-    const beforeTextMarkup=await page.locator('#typstPreview').innerHTML();
-    const textDownloadPromise=page.waitForEvent('download',{timeout:120000});
-    await page.locator('#textPdfButton').click();
-    const textDownload=await textDownloadPromise;
-    await textDownload.saveAs('test-results/editor-text-'+browserName+'.pdf');
-    const textBytes=fs.readFileSync('test-results/editor-text-'+browserName+'.pdf');
-    assert.equal(textBytes.subarray(0,5).toString(),'%PDF-');
-    assert.ok(textBytes.byteLength>3000,'Text PDF suspiciously empty');
-    const {PDFDocument}=require('../paper/editor/vendor/pdf-lib.min.js');
-    const parsed=await PDFDocument.load(textBytes);
-    assert.equal(parsed.getPages().length,expectedPages,'Text PDF altered page count');
-    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),beforeDownloadPrintCalls,'Text PDF used window.print');
-    assert.equal(await page.locator('#typstPreview').innerHTML(),beforeTextMarkup,'Text export changed preview');
-    console.log('DIRECT TEXT PDF',textBytes.byteLength,'preview pages',expectedPages);
-
-    // The editor exposes only direct download.
-    assert.equal(await page.locator('#browserPrintButton').count(),0);
-    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),0);
-    assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'Printing changed the existing preview pages');
+    // Text PDF is temporarily disabled in the interface, but the implementation remains.
+    assert.equal(await page.locator('#textPdfButton').isVisible(),false);
+    assert.equal(await page.locator('#mobileTextDownloadButton').isVisible(),false);
+    assert.equal(await page.locator('#browserPrintButton').isVisible(),true);
+    await page.locator('#browserPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===1);
+    assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('browser-print-active')),false,'system print state should clear after afterprint');
+    assert.equal(await page.locator('#typstPreview').innerHTML(),previewMarkup,'system print changed preview DOM');
 
     // Chromium print-to-PDF cross-check uses those same physical DOM pages.
     if(browserName==='chromium'){
@@ -185,12 +171,34 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),false);
     assert.equal(await page.locator('#mobileDownloadButton').isVisible(),true);
     assert.equal(await page.locator('#previewModeButton').isVisible(),true);
+    assert.equal(await page.locator('#mobileSystemPrintButton').isVisible(),true);
+    assert.equal(await page.locator('#mobileTextDownloadButton').isVisible(),false);
+    const toolbarButtons=await page.evaluate(()=>{
+      const ids=['navigatorToggleButton','templateButton','mobileDownloadButton','mobileSystemPrintButton','editModeButton','previewModeButton'];
+      const header=document.querySelector('.texpage-topbar').getBoundingClientRect();
+      const areas=ids.map(id=>{
+        const r=document.getElementById(id).getBoundingClientRect();
+        return {id,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
+      });
+      const a=areas.find(x=>x.id==='mobileDownloadButton');
+      const b=areas.find(x=>x.id==='mobileSystemPrintButton');
+      const c=areas.find(x=>x.id==='editModeButton');
+      const t=areas.find(x=>x.id==='templateButton');
+      const n=areas.find(x=>x.id==='navigatorToggleButton');
+      return {header:{top:header.top,bottom:header.bottom},areas,columnsOk:
+        a.right<=b.left+1&&b.right<=c.left+1&&n.right<=t.left+1,
+        rowsOk:t.bottom<a.top&&areas.every(x=>x.left>=-1&&x.right<=innerWidth+1&&x.top>=header.top-1&&x.bottom<=header.bottom+1)};
+    });
+    assert.ok(toolbarButtons.columnsOk&&toolbarButtons.rowsOk,'mobile toolbar overlaps '+JSON.stringify(toolbarButtons));
+
     const actionRects=await page.locator('.texpage-topbar .editor-top-actions').evaluate(el=>{const p=el.getBoundingClientRect();return {left:p.left,right:p.right,scrollWidth:el.scrollWidth,width:el.clientWidth}});
     assert.ok(actionRects.right<=393&&actionRects.left>=0&&actionRects.scrollWidth<=actionRects.width+2,'mobile topbar overflows '+JSON.stringify(actionRects));
 
     await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),true);
-    await page.locator('#workbenchBackdrop').click({position:{x:370,y:400}});
+    const drawer=await page.locator('#navigatorPanel').boundingBox();
+    assert.ok(drawer.width>360&&drawer.left>=-1,'mobile drawer does not fill phone workspace: '+JSON.stringify(drawer));
+    await page.locator('#navigatorToggleButton').click();
     assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('navigator-open')),false);
 
     // Mobile direct download: no print dialog, enter preview, same physical DOM.
@@ -205,19 +213,12 @@ async function waitForBrowserLayout(page, timeout=120000){
     assert.equal(await page.locator('.texpage-editor-pane').isVisible(),false);
     assert.equal(await page.locator('.texpage-preview-pane').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    assert.equal(await page.locator('#mobileTextDownloadButton').isVisible(),true,'mobile text PDF entry unavailable');
-    const mobileTextBefore=await page.locator('#typstPreview').innerHTML();
-    const mobileTextPromise=page.waitForEvent('download',{timeout:120000});
-    await page.locator('#mobileTextDownloadButton').click();
-    const mobileText=await mobileTextPromise;
-    await mobileText.saveAs('test-results/editor-mobile-text-'+browserName+'.pdf');
-    const mobileTextBytes=fs.readFileSync('test-results/editor-mobile-text-'+browserName+'.pdf');
-    assert.equal(mobileTextBytes.subarray(0,5).toString(),'%PDF-');
-    const {PDFDocument: MobilePdf}=require('../paper/editor/vendor/pdf-lib.min.js');
-    assert.equal((await MobilePdf.load(mobileTextBytes)).getPages().length,expectedPages,'mobile text export changes page count');
-    assert.equal(await page.evaluate(()=>window.__PRINT_CALLED__),mobilePrintCalls);
-    assert.equal(await page.locator('#typstPreview').innerHTML(),mobileTextBefore,'mobile text export modified preview');
-    console.log('MOBILE TEXT PDF',mobileTextBytes.length,'pages',expectedPages);
+    assert.equal(await page.locator('#mobileTextDownloadButton').isVisible(),false);
+    const mobilePrintPreview=await page.locator('#typstPreview').innerHTML();
+    await page.locator('#mobileSystemPrintButton').click();
+    await page.waitForFunction(()=>window.__PRINT_CALLED__===2);
+    assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('browser-print-active')),false);
+    assert.equal(await page.locator('#typstPreview').innerHTML(),mobilePrintPreview,'mobile system print altered preview');
     const pageWidth=await page.locator('#typstPreview > section.typst-page').first().evaluate(el=>el.getBoundingClientRect().width);
     console.log('MOBILE PAGE WIDTH',pageWidth,await page.locator('#typstPreview').evaluate(el=>({width:el.clientWidth,zoom:getComputedStyle(el).getPropertyValue('--browser-preview-scale'),screen:innerWidth,fit:getComputedStyle(el.querySelector('.browser-paper-page')).zoom})));
     assert.ok(pageWidth<=390,'mobile page should fit: '+pageWidth);
