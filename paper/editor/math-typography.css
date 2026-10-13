@@ -20,8 +20,7 @@
 :is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-rendered {
   font-size: inherit !important;
 }
-:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-rendered > math,
-:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item math:not(.math-safe-rendered math) {
+:is(.paper-measurement-layer, .browser-paper-page) .paper-layout-item .math-safe-rendered > math {
   font-size: 1em !important;
   font-family: "Everflow Termes Math", "STIX Two Math", "Cambria Math", math;
   font-size-adjust: none;
