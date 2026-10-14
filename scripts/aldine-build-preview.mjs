@@ -15,7 +15,7 @@ fs.cpSync(path.join(dist, 'assets'), assets, { recursive: true });
 
 let html = fs.readFileSync(index, 'utf8');
 if (!html.includes('id="root"')) throw new Error('Unexpected frontend: missing React root');
-html = html.replace('<head>', '<head>\n    <meta name="aldine-base-path" content="/latex/" />');
+html = html.replace('<head>', '<head>\n    <meta name="aldine-base-path" content="/latex/" />\n    <meta name="aldine-static-pages" content="1" />');
 html = html.replace('<title>Aldine</title>', '<title>LaTeX 编辑器 · Everflow Aldine</title>');
 html = html.replace('</body>', '    <script defer src="./frontend-health.js"></script>\n</body>');
 fs.writeFileSync(path.join(root, 'index.html'), html);
