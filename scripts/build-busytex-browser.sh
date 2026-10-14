@@ -56,5 +56,13 @@ for file in texlive-recommended.data texlive-recommended.js texlive-extra.data t
   echo "$expected  $dest/$file" | sha256sum -c --status
   echo "Verified and staged GitHub-hosted optional bundle: $file"
 done
+# Ship tiny TeX Live \ProvidesPackage manifests to let the browser identify
+# exactly which GitHub-hosted collection contains each macro package.
+for file in texlive-basic.js.providespackage.txt texlive-recommended.js.providespackage.txt texlive-extra.js.providespackage.txt; do
+  if [[ ! -s "$dest/$file" ]]; then
+    curl --fail --location --retry 3 --retry-delay 3 --silent --show-error "$base/$file" -o "$dest/$file"
+  fi
+  test -s "$dest/$file"
+done
 echo "BusyTeX Basic + optional Recommended/Extra are staged as static GitHub Pages files."
 echo "BusyTeX browser test bundle and WASM assets staged successfully."
