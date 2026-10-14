@@ -67,6 +67,40 @@ const { chromium } = require('playwright');
       throw new Error('ZIP import did not restore the Chinese LaTeX project');
     }
     console.log('PASS: Exported full workspace ZIP and successfully re-imported it.');
+    // Check that heavyweight assets survive a full page restart, not merely
+    // that the in-memory BusyTeX instance can compile twice in one tab.
+    await page.waitForFunction(async () => {
+      const wasm = await caches.match('/latex/browser-test/core/busytex/busytex.wasm');
+      return !!wasm;
+    }, null, { timeout: 30000 });
+    const cacheBefore = await page.evaluate(async () => ({
+      controlled: Boolean(navigator.serviceWorker?.controller),
+      wasm: Boolean(await caches.match('/latex/browser-test/core/busytex/busytex.wasm')),
+      data: Boolean(await caches.match('/latex/browser-test/core/busytex/texlive-basic.data')),
+      store: await caches.keys()
+    }));
+    console.log('Cache after first visit:', JSON.stringify(cacheBefore));
+    if (!cacheBefore.controlled || !cacheBefore.wasm) throw new Error('Persistent SW/WASM cache not installed.');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByTestId('browser-compile').waitFor({ timeout: 30000 });
+    const afterReload = await page.evaluate(async () => ({
+      controlled: Boolean(navigator.serviceWorker?.controller),
+      wasm: Boolean(await caches.match('/latex/browser-test/core/busytex/busytex.wasm')),
+      data: Boolean(await caches.match('/latex/browser-test/core/busytex/texlive-basic.data'))
+    }));
+    console.log('Cache after page reload:', JSON.stringify(afterReload));
+    if (!afterReload.wasm || !afterReload.controlled) throw new Error('Browser cache lost after page reload.');
+    await page.waitForFunction(() => (document.querySelector('textarea[aria-label="main.tex"]')?.value || '').includes('这是一份浏览器生成的数学试卷'), null, { timeout: 30000 });
+    await page.getByTestId('browser-compile').click();
+    await page.waitForFunction(() => {
+      const v = document.querySelector('[role=status]')?.textContent || '';
+      return v.includes('编译成功') || v.includes('编译失败') || v.includes('浏览器编译失败');
+    }, null, { timeout: 240000 });
+    const reopened = await page.getByRole('status').textContent();
+    console.log('After reload compilation:', reopened);
+    if (!reopened?.includes('编译成功')) throw new Error('Second-visit cached browser compilation failed.');
+    console.log('PASS: Persistent BusyTeX WASM cache survives reload and XeLaTeX compiles again.');
+
     if (errors.length) console.log('Nonfatal browser console errors:', errors.slice(0, 8));
     console.log('PASS: Real Aldine fork UI called BusyTeX WASM and returned a PDF.');
   } finally {
