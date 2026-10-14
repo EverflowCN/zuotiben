@@ -80,7 +80,24 @@ const { chromium } = require('playwright');
       store: await caches.keys()
     }));
     console.log('Cache after first visit:', JSON.stringify(cacheBefore));
-    if (!cacheBefore.controlled || !cacheBefore.wasm) throw new Error('Persistent SW/WASM cache not installed.');
+    if (!cacheBefore.controlled || !cacheBefore.wasm) {
+      const diagnostics = await page.evaluate(async () => {
+        const script = await fetch('/latex/busytex-sw.js', { cache: 'no-store' }).catch((e) => ({ error: String(e) }));
+        const helper = await fetch('/latex/busytex-cache.mjs', { cache: 'no-store' }).catch((e) => ({ error: String(e) }));
+        return {
+          location: location.href,
+          serviceWorkerAvailable: 'serviceWorker' in navigator,
+          swStatus: script?.status,
+          swContentType: script?.headers?.get?.('content-type'),
+          swHead: script?.text ? (await script.text()).slice(0, 150) : String(script?.error),
+          helperStatus: helper?.status,
+          helperContentType: helper?.headers?.get?.('content-type'),
+          regs: 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations().then((regs) => regs.map((r) => ({ scope: r.scope, active: r.active?.state, installing: r.installing?.state }))).catch((e) => String(e)) : [],
+        };
+      });
+      console.log('Service worker diagnostics:', JSON.stringify(diagnostics));
+      throw new Error('Persistent SW/WASM cache not installed.');
+    }
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByTestId('browser-compile').waitFor({ timeout: 30000 });
     const afterReload = await page.evaluate(async () => ({
