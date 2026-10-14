@@ -75,10 +75,19 @@ const { chromium } = require('playwright');
     if (!extractedText.includes('中文') || !extractedText.includes('这是一份')) {
       throw new Error('Real Chinese glyphs missing from PDF or its Unicode map, despite XeLaTeX reporting success.');
     }
-    // Probe Aldine's native PDF.js renderer: it should populate a canvas with
-    // page content, not just accept a nonempty PDF buffer.
+    // The default CJK-safe mode uses browser PDFium instead of Aldine PDF.js.
+    // PDF.js can silently omit subsetted CID/OpenType Chinese glyphs.
+    await page.locator('iframe[data-testid="pdf-native"]').waitFor({ timeout: 25000 });
+    const mode = page.getByRole('combobox', { name: 'PDF 预览模式' });
+    if ((await mode.inputValue()) !== 'native') throw new Error('Chinese-compatible native PDF viewer is not the default');
+    if (!(await page.locator('iframe[data-testid="pdf-native"]').getAttribute('src'))?.startsWith('blob:')) {
+      throw new Error('Native PDF preview did not load the compiled PDF blob');
+    }
+    await mode.selectOption('pdfjs');
     await page.locator('.pdf-pane .pdf-page').first().waitFor({ timeout: 25000 });
-    console.log('PASS: PDF contains extractable Chinese characters and embedded font inventory.');
+    await mode.selectOption('native');
+    await page.locator('iframe[data-testid="pdf-native"]').waitFor({ timeout: 25000 });
+    console.log('PASS: PDF has extractable Chinese glyphs; native browser PDF preview is default and switchable.');
 
 
     // Round-trip the entire local LaTeX project through a real ZIP download/upload.
