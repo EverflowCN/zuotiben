@@ -11,6 +11,15 @@ git clone --depth 1 --branch main https://github.com/EverflowCN/texlyre-busytex.
  npm run build
 )
 cp "$tmp/busytex/dist/index.js" latex/browser-test/busytex-lib.mjs
+# Small client-only ZIP reader/writer; needed for complete multi-file Everflow templates.
+# Install only in temporary build checkout. Do not commit node_modules.
+(
+  cd "$tmp/busytex"
+  npm install --no-save --no-package-lock --no-audit --no-fund fflate@0.8.2
+)
+cp "$tmp/busytex/node_modules/fflate/esm/browser.js" latex/browser-test/fflate.mjs
+cp "$tmp/busytex/node_modules/fflate/LICENSE" latex/browser-test/LICENSE.fflate
+
 cp "$tmp/busytex/LICENSE" latex/browser-test/LICENSE.busytex
 git -C "$tmp/busytex" rev-parse HEAD > latex/browser-test/busytex-source-rev.txt
 tag="build_wasm_46ebb6216a5c1fe63dd1dc885831d1a8cef2dc86_31802832436_1"
