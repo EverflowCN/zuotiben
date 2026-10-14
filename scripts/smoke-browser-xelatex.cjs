@@ -216,7 +216,7 @@ const { chromium } = require('playwright');
     // Import a completely SYNTHETIC multi-entry Everflow-like ZIP (not the
     // user's private template). Ensure its real Exam entrypoint is selected,
     // not an unrelated helper file or the Book/Public alternate entrypoint.
-    const fixture = await page.evaluate(async () => {
+    const rootFixture = await page.evaluate(async () => {
       const zip = await import('/latex/browser-test/fflate.mjs');
       const encoder = new TextEncoder();
       const items = {
@@ -229,7 +229,7 @@ const { chromium } = require('playwright');
       return Array.from(zip.zipSync(items, { level: 0 }));
     });
     await page.locator('input[type="file"][accept*="application/zip"]').setInputFiles({
-      name: 'everflow-fixture.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture)
+      name: 'everflow-fixture.zip', mimeType: 'application/zip', buffer: Buffer.from(rootFixture)
     });
     await page.waitForFunction(() => (document.querySelector('.browser-aldine__status-text')?.textContent || '').includes('ZIP 已导入'), null, { timeout: 30000 });
     const root = await page.getByRole('combobox', { name: '主文档' }).inputValue();
