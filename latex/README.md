@@ -14,3 +14,15 @@
 ## 自托管服务器与 Cloudflare 接入
 
 已加入 [完整部署配置](./deploy/README.md)：双容器 Docker Compose、从复刻源码构建的覆盖配置、TeX Live Full 和 Cloudflare Worker 路由。部署配置不会自动开通或免费获得远程服务器。请勿将真实 .env 放进网站仓库。
+
+## 无服务器浏览器编译 · 新增本地工作区
+
+正式 Aldine 编辑器入口 /latex/ 的工具栏已新增「浏览器编译 · 免费」，也可以访问：
+
+    https://zuotiben.top/latex/?local=1
+
+这是由 `EverflowCN/aldine` 复刻源码实现的浏览器模式，而不是另一个编辑器截图，也不再调用 Aldine Node.js API。浏览器从 /latex/browser-test/ 加载由 `EverflowCN/texlyre-busytex` 编译出来的 BusyTeX JavaScript SDK 和静态 WebAssembly 引擎；首次下载大量静态资源，但 **无需购买服务器或由用户安装 LaTeX**。
+
+第一阶段实现：本机 IndexedDB 持久化工程、根 .tex 文件选择、编译引擎切换、单文件/多文件与图片导入、ZIP 工程导入/导出、PDF 预览/下载、编译日志、中文兼容测试样例。ZIP 使用独立打包的 fflate MIT 库，未使用公共在线编译服务。
+
+**限制：**未实测 Everflow ExamA4 完整模板；中文字体或特殊宏包可能依赖 TeXlyre 资源下载服务，浏览器内存不足会失败。此模式无 Aldine 的多人在线协作、账户、服务器 Git 历史或云同步。本地 IndexedDB 可能被用户清理，应通过导出 ZIP 定期备份。原来的 Node.js + Docker 部署方案仍在 /latex/deploy/，互不影响。
