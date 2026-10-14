@@ -21,7 +21,13 @@ source.value = [
   '\\end{document}'
 ].join('\n');
 
-const cacheInit = prepareBusyTeXCache().catch(() => null);
+const cacheInit = prepareBusyTeXCache((progress) => {
+  if (progress.phase === 'evicted') note('检测到缓存缺失，正在自动恢复…');
+  if (progress.phase === 'repairing') note('正在恢复本地编译资源：' + (progress.file || ''));
+  if (progress.phase === 'restored') note('已自动恢复被清理的编译资源。');
+  if (progress.phase === 'repair-failed') note('自动恢复未完成，下次编译将重新下载缺失资源。');
+  if (progress.phase === 'persistence' && progress.granted) note('已获得浏览器持久存储授权，无需手动设置。');
+}).catch(() => null);
 let runner = null;
 let compiler = null;
 let pdfUrl = null;
@@ -42,7 +48,9 @@ async function ensureEngine() {
   await runner.initialize(true);
   compiler = new XeLatex(runner);
   const cacheStatus = await getBusyTeXCacheStatus();
-  note(cacheStatus.coreCached ? '编译器已就绪；引擎资源已持久缓存到本浏览器。' : '本地编译引擎已就绪；缓存写入中或受浏览器存储限制。');
+  note(cacheStatus.coreCached
+    ? cacheStatus.persistent ? '编译器已就绪，持久存储已授权。' : '编译器已就绪，资源已缓存；浏览器可能限制长期存储。'
+    : '编译器已就绪；缺失资源将自动补齐并缓存。');
 }
 button.addEventListener('click', async () => {
   if (busy) return;
