@@ -12,11 +12,11 @@ const ROOT = '/latex/browser-test/core/busytex/';
 const VERSION_MARKER = 'everflow.busytex.cached.' + BUSYTEX_CACHE_NAME;
 const PERSIST_ATTEMPT = 'everflow.busytex.persist-attempt';
 const RETRY_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
+// The five inputs always used by the basic compilation path. Optional
+// bibliography/config assets are cached on demand by the Service Worker.
 const ASSETS = [
-  'busytex_worker.js', 'busytex_pipeline.js', 'busytex.js',
-  'busytex.wasm', 'busytex_biber.js',
+  'busytex_worker.js', 'busytex.js', 'busytex.wasm',
   'texlive-basic.js', 'texlive-basic.data',
-  'texmf.cnf', 'dvipdfmx.cfg', 'updmap.cfg',
 ];
 let registering = null;
 let repairing = null;
