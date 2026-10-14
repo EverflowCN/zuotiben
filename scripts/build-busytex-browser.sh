@@ -81,21 +81,26 @@ after=("        // Everflow: do not prune user-selected Recommended/Extra bundle
        "        const resolved = await this.data_package_resolver.resolve(files, main_tex_path, data_packages_js);")
 # Build real newlines: source below stores a JS program, not literal \\n escapes.
 after=after.replace('\\n','\n')
-if s.count(before)!=1:
-    raise SystemExit('BusyTeX pipeline changed: resolver anchor mismatch; abort instead of shipping an untested patch')
-s=s.replace(before,after)
-needle="data_packages_js = Array.from(new Set(filter_map(v => v.used && v.source != 'local' && v.source != null, false))).sort();"
-replacement="data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...filter_map(v => v.used && v.source != 'local' && v.source != null, false)])).sort();"
-if s.count(needle)!=1:
-    raise SystemExit('BusyTeX pipeline changed: selected bundle anchor mismatch')
-s=s.replace(needle,replacement)
-old="data_packages_js = this.data_package_resolver.data_packages_js;"
-new="data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...this.data_package_resolver.data_packages_js])).sort();"
-if s.count(old)!=1:
-    raise SystemExit('BusyTeX pipeline changed: unresolved bundle anchor mismatch')
-s=s.replace(old,new)
-if s.count('explicitly_requested_bundles') != 3:
-    raise SystemExit('Missing pinned BusyTeX patch assertions')
+patched_marker = "const explicitly_requested_bundles = Array.isArray(data_packages_js)"
+selected_patch = "data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...filter_map("
+unresolved_patch = "data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...this.data_package_resolver.data_packages_js])).sort();"
+if patched_marker not in s:
+    if s.count(before)!=1:
+        raise SystemExit('BusyTeX resolver anchor changed; refusing to build unverified JavaScript')
+    s=s.replace(before,after)
+    needle="data_packages_js = Array.from(new Set(filter_map(v => v.used && v.source != 'local' && v.source != null, false))).sort();"
+    new="data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...filter_map(v => v.used && v.source != 'local' && v.source != null, false)])).sort();"
+    if s.count(needle)!=1:
+        raise SystemExit('BusyTeX selected bundle anchor changed')
+    s=s.replace(needle,new)
+    old="data_packages_js = this.data_package_resolver.data_packages_js;"
+    if s.count(old)!=1:
+        raise SystemExit('BusyTeX unresolved bundle anchor changed')
+    s=s.replace(old,unresolved_patch)
+else:
+    print('BusyTeX pipeline already patched in Actions cache; verifying patch invariants.')
+if s.count(patched_marker)!=1 or s.count(selected_patch)!=1 or s.count(unresolved_patch)!=1:
+    raise SystemExit('BusyTeX pipeline patch invariants failed')
 p.write_text(s,encoding='utf8')
 print('Pinned BusyTeX pipeline patched to preserve explicitly requested TeX Live collection URLs.')
 PY
