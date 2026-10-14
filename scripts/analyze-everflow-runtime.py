@@ -34,10 +34,30 @@ def main():
         if len(packages) < 10:
             raise SystemExit(f"Unexpected empty manifest {name}: {len(packages)}")
         sources[tier] = packages
+    # A few macros (notably ctex, tikz, xeCJK) are not present in the
+    # generated ProvidesPackage metadata, even if their .sty exists.
+    # The release also ships literal file lists produced by find(1), which
+    # give stronger evidence of actual files bundled with each collection.
+    physical = {}
+    for tier in TIERS:
+        p = RUNTIME / f"texlive-{tier}.txt"
+        if not p.is_file():
+            raise SystemExit("Missing TeX Live file inventory: " + str(p))
+        names = {Path(line.strip()).name.lower() for line in p.read_text(encoding="utf8", errors="replace").splitlines() if line.strip()}
+        if len(names) < 100:
+            raise SystemExit("Suspiciously short TeX Live file list: " + str(p))
+        physical[tier] = names
     rows = []
     for name in [*NAMES, *LOCAL]:
-        tier = "local" if name in LOCAL else next((t for t in TIERS if name.lower() in sources[t]), "unlisted")
-        rows.append({"name": name, "tier": tier})
+        if name in LOCAL:
+            tier, method = "local", "project"
+        else:
+            key = name.lower()
+            first = next((t for t in TIERS if key in sources[t]), None)
+            file_keys = (key + ".sty", key + ".cls", key + ".code.tex", key + ".tex")
+            second = next((t for t in TIERS if any(x in physical[t] for x in file_keys)), None)
+            tier, method = (first, "ProvidesPackage") if first else ((second, "physical filename") if second else ("unlisted", "not indexed"))
+        rows.append({"name": name, "tier": tier, "match_method": method})
     tally = Counter(row["tier"] for row in rows)
     report = {
         "source": "Everflow original 173-file Exam/Book/Public ZIP static scan",
@@ -47,22 +67,27 @@ def main():
         "counts": dict(tally),
         "total_direct_packages_including_local": len(rows),
         "packages": rows,
-        "note": "This is a TeX ProvidesPackage inventory, not a guarantee of actual availability, fonts or successful browser compilation."
+        "source_lists": ["ProvidesPackage", "TeX Live installed filenames"],
+        "font_name_probe": {
+            name: next((t for t in TIERS if name.lower() in physical[t]), "unlisted")
+            for name in ["XITSMath-Regular.otf", "Asana-Math.otf", "Times New Roman", "TeXGyreTermesX"]
+        },
+        "note": "Filename/Provides metadata is evidence that an asset belongs to a bundle, not proof the complete template will compile or font family resolution will succeed."
     }
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "everflow-package-coverage.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
     lines = [
         "# Everflow 模板：TeX Live 2026 GitHub 资源覆盖明细",
         "",
-        "三个 BusyTeX 资源包中的 ProvidesPackage 静态声明，非浏览器编译结果。",
+        "同时比对三个 TeX Live 包的 ProvidesPackage 元数据与实际文件路径列表。不能代替浏览器编译或字体渲染验证。",
         "",
         "| 资源档位 | 宏包数量 |",
         "| --- | ---: |",
         *[f"| {name} | {tally.get(name,0)} |" for name in (*TIERS,"local","unlisted")],
         "",
-        "| 宏包 | 归属 |",
-        "| --- | --- |",
-        *[f"| {row['name']} | {row['tier']} |" for row in rows],
+        "| 宏包 | 归属 | 检查方式 |",
+        "| --- | --- | --- |",
+        *[f"| {row['name']} | {row['tier']} | {row['match_method']} |" for row in rows],
         "",
         "未直接匹配声明的宏包，不等于一定缺失；请查看实际 XeLaTeX 日志。",
     ]
