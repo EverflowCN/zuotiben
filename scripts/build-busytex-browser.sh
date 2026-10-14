@@ -64,5 +64,40 @@ for file in texlive-basic.js.providespackage.txt texlive-recommended.js.provides
   fi
   test -s "$dest/$file"
 done
+# Upstream BusytexPipeline.compile() auto-prunes optional dataPackagesJs
+# based only on \\usepackage in the entry .tex. Everflow's dependencies live
+# inside custom .cls/.sty files, so this can silently DISCARD a bundle that
+# the user explicitly selected. Preserve those explicit GitHub-hosted URLs.
+# Patch the release file during the Pages build (do not modify upstream files).
+python3 - "$dest/busytex_pipeline.js" <<'PY'
+import sys
+from pathlib import Path
+p=Path(sys.argv[1])
+s=p.read_text(encoding='utf8')
+before="        const resolved = await this.data_package_resolver.resolve(files, main_tex_path, data_packages_js);"
+after=("        // Everflow: do not prune user-selected Recommended/Extra bundles just because "
+       "the dependencies appear in included .sty/.cls files.\\n"
+       "        const explicitly_requested_bundles = Array.isArray(data_packages_js) ? [...data_packages_js] : [];\\n"
+       "        const resolved = await this.data_package_resolver.resolve(files, main_tex_path, data_packages_js);")
+# Build real newlines: source below stores a JS program, not literal \\n escapes.
+after=after.replace('\\n','\n')
+if s.count(before)!=1:
+    raise SystemExit('BusyTeX pipeline changed: resolver anchor mismatch; abort instead of shipping an untested patch')
+s=s.replace(before,after)
+needle="data_packages_js = Array.from(new Set(filter_map(v => v.used && v.source != 'local' && v.source != null, false))).sort();"
+replacement="data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...filter_map(v => v.used && v.source != 'local' && v.source != null, false)])).sort();"
+if s.count(needle)!=1:
+    raise SystemExit('BusyTeX pipeline changed: selected bundle anchor mismatch')
+s=s.replace(needle,replacement)
+old="data_packages_js = this.data_package_resolver.data_packages_js;"
+new="data_packages_js = Array.from(new Set([...explicitly_requested_bundles, ...this.data_package_resolver.data_packages_js])).sort();"
+if s.count(old)!=1:
+    raise SystemExit('BusyTeX pipeline changed: unresolved bundle anchor mismatch')
+s=s.replace(old,new)
+if s.count('explicitly_requested_bundles') != 3:
+    raise SystemExit('Missing pinned BusyTeX patch assertions')
+p.write_text(s,encoding='utf8')
+print('Pinned BusyTeX pipeline patched to preserve explicitly requested TeX Live collection URLs.')
+PY
 echo "BusyTeX Basic + optional Recommended/Extra are staged as static GitHub Pages files."
 echo "BusyTeX browser test bundle and WASM assets staged successfully."
