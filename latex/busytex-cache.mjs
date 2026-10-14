@@ -54,7 +54,8 @@ export async function getBusyTeXCacheStatus() {
     };
   }
   try {
-    const cached = await Promise.all(ASSETS.map((name) => caches.match(ROOT + name)));
+    const cache = await caches.open(BUSYTEX_CACHE_NAME);
+    const cached = await Promise.all(ASSETS.map((name) => cache.match(ROOT + name)));
     const missing = ASSETS.filter((_, i) => !cached[i]);
     const wasmCached = Boolean(cached[ASSETS.indexOf('busytex.wasm')]);
     const dataCached = Boolean(cached[ASSETS.indexOf('texlive-basic.data')]);
