@@ -172,6 +172,44 @@ const { chromium } = require('playwright');
     if (!reopened?.includes('编译成功')) throw new Error('Second-visit cached browser compilation failed.');
     console.log('PASS: Persistent BusyTeX WASM cache survives reload and XeLaTeX compiles again.');
 
+
+    // Synthetic Everflow fixture: check the REAL published TeX Live file index
+    // without uploading or committing the user's private 173-file template.
+    const fixture = await page.evaluate(async () => {
+      const zip = await import('/latex/browser-test/fflate.mjs');
+      const encoder = new TextEncoder();
+      const source = [
+        '\\documentclass{ctexart}',
+        '\\usepackage{ctex,tikz,fontspec,xeCJK,multirow}',
+        '\\begin{document}',
+        '数学与中文测试',
+        '\\end{document}',
+      ].join('\n');
+      const files = {
+        'Everflow-Exam.tex': encoder.encode(source),
+        'Everflow-Book.tex': encoder.encode(source.replace('ctex,tikz,fontspec,xeCJK,multirow', 'ctex,fontspec')),
+        'Everflow-Public.tex': encoder.encode(source),
+        'core/everflow/everflow-fonts.sty': encoder.encode('\\ProvidesPackage{everflow-fonts}'),
+      };
+      return [...zip.zipSync(files)];
+    });
+    const fixturePath = '/tmp/everflow-preflight-fixture.zip';
+    require('fs').writeFileSync(fixturePath, Buffer.from(fixture));
+    await page.locator('input[type="file"][accept*="application/zip"]').setInputFiles(fixturePath);
+    await page.getByTestId('preflight-panel').waitFor({ timeout: 10000 });
+    await page.waitForFunction(() => {
+      const t = document.querySelector('[data-testid="preflight-coverage"]')?.textContent || '';
+      return t.includes('归属核对') || t.includes('未在三套目录') || t.includes('无法加载');
+    }, null, { timeout: 20000 });
+    const fixtureText = await page.getByTestId('preflight-panel').textContent();
+    console.log('Synthetic Everflow report:', fixtureText?.slice(0, 1800));
+    if (!fixtureText?.includes('已识别 Everflow 原版工程')) throw new Error('Everflow project not recognized');
+    if (!fixtureText.includes('tikz') || !fixtureText.includes('xeCJK') || !fixtureText.includes('multirow')) {
+      throw new Error('Source package dependencies not extracted');
+    }
+    const coverageSummary = await page.getByTestId('preflight-coverage').textContent();
+    if (coverageSummary?.includes('无法加载')) throw new Error('GitHub hosted file inventory was not available');
+    console.log('PASS: ZIP auto-preflight recognizes Everflow and classifies TeX Live file/package assets.');
     if (errors.length) console.log('Nonfatal browser console errors:', errors.slice(0, 8));
     console.log('PASS: Real Aldine fork UI called BusyTeX WASM and returned a PDF.');
   } finally {
