@@ -1,7 +1,10 @@
 // Explicit warning while only Aldine's static React app is deployed.
 (() => {
   // Local BusyTeX workspace is operational without the Node.js API.
-  if (new URLSearchParams(location.search).get('local') === '1') return;
+  const params = new URLSearchParams(location.search);
+  const pagesMode = document.querySelector('meta[name="aldine-static-pages"]')?.getAttribute('content') === '1';
+  // Native Chinese browser editor is the default on GitHub Pages.
+  if (params.get('local') === '1' || (pagesMode && params.get('server') !== '1')) return;
   const show = () => {
     if (document.getElementById('everflow-aldine-offline')) return;
     const el = document.createElement('aside');
