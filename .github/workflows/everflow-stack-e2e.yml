@@ -1,0 +1,29 @@
+name: Everflow-like BusyTeX Extra-tier compatibility probe
+on:
+  workflow_dispatch:
+  # One-time self-test on workflow creation/change. Subsequent unrelated Pages
+  # deploys do NOT download ~650 MB of optional collections again.
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/everflow-stack-e2e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser test tools
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+          command -v pdftotext || { sudo apt-get update && sudo apt-get install -y poppler-utils; }
+      - name: Compile public synthetic CJK / TikZ / multirow document with GitHub-hosted Extra collection
+        run: node scripts/smoke-everflow-stack.cjs
