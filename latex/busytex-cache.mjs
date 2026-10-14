@@ -144,15 +144,16 @@ export async function prepareBusyTeXCache(onProgress = () => {}) {
 
   // Automatic, no bespoke "Keep cache" button; browser may still deny or
   // prompt because persistence is a browser-controlled permission.
-  const persistent = await requestBusyTeXPersistentStorage();
+  void requestBusyTeXPersistentStorage().then((granted) => {
+    onProgress({ phase: 'persistence', granted });
+  });
   let cache = await getBusyTeXCacheStatus();
-  cache.persistent = persistent || cache.persistent;
 
   if (cache.wasEvicted && navigator.onLine !== false) {
     onProgress({ phase: 'evicted', missing: cache.missing });
     try {
       cache = await repairBusyTeXCache(onProgress);
-      cache.persistent = persistent || cache.persistent;
+
     } catch (err) {
       onProgress({ phase: 'repair-failed', message: String(err) });
       console.warn('[Everflow] BusyTeX cache self-heal deferred until compilation:', err);
