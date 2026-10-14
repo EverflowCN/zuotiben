@@ -1,0 +1,14 @@
+# Use the actual replicated source code from latex/aldine for custom builds.
+services:
+  app:
+    image: everflow-aldine-app:local
+    build:
+      context: ../aldine
+      dockerfile: apps/server/Dockerfile
+  compiler:
+    image: everflow-aldine-compiler:local
+    build:
+      context: ../aldine/apps/compiler
+      dockerfile: Dockerfile
+      args:
+        TEXLIVE_SCHEME: full
