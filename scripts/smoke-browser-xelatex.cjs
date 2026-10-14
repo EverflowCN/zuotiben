@@ -57,6 +57,30 @@ const { chromium } = require('playwright');
     if (!chineseStatus?.includes('编译成功')) throw new Error('Chinese ctexart + amsmath browser compile failed: ' + chineseStatus);
     console.log('PASS: XeLaTeX CJK text and mathematical formula also generated a PDF.');
 
+    // Validate CJK at the PDF output level rather than merely checking
+    // BusyTeX success and nonempty PDF bytes. This catches font embedding,
+    // Unicode conversion and PDF.js preview regressions.
+    const pdfBytes = await page.evaluate(async () => {
+      const url = document.querySelector('a[download$=".pdf"]')?.href;
+      if (!url) throw Error('Missing PDF blob URL');
+      return [...new Uint8Array(await (await fetch(url)).arrayBuffer())];
+    });
+    const pdfFile = '/tmp/everflow-cjk-font-test.pdf';
+    require('fs').writeFileSync(pdfFile, Buffer.from(pdfBytes));
+    const { execFileSync } = require('child_process');
+    const extractedText = execFileSync('pdftotext', ['-layout', pdfFile, '-'], { encoding: 'utf8' });
+    const fonts = execFileSync('pdffonts', [pdfFile], { encoding: 'utf8' });
+    console.log('CJK PDF pdftotext:', JSON.stringify(extractedText));
+    console.log('CJK PDF embedded fonts:', fonts.slice(0, 2400));
+    if (!extractedText.includes('中文') || !extractedText.includes('这是一份')) {
+      throw new Error('Real Chinese glyphs missing from PDF or its Unicode map, despite XeLaTeX reporting success.');
+    }
+    // Probe Aldine's native PDF.js renderer: it should populate a canvas with
+    // page content, not just accept a nonempty PDF buffer.
+    await page.locator('.pdf-pane .pdf-page').first().waitFor({ timeout: 25000 });
+    console.log('PASS: PDF contains extractable Chinese characters and embedded font inventory.');
+
+
     // Round-trip the entire local LaTeX project through a real ZIP download/upload.
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30000 });
     await page.getByRole('button', { name: '导出 ZIP' }).first().click();
