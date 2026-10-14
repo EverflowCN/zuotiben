@@ -33,3 +33,19 @@
 - 每次进入本地工作区，自动检查实际资源条目而非单凭“已安装”标记；发现曾经完整缓存的文件缺失时，在有网络的情况下尝试自动补齐。首次编译仍需下载约 120MB 的初始资源。
 - 默认尝试调用 `navigator.storage.persist()` 请求浏览器长期保留 **整个 zuotiben.top 源站**的缓存与本地工程；无需专门点击“保留缓存”。浏览器可根据自身规则允许、拒绝或显示原生权限提示。自动尝试会限频以避免重复提示。
 - **无法保证真正永久**：用户手动清理网站数据、隐私/无痕模式、浏览器不允许或移动端存储政策可能移除资源和 IndexedDB 工程；清除整个源站数据后，网站无法保留“先前缓存过”的记录。请定期使用“导出 ZIP”备份重要工程。
+
+## GitHub 托管的 TeX Live 编译资源（三档，按需下载）
+
+构建阶段通过 `scripts/build-busytex-browser.sh` 从同一个上游固定的 TeX Live 2026 BusyTeX release 下载并 SHA-256 验证：
+
+| 浏览器 UI 资源档位 | 文件（上传到本站 GitHub Pages 工件，**不写进 Git 历史**） | 首次数据量 | 功能 |
+| --- | --- | ---: | --- |
+| 基础 | `texlive-basic.js/.data` + `busytex.wasm` | 约 120 MiB | 默认、普通 LaTeX 编译 |
+| 推荐 | 再下载 `texlive-recommended.js/.data` | 约 196 MiB | 较多标准宏包、字体 |
+| 扩展 | 再下载 `texlive-extra.js/.data` | 约 333 MiB | TikZ、CTeX 或出版类工程可能用到的更多资源 |
+
+网页 UI 中的「本地宏包」档位只在用户主动切换时加载较大的推荐/扩展包；不要求所有访客首次下载所有包。Emscripten 将包缓存到 IndexedDB；编译器 wasm 核心继续由原有 Service Worker 缓存。用户文件绝不会因上传这些公共 TeX Live 资源而被上传。
+
+**重要边界：**Basic、Recommended、Extra 三组共约 637 MiB，并不等于 TeX Live 的 full 全部包与字体。未覆盖的资源仍可通过 TeXlyre 第三方按需字体/宏包资源服务获取。浏览器不支持执行大部分本机 shell-escape 外部程序，某些工程即使宏包齐全也无法复现本地完整 TeX Live 的输出。
+
+GitHub 的源文件大小限制意味着大 `.data` 文件不能直接 `git add` 提交。当前方案是 **GitHub Actions 临时拉取 → 验证校验和 → 发布到 GitHub Pages 同源静态文件**。不要把完整 TeX Live 多 GB 的 `texmf-dist` 上传 Pages：发布站点有 1 GB 规模限制及每月 100 GB 软带宽上限。GitHub Releases 可以存档更大的分卷，但归档文件不能等同于提供 TeX Live 的逐文件/字体实时 API。为 Everflow 原版模板建议先测试「推荐」档位，若仍缺资源再选择「扩展」或远程按需补全；手机端注意内存和下载成本。
