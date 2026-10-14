@@ -10,3 +10,7 @@
 **注意**：GitHub Pages 只能运行网站前端，不会运行仓库里包含的 Node.js 和 Docker。页面出现 Aldine 界面并不代表可编译；需要另外部署应用 + TeX Live 编译容器，配置 ALDINE_BASE_PATH=/latex、ALDINE_PUBLIC_URL=https://zuotiben.top/latex 并将 Cloudflare /latex* 路由反代到该服务。未部署后端时前端提示不可用，不会伪造 PDF。
 
 保留原 zuotiben /paper/ 及网站功能；许可证归属按各自项目管理，Aldine 仍遵循 AGPL-3.0-only。
+
+## 自托管服务器与 Cloudflare 接入
+
+已加入 [完整部署配置](./deploy/README.md)：双容器 Docker Compose、从复刻源码构建的覆盖配置、TeX Live Full 和 Cloudflare Worker 路由。部署配置不会自动开通或免费获得远程服务器。请勿将真实 .env 放进网站仓库。
