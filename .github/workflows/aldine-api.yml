@@ -1,0 +1,52 @@
+name: Activate Aldine API gateway
+
+# Manual only. The Cloudflare route must never hijack /latex/
+# until an authenticated, working Aldine backend is reachable.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify backend and required settings
+        env:
+          ALDINE_ORIGIN: ${{ vars.ALDINE_ORIGIN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$ALDINE_ORIGIN" || { echo "::error::Set repository variable ALDINE_ORIGIN to your own live Aldine server HTTPS origin"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN secret"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID secret"; exit 1; }
+          node scripts/check-aldine-upstream.mjs
+
+      - name: Prepare explicit enabled Worker configuration
+        env:
+          ALDINE_ORIGIN: ${{ vars.ALDINE_ORIGIN }}
+        run: |
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const file = "latex/deploy/wrangler.jsonc";
+            const config = JSON.parse(fs.readFileSync(file, "utf8"));
+            config.vars = { ALDINE_ORIGIN: process.env.ALDINE_ORIGIN, ALDINE_PUBLIC_READY: "1" };
+            fs.writeFileSync("latex/deploy/wrangler.runtime.jsonc", JSON.stringify(config, null, 2));
+          '
+
+      - name: Deploy Worker route to existing Cloudflare zone
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy --config latex/deploy/wrangler.runtime.jsonc
+
+      - name: Remove temporary config
+        if: always()
+        run: rm -f latex/deploy/wrangler.runtime.jsonc
