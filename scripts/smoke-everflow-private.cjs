@@ -7,6 +7,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
 const file = process.env.PRIVATE_TEMPLATE_ZIP;
+const reduced = process.env.EVERFLOW_REDUCED_MODE === '1';
 if (!file || !fs.existsSync(file)) throw Error('Private template file unavailable in ephemeral runner storage');
 
 (async () => {
@@ -46,14 +47,14 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
     await page.getByRole('combobox', { name: 'TeX Live 资源包' }).selectOption('extra');
     const compileButton = page.getByTestId('browser-compile');
     await compileButton.click();
-    console.log('Started original private Exam mode with GitHub-hosted Extra resources; no source disclosed.');
+    console.log('Started private Exam', reduced ? 'preamble-only reduced question list' : 'complete question list', 'with GitHub-hosted Extra; source redacted.');
     await page.waitForFunction(() => {
       const status = document.querySelector('.browser-aldine__status-text')?.textContent || '';
       return status.includes('编译成功') || status.includes('编译失败') || status.includes('浏览器编译失败');
     }, null, { timeout: 16 * 60 * 1000 });
     const status = await page.locator('.browser-aldine__status-text').textContent();
     const successful = Boolean(status?.includes('编译成功'));
-    console.log('Original Everflow Exam compile success:', successful);
+    console.log('Private Exam compile success:', successful, 'reduced:', reduced);
     if (!successful) {
       const log = await page.getByTestId('browser-compile-log').textContent().catch(() => '');
       const categories = {
@@ -66,9 +67,16 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
         memoryError: /(?:out of memory|memory access out of bounds|wasm.*abort|TeX capacity exceeded)/i.test(log),
         generalLaTeXError: /(?:Emergency stop|undefined control sequence|Fatal error)/i.test(log),
         browserCrashed: pageCrashed,
+        statusCategory: status?.includes('浏览器编译失败') ? 'runtime-exception' : status?.includes('编译失败') ? 'tex-compile-failure' : 'unknown',
+        exitCode: status?.match(/退出码[：:]\s*([\w-]+)/)?.[1] || 'not-shown',
+        logChars: log.length,
+        logLines: log.split(/\r?\n/).length,
+        texErrorMarker: /!\s+(?:LaTeX|Package|Class|Font|Undefined)/.test(log),
+        remoteFileRequestMarker: /(?:remote_endpoint|TEXLIVE_REMOTE|fileid|kpse_remote)/i.test(log),
+        pdfConversionMarker: /xdvipdfmx|Cannot proceed without|DVI/i.test(log),
       };
       console.log('Private compile diagnostics (only booleans, no source/log text):', JSON.stringify(categories));
-      throw Error('Full private Everflow Exam not confirmed compatible with BusyTeX; details redacted');
+      throw Error('Private Everflow Exam (' + (reduced ? 'reduced' : 'full') + ') not confirmed compatible with BusyTeX; details redacted');
     }
 
     const pdfDownload = page.waitForEvent('download', { timeout: 45000 });
@@ -82,14 +90,14 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
     const readableCJK = /[\u3400-\u9fff]{3,}/u.test(extracted);
     const fonts = execFileSync('pdffonts', [pdfPath], { encoding: 'utf8' }).split(/\r?\n/);
     console.log(JSON.stringify({
-      mode: 'Exam', successful: true, pages, readableChinese: readableCJK,
+      mode: 'Exam', variant: reduced ? 'preamble-only' : 'full', successful: true, pages, readableChinese: readableCJK,
       embeddedFontRecords: Math.max(0, fonts.length - 3),
-      expectedFromFullLocalTexLive: 58,
-      pageCountMatchesLocalBaseline: pages === 58,
+      expectedFromFullLocalTexLive: reduced ? null : 58,
+      pageCountMatchesLocalBaseline: reduced ? null : pages === 58,
     }));
     if (!readableCJK) throw Error('Private PDF produced, but Chinese text was not extractable');
-    if (pages < 3) throw Error('Private PDF did not contain a plausibly complete exam');
-    console.log('PASS: Original private Everflow Exam compiled to a nontrivial Chinese PDF entirely in the browser.');
+    if (pages < (reduced ? 1 : 3)) throw Error('Private PDF did not contain a plausible number of pages');
+    console.log('PASS: Private Everflow Exam ' + (reduced ? 'preamble / minimal body' : 'complete body') + ' generated a Chinese PDF entirely in the browser.');
   } finally {
     await browser.close();
   }
