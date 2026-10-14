@@ -1,11 +1,6 @@
 name: BusyTeX browser PDF smoke test
 on:
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    paths:
-      - "scripts/smoke-browser-xelatex.cjs"
-      - ".github/workflows/browser-xelatex-smoke.yml"
   # Run after the actual Pages rollout, not concurrently with its build.
   workflow_run:
     workflows: ["Deploy GitHub Pages"]
