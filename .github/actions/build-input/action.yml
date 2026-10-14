@@ -1,5 +1,5 @@
 name: Load trusted build input
-description: Load a read-only build dependency into runner temporary storage without publishing it.
+description: Read a private build dependency into runner temporary storage without publishing it.
 inputs:
   repository:
     description: Repository in owner/name format.
@@ -8,7 +8,7 @@ inputs:
     description: Read-only token scoped to the dependency repository.
     required: true
   ref:
-    description: Ref of the dependency repository.
+    description: Branch of the dependency repository.
     required: false
     default: main
 outputs:
@@ -18,24 +18,36 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Check out dependency with ephemeral credentials
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ inputs.repository }}
-        ref: ${{ inputs.ref }}
-        token: ${{ inputs.token }}
-        path: .build-dependency
-        persist-credentials: false
-    - name: Move dependency outside deployable workspace
+    - name: Load dependency directly into temporary storage
       id: stage
       shell: bash
+      env:
+        SOURCE_REPOSITORY: ${{ inputs.repository }}
+        SOURCE_TOKEN: ${{ inputs.token }}
+        SOURCE_REF: ${{ inputs.ref }}
       run: |
         set -euo pipefail
-        source="$GITHUB_WORKSPACE/.build-dependency"
+        if [[ ! "$SOURCE_REPOSITORY" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+          echo '::error::Invalid repository identifier.'
+          exit 1
+        fi
+        if [[ -z "$SOURCE_TOKEN" || -z "$SOURCE_REF" ]]; then
+          echo '::error::Missing build input credentials or branch.'
+          exit 1
+        fi
         dest="$RUNNER_TEMP/build-input-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-        test -d "$source/.git" || { echo '::error::Dependency checkout failed'; exit 1; }
-        test ! -e "$dest" || { echo '::error::Temporary destination already exists'; exit 1; }
-        mv "$source" "$dest"
+        if [[ -e "$dest" ]]; then
+          echo '::error::Temporary source destination already exists.'
+          exit 1
+        fi
+        # Configure auth only for this git process, never in a URL or .git/config.
+        authorization="$(printf 'x-access-token:%s' "$SOURCE_TOKEN" | base64 | tr -d '\n')"
+        GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $authorization" \
+          git clone --quiet --depth 1 --single-branch --branch "$SOURCE_REF" \
+          "https://github.com/$SOURCE_REPOSITORY.git" "$dest"
+        unset authorization
         chmod 700 "$dest"
         printf 'directory=%s\n' "$dest" >> "$GITHUB_OUTPUT"
-        echo 'Build input checked out to runner temporary storage.'
+        echo 'Build input is available in runner temporary storage.'
