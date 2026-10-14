@@ -1,0 +1,9 @@
+# Copy this file as docker-compose.override.yml into EverflowCN/aldine
+# alongside the upstream docker-compose.yml.
+# This is only the app-side configuration. It does not provision a host.
+services:
+  app:
+    environment:
+      ALDINE_BASE_PATH: /latex
+      ALDINE_PUBLIC_URL: https://zuotiben.top/latex
+      AUTH_ENABLED: "1"
