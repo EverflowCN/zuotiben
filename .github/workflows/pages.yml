@@ -82,6 +82,15 @@ jobs:
       - name: Vendor local PDF libraries
         run: bash scripts/install-pdf-vendor.sh
 
+      - name: Cache BusyTeX basic runtime assets
+        uses: actions/cache@v4
+        with:
+          path: latex/browser-test/core/busytex
+          key: busytex-basic-v1.4.x-build_wasm_46ebb6216a5c1fe63dd1dc885831d1a8cef2dc86_31802832436_1
+
+      - name: Build browser-only BusyTeX test from own fork
+        run: bash scripts/build-busytex-browser.sh
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
