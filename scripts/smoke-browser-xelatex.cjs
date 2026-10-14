@@ -19,6 +19,17 @@ const { chromium } = require('playwright');
       'Hello from browser-only XeLaTeX.',
       '\\end{document}'
     ].join('\n'));
+    // Validate that the native Aldine preflight works without a compiler or
+    // uploading the user's sources to any remote service.
+    await page.getByTestId('preflight-open').click();
+    const audit = page.getByTestId('preflight-panel');
+    await audit.waitFor({ timeout: 10000 });
+    const auditText = await audit.textContent();
+    if (!auditText?.includes('LaTeX 模板依赖检查') || !auditText.includes('普通 LaTeX 工程')) {
+      throw new Error('Unexpected local template dependency preflight report: ' + auditText);
+    }
+    await audit.getByRole('button', { name: '关闭' }).click();
+    console.log('PASS: Offline LaTeX dependency preflight reports source packages locally.');
     await page.getByTestId('browser-compile').click();
     const status = page.getByRole('status');
     // Watch for either completion state instead of blindly waiting until timeout.
