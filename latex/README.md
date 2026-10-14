@@ -63,3 +63,7 @@ GitHub 的源文件大小限制意味着大 `.data` 文件不能直接 `git add`
 ## 多文件工程与可选宏包资源包修复
 
 Aldine 浏览器工作区导入 ZIP 时优先将 `Everflow-Exam.tex` 识别为入口，避免将子目录中的辅助 `.tex` 错认成主文档。BusyTeX 的固定发行版 `busytex_pipeline.js` 在站点构建时打上小范围兼容补丁：**用户明确选择 Recommended/Extra 时，即使实际 `\usepackage` 写在 `.sty`/`.cls` 中，也不会被上游默认的包名推断逻辑自动裁掉。** CI 检查补丁锚点，如版本更新导致不匹配则拒绝静默发布。新增不含私人原版模板内容的 CJK/TikZ/multirow 合成文档测试，验证大体积资源包实际加载和浏览器编译。
+
+## 原版模板浏览器端兼容性验证
+
+已增加单独的合成测试（中文、TikZ、multirow），验证用户手动选择 Extra 时完整加载 GitHub 静态资源包，并确认 PDF 中文可以提取。另设一次性私有工程验证：通过已有只读凭据从私有仓库下载到 GitHub Actions 临时空间，浏览器本地导入，不将原始 ZIP、LaTeX 日志或生成 PDF 提交、公开展示、上传为 Actions 工件。**本地完整 TeX Live 编译成功，不代表同一模板已通过 BusyTeX WebAssembly 验证。** BusyTeX 界面已改为显示每个编译阶段的 TeX、字体与标准错误日志，以便定位不完整的编译结果。
