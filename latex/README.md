@@ -49,3 +49,11 @@
 **重要边界：**Basic、Recommended、Extra 三组共约 637 MiB，并不等于 TeX Live 的 full 全部包与字体。未覆盖的资源仍可通过 TeXlyre 第三方按需字体/宏包资源服务获取。浏览器不支持执行大部分本机 shell-escape 外部程序，某些工程即使宏包齐全也无法复现本地完整 TeX Live 的输出。
 
 GitHub 的源文件大小限制意味着大 `.data` 文件不能直接 `git add` 提交。当前方案是 **GitHub Actions 临时拉取 → 验证校验和 → 发布到 GitHub Pages 同源静态文件**。不要把完整 TeX Live 多 GB 的 `texmf-dist` 上传 Pages：发布站点有 1 GB 规模限制及每月 100 GB 软带宽上限。GitHub Releases 可以存档更大的分卷，但归档文件不能等同于提供 TeX Live 的逐文件/字体实时 API。为 Everflow 原版模板建议先测试「推荐」档位，若仍缺资源再选择「扩展」或远程按需补全；手机端注意内存和下载成本。
+
+## Everflow 原版母版宏包与字体预检
+
+- Aldine 中文编辑器新增 `检查模板依赖`，支持扫描本地导入 ZIP 的包、字体候选、图片、引用路径、外部程序风险，以及 Everflow 的 Exam/Book/Public 入口。
+- 导入 ZIP 后**自动执行预检**，没有编译器下载行为，也不会上传用户源文件。
+- 预检时读取本站发布的 `texlive-basic/recommended/extra.js.providespackage.txt` 小型目录，为宏包标注归属和建议档位；大型 Recommended/Extra 数据包仍仅在用户选择并编译时才下载。
+- 原版母版 173 文件、54 个直接引用包，详细参见 [原版母版兼容审查](./deploy/EVERFLOW_COMPATIBILITY_AUDIT.md)。
+- 注意：静态包名归属不能保证 XeLaTeX WASM 兼容、中文字体可用、PDF 分页与本地一致；需继续进行完整工程端到端编译验证。
