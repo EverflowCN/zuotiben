@@ -1,4 +1,5 @@
-import { BusyTexRunner, XeLatex } from './busytex-lib.mjs';
+import { BusyTexRunner, XeLatex, isPackageCached } from './busytex-lib.mjs';
+import { prepareBusyTeXCache, getBusyTeXCacheStatus } from '../busytex-cache.mjs';
 
 const el = (id) => document.getElementById(id);
 const source = el('source');
@@ -20,6 +21,7 @@ source.value = [
   '\\end{document}'
 ].join('\n');
 
+const cacheInit = prepareBusyTeXCache().catch(() => null);
 let runner = null;
 let compiler = null;
 let pdfUrl = null;
@@ -28,7 +30,9 @@ function note(message) { status.textContent = message; }
 async function ensureEngine() {
   if (compiler) return;
   const base = '/latex/browser-test/core/busytex';
-  note('正在下载 XeLaTeX WebAssembly 和基础宏包（首次约 120 MB）…');
+  const cache = await cacheInit;
+  const basicCached = await isPackageCached(base + '/texlive-basic.js').catch(() => false);
+  note(cache?.coreCached || basicCached ? '本地缓存已找到，正在重新初始化 XeLaTeX…' : '首次使用需获取约 120 MB 资源，成功后将保存于浏览器缓存…');
   runner = new BusyTexRunner({
     busytexBasePath: base,
     preloadDataPackages: [base + '/texlive-basic.js'],
@@ -37,7 +41,8 @@ async function ensureEngine() {
   });
   await runner.initialize(true);
   compiler = new XeLatex(runner);
-  note('本地编译引擎已加载。');
+  const cacheStatus = await getBusyTeXCacheStatus();
+  note(cacheStatus.coreCached ? '编译器已就绪；引擎资源已持久缓存到本浏览器。' : '本地编译引擎已就绪；缓存写入中或受浏览器存储限制。');
 }
 button.addEventListener('click', async () => {
   if (busy) return;
