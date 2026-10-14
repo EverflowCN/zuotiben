@@ -9,7 +9,10 @@ const { chromium } = require('playwright');
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto('https://zuotiben.top/latex/?local=1', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.getByTestId('browser-compile').waitFor({ timeout: 30000 });
-    const editor = page.getByRole('textbox', { name: 'main.tex' });
+    const editor = page.locator('.code-pane [contenteditable="true"][aria-label="main.tex"]');
+    await page.locator('.editor-shell .toolbar').waitFor();
+    await page.locator('.editor-shell .pdf-pane').waitFor();
+    await page.getByRole('tab', { name: '文件' }).waitFor();
     await editor.fill([
       '\\documentclass[12pt]{article}',
       '\\begin{document}',
@@ -63,7 +66,7 @@ const { chromium } = require('playwright');
     page.on('dialog', (dialog) => dialog.accept());
     await page.locator('input[type="file"][accept*="application/zip"]').setInputFiles(zipFile);
     await page.waitForFunction(() => (document.querySelector('[role=status]')?.textContent || '').includes('ZIP 已导入'), null, { timeout: 30000 });
-    if (!(await editor.inputValue()).includes('这是一份浏览器生成的数学试卷')) {
+    if (!((await editor.textContent()) || '').includes('这是一份浏览器生成的数学试卷')) {
       throw new Error('ZIP import did not restore the Chinese LaTeX project');
     }
     console.log('PASS: Exported full workspace ZIP and successfully re-imported it.');
@@ -107,7 +110,7 @@ const { chromium } = require('playwright');
     }));
     console.log('Cache after page reload:', JSON.stringify(afterReload));
     if (!afterReload.wasm || !afterReload.controlled) throw new Error('Browser cache lost after page reload.');
-    await page.waitForFunction(() => (document.querySelector('textarea[aria-label="main.tex"]')?.value || '').includes('这是一份浏览器生成的数学试卷'), null, { timeout: 30000 });
+    await page.waitForFunction(() => (document.querySelector('.code-pane [contenteditable="true"][aria-label="main.tex"]')?.textContent || '').includes('这是一份浏览器生成的数学试卷'), null, { timeout: 30000 });
     await page.getByTestId('browser-compile').click();
     await page.waitForFunction(() => {
       const v = document.querySelector('[role=status]')?.textContent || '';
