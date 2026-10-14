@@ -12,12 +12,11 @@ const ROOT = '/latex/browser-test/core/busytex/';
 const VERSION_MARKER = 'everflow.busytex.cached.' + BUSYTEX_CACHE_NAME;
 const PERSIST_ATTEMPT = 'everflow.busytex.persist-attempt';
 const RETRY_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
-// The five inputs always used by the basic compilation path. Optional
-// bibliography/config assets are cached on demand by the Service Worker.
-const ASSETS = [
-  'busytex_worker.js', 'busytex.js', 'busytex.wasm',
-  'texlive-basic.js', 'texlive-basic.data',
-];
+// These are the two heavyweight assets (~120 MB in total). JavaScript
+// loaders, fonts, and optional bibliography/config assets are also cached by
+// the Service Worker as needed, but must not cause a false "cache evicted"
+// alarm when the initial compilation did not request them.
+const ASSETS = ['busytex.wasm', 'texlive-basic.data'];
 let registering = null;
 let repairing = null;
 
