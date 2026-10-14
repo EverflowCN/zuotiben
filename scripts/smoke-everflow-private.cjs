@@ -57,6 +57,10 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
     if (!successful) {
       const log = await page.getByTestId('browser-compile-log').textContent().catch(() => '');
       const categories = {
+        compileDeadline: /Compilation timeout|Timeout waiting|timed out|after 180 seconds|after 720 seconds/i.test(log),
+        thrownRuntimeError: Boolean(status?.includes('浏览器编译失败')),
+        texExitNonzero: Boolean(status?.includes('编译失败') && !status?.includes('浏览器编译失败')),
+        emptyLog: log.length === 0 || log === '暂无日志。',
         missingTexAsset: /(?:File .* not found|cannot find file|kpsewhich|not found)/i.test(log),
         fontError: /(?:fontspec error|font .* not found|missing character|cannot find font)/i.test(log),
         memoryError: /(?:out of memory|memory access out of bounds|wasm.*abort|TeX capacity exceeded)/i.test(log),
