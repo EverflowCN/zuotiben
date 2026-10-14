@@ -28,8 +28,15 @@ const { chromium } = require('playwright');
     if (!auditText?.includes('LaTeX 模板依赖检查') || !auditText.includes('普通 LaTeX 工程')) {
       throw new Error('Unexpected local template dependency preflight report: ' + auditText);
     }
+    await page.waitForFunction(() => {
+      const text = document.querySelector('[data-testid="preflight-coverage"]')?.textContent || '';
+      return text.includes('归属核对') || text.includes('未在三套目录') || text.includes('无法加载');
+    }, null, { timeout: 15000 });
+    const coverage = await page.getByTestId('preflight-coverage').textContent();
+    console.log('Package manifest coverage:', coverage?.slice(0, 1300));
+    if (coverage?.includes('无法加载')) throw new Error('Website could not serve required TeX Live package metadata');
     await audit.getByRole('button', { name: '关闭' }).click();
-    console.log('PASS: Offline LaTeX dependency preflight reports source packages locally.');
+    console.log('PASS: Offline LaTeX dependency preflight matched source packages to hosted TeX Live manifests.');
     await page.getByTestId('browser-compile').click();
     const status = page.getByRole('status');
     // Watch for either completion state instead of blindly waiting until timeout.
