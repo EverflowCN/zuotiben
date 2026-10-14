@@ -1,14 +1,14 @@
 name: Load trusted build input
-description: Read a private build dependency into runner temporary storage without publishing it.
+description: Download a private repository's source archive directly into temporary runner storage.
 inputs:
   repository:
     description: Repository in owner/name format.
     required: true
   token:
-    description: Read-only token scoped to the dependency repository.
+    description: Fine-grained PAT scoped to the private repository with Contents Read-only.
     required: true
   ref:
-    description: Branch of the dependency repository.
+    description: Branch of the private repository.
     required: false
     default: main
 outputs:
@@ -18,7 +18,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Load dependency directly into temporary storage
+    - name: Fetch private source via GitHub archive API
       id: stage
       shell: bash
       env:
@@ -28,26 +28,37 @@ runs:
       run: |
         set -euo pipefail
         if [[ ! "$SOURCE_REPOSITORY" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
-          echo '::error::Invalid repository identifier.'
+          echo '::error::BUILD_INPUT_REPOSITORY must have the format owner/repository.'
           exit 1
         fi
-        if [[ -z "$SOURCE_TOKEN" || -z "$SOURCE_REF" ]]; then
-          echo '::error::Missing build input credentials or branch.'
+        if [[ ! "$SOURCE_REF" =~ ^[a-zA-Z0-9_.-]+$ || -z "$SOURCE_TOKEN" ]]; then
+          echo '::error::Invalid branch name or missing token.'
           exit 1
         fi
         dest="$RUNNER_TEMP/build-input-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-        if [[ -e "$dest" ]]; then
-          echo '::error::Temporary source destination already exists.'
+        archive="$RUNNER_TEMP/private-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tar.gz"
+        test ! -e "$dest" || { echo '::error::Temporary source destination already exists.'; exit 1; }
+        trap 'rm -f -- "$archive"' EXIT
+        # This API explicitly supports fine-grained PATs with Contents: read.
+        # Do not print the token, archive, response body, or private source paths.
+        code="$(curl --silent --show-error --location \
+          --retry 2 --retry-delay 1 \
+          --output "$archive" --write-out '%{http_code}' \
+          --header 'Accept: application/vnd.github+json' \
+          --header "Authorization: Bearer $SOURCE_TOKEN" \
+          --header 'X-GitHub-Api-Version: 2022-11-28' \
+          "https://api.github.com/repos/$SOURCE_REPOSITORY/tarball/$SOURCE_REF")"
+        if [[ "$code" != '200' ]]; then
+          case "$code" in
+            401) echo '::error::GitHub refused the credential (HTTP 401). Update BUILD_INPUT_READ_TOKEN.' ;;
+            403) echo '::error::GitHub denied access (HTTP 403). Ensure the fine-grained token selects the PRIVATE repo and has Repository permissions > Contents > Read-only.' ;;
+            404) echo '::error::GitHub could not access the private repository (HTTP 404). Check BUILD_INPUT_REPOSITORY and the token repository selection.' ;;
+            *) echo "::error::GitHub archive request failed (HTTP $code)." ;;
+          esac
           exit 1
         fi
-        # Configure auth only for this git process, never in a URL or .git/config.
-        authorization="$(printf 'x-access-token:%s' "$SOURCE_TOKEN" | base64 | tr -d '\n')"
-        GIT_CONFIG_COUNT=1 \
-          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
-          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $authorization" \
-          git clone --quiet --depth 1 --single-branch --branch "$SOURCE_REF" \
-          "https://github.com/$SOURCE_REPOSITORY.git" "$dest"
-        unset authorization
-        chmod 700 "$dest"
+        tar -tzf "$archive" >/dev/null || { echo '::error::Private archive verification failed.'; exit 1; }
+        mkdir -m 700 "$dest"
+        tar -xzf "$archive" --strip-components=1 -C "$dest"
         printf 'directory=%s\n' "$dest" >> "$GITHUB_OUTPUT"
-        echo 'Build input is available in runner temporary storage.'
+        echo 'Private dependency archive fetched into ephemeral runner storage (not deployed).'
