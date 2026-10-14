@@ -57,3 +57,5 @@ GitHub 的源文件大小限制意味着大 `.data` 文件不能直接 `git add`
 - 预检时读取本站发布的 `texlive-basic/recommended/extra.js.providespackage.txt` 小型目录，为宏包标注归属和建议档位；大型 Recommended/Extra 数据包仍仅在用户选择并编译时才下载。
 - 原版母版 173 文件、54 个直接引用包，详细参见 [原版母版兼容审查](./deploy/EVERFLOW_COMPATIBILITY_AUDIT.md)。
 - 注意：静态包名归属不能保证 XeLaTeX WASM 兼容、中文字体可用、PDF 分页与本地一致；需继续进行完整工程端到端编译验证。
+
+**2026-10-15 实测清单补充：**对先前上传的 173 文件 Everflow 原版母版进行静态扫描后，三个本地资源档位中的宏包索引识别为 Basic 20、Recommended 11、Extra 15、工程内 2、索引暂未直接列出 6（`bbding`、`ctex`、`newtxmath`、`xeCJK`、`xeCJKfntef`、`zhnumber`）。用户打开「检查模板依赖」看到的**资源建议来自实际 TeX Live 文件索引**，并非仅按包名猜测。未列出不等于编译一定失败，仍保留按需下载宏包的选项。上述结果并非原版母版 BusyTeX WASM 编译通过的证明。
