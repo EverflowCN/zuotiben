@@ -213,6 +213,31 @@ const { chromium } = require('playwright');
     const coverageSummary = await page.getByTestId('preflight-coverage').textContent();
     if (coverageSummary?.includes('无法加载')) throw new Error('GitHub hosted file inventory was not available');
     console.log('PASS: ZIP auto-preflight recognizes Everflow and classifies TeX Live file/package assets.');
+    // Import a completely SYNTHETIC multi-entry Everflow-like ZIP (not the
+    // user's private template). Ensure its real Exam entrypoint is selected,
+    // not an unrelated helper file or the Book/Public alternate entrypoint.
+    const fixture = await page.evaluate(async () => {
+      const zip = await import('/latex/browser-test/fflate.mjs');
+      const encoder = new TextEncoder();
+      const items = {
+        '00-user-config/settings.tex': encoder.encode('% settings fixture\n'),
+        'questions/first.tex': encoder.encode('A synthetic question.'),
+        'Everflow-Book.tex': encoder.encode('\\documentclass{article}\n\\begin{document}book\\end{document}'),
+        'Everflow-Public.tex': encoder.encode('\\documentclass{article}\n\\begin{document}public\\end{document}'),
+        'Everflow-Exam.tex': encoder.encode('\\documentclass{article}\n\\input{questions/first}\n\\begin{document}exam\\end{document}')
+      };
+      return Array.from(zip.zipSync(items, { level: 0 }));
+    });
+    await page.locator('input[type="file"][accept*="application/zip"]').setInputFiles({
+      name: 'everflow-fixture.zip', mimeType: 'application/zip', buffer: Buffer.from(fixture)
+    });
+    await page.waitForFunction(() => (document.querySelector('.browser-aldine__status-text')?.textContent || '').includes('ZIP 已导入'), null, { timeout: 30000 });
+    const root = await page.getByRole('combobox', { name: '主文档' }).inputValue();
+    console.log('Synthetic Everflow ZIP chosen root:', root);
+    if (root !== 'Everflow-Exam.tex') throw Error('ZIP root heuristic did not select Everflow-Exam.tex');
+    await page.getByTestId('preflight-panel').waitFor({ timeout: 20000 });
+    console.log('PASS: ZIP import selects Everflow-Exam.tex and automatically opens dependency preflight.');
+
     if (errors.length) console.log('Nonfatal browser console errors:', errors.slice(0, 8));
     console.log('PASS: Real Aldine fork UI called BusyTeX WASM and returned a PDF.');
   } finally {
