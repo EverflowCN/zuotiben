@@ -4,9 +4,12 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # Keep the embedded source aligned with edits made in EverflowCN/aldine.
+  schedule:
+    - cron: "17 2,14 * * *"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,16 +26,52 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Node for Aldine
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Mirror all files from EverflowCN/aldine to /latex/aldine
+        run: bash scripts/sync-aldine.sh
+
+      - name: Build real Aldine React frontend for /latex/
+        run: |
+          cd latex/aldine
+          npm ci --no-audit --no-fund
+          npm run build -w apps/web
+          cd ../..
+          node scripts/aldine-build-preview.mjs
+          rm -rf latex/aldine/node_modules latex/aldine/apps/web/dist
+          find latex/aldine -type d -name node_modules -prune -exec rm -rf {} +
+
+      - name: Commit fork source and compiled preview into website repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A latex/aldine latex/index.html latex/assets latex/.aldine-source-rev
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(latex): sync Aldine fork and publish updated preview"
+            git push origin HEAD:main
+          else
+            echo "Aldine source and preview already up to date"
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
       - name: Vendor local PDF libraries
         run: bash scripts/install-pdf-vendor.sh
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
