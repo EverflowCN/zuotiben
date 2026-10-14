@@ -41,7 +41,7 @@ jobs:
         run: |
           cd latex/aldine
           npm ci --no-audit --no-fund
-          npm test -w apps/web -- latex-preflight
+          npm test -w apps/web -- latex-
           npm run typecheck -w apps/web
           npm run build -w apps/web
           cd ../..
