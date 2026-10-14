@@ -1,0 +1,53 @@
+node_modules/
+dist/
+.data/
+.data-e2e/
+.data-e2e-gitlab/
+.data-e2e-gitea/
+.data-e2e-prov/
+.data-auth/
+.data-base-path/
+.data-base-path-auth/
+.data-remote/
+.data-shots/
+.data-demo/
+.secrets/
+.secrets-e2e/
+.secrets-e2e-prov/
+.secrets-auth/
+.secrets-base-path/
+.secrets-base-path-auth/
+.secrets-remote/
+.secrets-pb/
+.secrets-shots/
+.secrets-demo/
+.cache/
+.cache-shots/
+*.log
+.DS_Store
+test-results/
+e2e/test-results/
+e2e/playwright-report/
+e2e/.auth/
+.data-c2/
+.secrets-c2/
+apps/web/dist/
+apps/server/dist/
+
+# local runtime config / secrets
+.env
+
+# maintainer-local launch playbook (not for the public repo)
+LAUNCH.md
+
+# local Claude Code config
+.claude/
+
+# maintainer SSH pubkey copied in by aldine-ops tooling
+deploy/demo/*.pub
+
+# local tooling
+.entire/
+
+# built MCP App viewer (npm run build:viewer -w apps/server)
+apps/server/assets/pdf-viewer.html

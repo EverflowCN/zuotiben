@@ -1,0 +1,462 @@
+import { withBase } from './basePath';
+
+/** email is null for accounts whose provider shared none (ORCID); orcid is the iD when signed in that way. */
+export interface AuthUser { id: string; email: string | null; name: string; provider?: string; orcid?: string }
+export interface OAuthProviderInfo { id: string; label: string }
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  rootFile: string;
+  engine: string;
+  stopOnFirstError?: boolean;
+  createdAt: string;
+  ownerId?: string;
+  ownerName?: string;
+  isOwner?: boolean;
+  /** Owner or invited collaborator — false for someone here via a share link.
+   *  Gates the affordances the server restricts to members. */
+  isMember?: boolean;
+  /** `collaborators` is empty unless you are the owner (the server does not
+   *  disclose other people's invite list). */
+  share?: { mode: 'private' | 'link'; collaborators: string[] } | null;
+  zotero: { libraryPrefix: string; collectionKey?: string; bibFile: string; lastSyncedAt?: string; username?: string } | null;
+  remote?: RemoteLink | null;
+  /** Server-side push after every autosave commit on main (owner-only toggle). */
+  autopush?: boolean;
+  /** Set when GitLab provisioning was configured but failed at create time:
+   *  the project exists locally only until a retry succeeds. */
+  remotePending?: { provider: 'gitlab'; namespace: string } | null;
+}
+
+export type RemoteProviderId = 'github' | 'gitlab' | 'gitea';
+/** A provider the server offers (honours its REMOTE_PROVIDERS allowlist). */
+/** `provisioning`: new projects are also created on this host (GitLab with a service token). */
+export interface RemoteInfo { id: RemoteProviderId; label: string; oauth: boolean; selfHosted: boolean; baseUrlRequired?: boolean; changeRequestLabel: 'pull request' | 'merge request'; provisioning: boolean }
+/** `fullName` is an opaque host path: `owner/repo` on GitHub, `group/sub/project` on GitLab. */
+export interface RemoteRepo { fullName: string; name: string; owner: string; private: boolean; defaultBranch: string; cloneUrl: string; updatedAt: string }
+/** `baseUrl` is set for a self-hosted instance connected with a token; `baseUrlRequired` when the host has no canonical instance. */
+export interface RemoteStatus { connected: boolean; login?: string; baseUrl?: string; oauth: boolean; selfHosted: boolean; baseUrlRequired?: boolean }
+/** `createdByAldine` marks a repository Aldine provisioned (deleted with the
+ *  project); an imported one is never deleted by the server. */
+/** `baseUrl` is the instance the link was made on (self-hosted GitLab, every Gitea/Forgejo instance). */
+export interface RemoteLink { provider: RemoteProviderId; fullName: string; owner: string; repo: string; remoteBranch: string; cloneUrl: string; baseUrl?: string; connectedBy?: string; createdByAldine?: boolean }
+/** A group under the configured GitLab root; `fullPath` is what create/import send as `namespace`. */
+export interface GitlabNamespace { fullPath: string; name: string }
+/** Server-wide counts for the admin page. Metadata only: no project content. */
+export interface AdminStats {
+  users: { total: number; active7d: number; active30d: number; onlineNow: number };
+  projects: { total: number; trashed: number };
+  collab: { documents: number; connections: number };
+  compile: { month: string; seconds: number; quotaSeconds: number; metering: boolean };
+  admins: string[];
+}
+export interface AdminUserRow {
+  id: string;
+  email: string | null;
+  name: string;
+  provider?: string;
+  createdAt: string;
+  lastSeenAt?: string;
+  admin: boolean;
+  projects: number;
+  compileSecondsThisMonth: number;
+}
+
+export interface BranchInfo { name: string; head: string; message: string; date: string }
+export interface ProjectDetail extends ProjectSummary { branches: BranchInfo[] }
+export interface TreeEntry { path: string; type: 'file' | 'dir'; size?: number; binary?: boolean }
+export interface CompileError { type: 'error' | 'warning' | 'typesetting'; line: number | null; message: string }
+export interface CompileResult {
+  ok: boolean;
+  timedOut?: boolean;
+  pdf: string | null;
+  pdfUrl: string | null;
+  /** The run failed and pdfUrl is the last successful one, unchanged. */
+  pdfStale?: boolean;
+  /** The run whose PDF pdfUrl serves; sent back with SyncTeX lookups. */
+  compileId?: number;
+  /** This run; never reused, so it orders runs. */
+  runId?: number;
+  synctex?: string | null;
+  log: string;
+  errors: CompileError[];
+  durationMs: number;
+  error?: string;
+}
+export interface CompileStatus {
+  /** A typeset for this branch is in flight on the server. */
+  running: boolean;
+  /** The branch's last completed run, or null (restart, or another node). */
+  result: CompileResult | null;
+  finishedAt: number | null;
+  /** That run followed agent edits. */
+  agent: boolean;
+}
+export interface BibEntry { key: string; type: string; author?: string; authorLabel?: string; title?: string; year?: string; journal?: string; file: string }
+export interface LogEntry { hash: string; date: string; message: string; author: string }
+/** Claude's commits on a branch past the caller's review mark. `commitCount`
+ *  and `fileCount` are a floor when `truncated`; `commits` is capped. */
+export interface AgentActivity {
+  since: { head: string; at: string } | null;
+  head: string;
+  commits: Array<{ hash: string; date: string; message: string; files: string[] }>;
+  commitCount: number;
+  fileCount: number;
+  truncated: boolean;
+  /** An agent session is live on the branch right now (server-side, so a fresh page knows before awareness syncs). */
+  sessionActive: boolean;
+}
+export interface PluginManifest { id: string; name: string; description?: string; version: string; entry: string; icon?: string; enabled?: boolean }
+/** Token metadata only — the `aldn_…` value itself is returned once, on create. */
+export interface AccessToken {
+  id: string;
+  name: string;
+  projectIds: string[] | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  /** Set when the token was minted through the OAuth Connect flow — the
+   *  connector's display name; null for hand-made tokens. */
+  clientName: string | null;
+}
+/** What the consent page shows about the app asking for access. */
+export interface OAuthClientInfo {
+  name: string;
+  /** Where the client's identity comes from: the metadata document's host
+   *  (CIMD) or the redirect host (dynamic registration). */
+  host: string;
+  redirectHost: string;
+  /** Every registered redirect is a loopback address — the request could
+   *  have been started by anything running on the user's machine. */
+  loopbackOnly: boolean;
+  kind: 'cimd' | 'dcr';
+}
+export interface CommentReply { author: string; body: string; createdAt: string }
+export interface Comment {
+  id: string;
+  branch: string;
+  file: string;
+  anchor: { from: number; to: number; quote: string };
+  author: string;
+  body: string;
+  suggestion?: string;
+  resolved: boolean;
+  createdAt: string;
+  replies: CommentReply[];
+}
+
+/** Carries the HTTP status so callers can tell a body-limit 413 (proxy or
+ *  framework, no JSON `error` text worth quoting) from a route's own message. */
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) { super(message); }
+}
+
+/** OAuth routes answer in RFC 6749 shape (`error` is a code such as
+ *  `invalid_client`, `error_description` the sentence); the description is
+ *  the message and the code stays available for branching. */
+export class OAuthApiError extends ApiError {
+  constructor(message: string, status: number, public readonly code: string) { super(message, status); }
+}
+
+async function oauthReq<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: init?.body ? { 'content-type': 'application/json' } : undefined,
+    ...init,
+  });
+  if (!res.ok) {
+    let code = `http_${res.status}`;
+    let msg = `HTTP ${res.status}`;
+    try {
+      const body = (await res.json()) as { error?: string; error_description?: string };
+      if (body.error_description) { msg = body.error_description; code = body.error || code; }
+      else if (body.error) msg = body.error;
+    } catch { /* keep */ }
+    throw new OAuthApiError(msg, res.status, code);
+  }
+  return res.json() as Promise<T>;
+}
+
+/** The host refused the stored token (expired or revoked): the dialogs show
+ *  the connect form again instead of a generic error. */
+export class RemoteTokenError extends ApiError {
+  constructor(message: string, public readonly provider: RemoteProviderId) { super(message, 401); }
+}
+
+async function req<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(withBase(url), {
+    headers: init?.body && !(init.body instanceof FormData) ? { 'content-type': 'application/json' } : undefined,
+    ...init,
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { msg = ((await res.json()) as { error?: string }).error || msg; } catch { /* keep */ }
+    throw new ApiError(msg, res.status);
+  }
+  return res.json() as Promise<T>;
+}
+
+export type TemplateCategory = 'Journals' | 'Conferences' | 'Theses' | 'Slides' | 'General';
+export interface TemplateInfo {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  category?: TemplateCategory;
+  documentClass?: string;
+  license?: string;
+  licenseUrl?: string;
+  /** Upstream the template's files were taken from (`source` in template.json). */
+  origin?: { url: string; version?: string };
+  /** Which listing the template comes from; `label` is the repository label for `repo`. */
+  source?: { kind: 'builtin' | 'repo' | 'venue' | 'kit'; label?: string };
+  /** Fetched-kit venues: where the official kit is downloaded from at create time. */
+  kit?: { host: string; url: string; homepage?: string; termsUrl?: string };
+}
+
+/** One configured template repository (TEMPLATE_REPOS). `ok: false` with
+ *  `available: true` is stale: the previous checkout is still listed. */
+export interface TemplateRepoState {
+  id: string;
+  label: string;
+  ok: boolean;
+  available: boolean;
+  head?: string;
+  syncedAt?: string;
+  error?: string;
+}
+
+/** How the venue kit went while the project was being created. */
+export interface VenueKitStatus {
+  id: string;
+  name: string;
+  host: string;
+  url: string;
+  ok: boolean;
+  reason?: string;
+}
+
+/** POST /api/projects: a fetched-venue project also reports its kit.
+ *  `remoteError` is set when GitLab provisioning was on but failed; the
+ *  project was still created (see `remotePending`). */
+export interface CreatedProject extends ProjectSummary {
+  venueKit?: VenueKitStatus;
+  remoteError?: string;
+}
+
+/** What /api/projects/import decided while placing the archive. */
+export interface ImportedProject extends ProjectSummary {
+  import: { engine: string; engineReason: string | null; transcoded: string[] };
+  remoteError?: string;
+}
+export interface CompilerInfo { ok: boolean; texlive: { release: string; scheme: string } }
+
+export const api = {
+  listProjects: () => req<ProjectSummary[]>('/api/projects'),
+  /** `namespace` is the GitLab group to provision into; only meaningful when
+   *  the server has provisioning configured (it ignores it otherwise). */
+  createProject: (name: string, files?: Record<string, string>, template?: string, namespace?: string) =>
+    req<CreatedProject>('/api/projects', { method: 'POST', body: JSON.stringify({ name, files, template, namespace }) }),
+  templates: () => req<TemplateInfo[]>('/api/templates'),
+  templateRepos: () => req<{ repos: TemplateRepoState[] }>('/api/templates/repos'),
+  refreshTemplateRepos: () => req<{ repos: TemplateRepoState[] }>('/api/templates/repos/refresh', { method: 'POST' }),
+  /** Multipart so the browser streams the File itself; the JSON + base64
+   *  shape stays on the server for API clients. */
+  /** Direct link (not a fetch): the browser saves the branch's source as a ZIP. */
+  archiveUrl: (id: string, branch: string) => withBase(`/api/projects/${id}/archive?branch=${encodeURIComponent(branch)}`),
+  importZip: (name: string, zip: File, namespace?: string) => {
+    const form = new FormData();
+    form.append('name', name);
+    if (namespace) form.append('namespace', namespace);
+    form.append('zip', zip, zip.name);
+    return req<ImportedProject>('/api/projects/import', { method: 'POST', body: form });
+  },
+  compilerInfo: () => req<CompilerInfo>('/api/compiler'),
+  getProject: (id: string) => req<ProjectDetail>(`/api/projects/${id}`),
+  patchProject: (id: string, patch: Partial<Pick<ProjectSummary, 'name' | 'rootFile' | 'engine' | 'stopOnFirstError'>>) =>
+    req<ProjectSummary>(`/api/projects/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  deleteProject: (id: string, permanent = false) => req<{ ok: boolean }>(`/api/projects/${id}${permanent ? '?permanent=1' : ''}`, { method: 'DELETE' }),
+  restoreProject: (id: string) => req<{ ok: boolean }>(`/api/projects/${id}/restore`, { method: 'POST' }),
+  claimProject: (id: string) => req<ProjectSummary>(`/api/projects/${id}/claim`, { method: 'POST' }),
+  listTrash: () => req<{ id: string; name: string; deletedAt: string }[]>('/api/projects/trash'),
+
+  listFiles: (id: string, branch: string) =>
+    req<{ files: TreeEntry[]; contentVersion: number }>(`/api/projects/${id}/files?branch=${encodeURIComponent(branch)}`).then((r) => r.files),
+  // GET /file answers with `x-aldine-content-version` (the branch version —
+  // pass it back as `baseVersion`) and `x-aldine-file-version` (when this
+  // file last changed). PUT with `baseVersion` is refused with
+  // `409 { error: 'version_conflict', currentVersion, fileVersion }` only when
+  // THIS file changed after that version, or when the version is newer than
+  // the branch knows; writes to other files never conflict.
+  readFile: async (id: string, branch: string, path: string) => {
+    const res = await fetch(withBase(`/api/projects/${id}/file?branch=${encodeURIComponent(branch)}&path=${encodeURIComponent(path)}`));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.text();
+  },
+  writeFile: (id: string, branch: string, path: string, content: string, encoding: 'utf8' | 'base64' = 'utf8', opts: { createOnly?: boolean; baseVersion?: number } = {}) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/file`, { method: 'PUT', body: JSON.stringify({ branch, path, content, encoding, ...(opts.createOnly ? { createOnly: true } : {}), ...(opts.baseVersion !== undefined ? { baseVersion: opts.baseVersion } : {}) }) }),
+  createFile: (id: string, branch: string, path: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/file`, { method: 'PUT', body: JSON.stringify({ branch, path, content: '', createOnly: true }) }),
+  deleteFile: (id: string, branch: string, path: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/file?branch=${encodeURIComponent(branch)}&path=${encodeURIComponent(path)}`, { method: 'DELETE' }),
+  renameFile: (id: string, branch: string, from: string, to: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/file/rename`, { method: 'POST', body: JSON.stringify({ branch, from, to }) }),
+
+  compile: (id: string, branch: string, reason?: 'agent') =>
+    req<CompileResult>(`/api/projects/${id}/compile`, { method: 'POST', body: JSON.stringify({ branch, ...(reason ? { reason } : {}) }) }),
+  compileStatus: (id: string, branch: string) =>
+    req<CompileStatus>(`/api/projects/${id}/compile-status?branch=${encodeURIComponent(branch)}`),
+  synctex: (id: string, branch: string, payload: Record<string, unknown>) =>
+    req<{ ok: boolean; records: Array<Record<string, number | string>> }>(`/api/projects/${id}/synctex`, { method: 'POST', body: JSON.stringify({ branch, ...payload }) }),
+  bib: (id: string, branch: string) => req<BibEntry[]>(`/api/projects/${id}/bib?branch=${encodeURIComponent(branch)}`),
+  wordcount: (id: string, branch: string) =>
+    req<{ rootFile: string; total: number; files: Record<string, number> }>(`/api/projects/${id}/wordcount?branch=${encodeURIComponent(branch)}`),
+  labels: (id: string, branch: string) => req<Array<{ label: string; file: string }>>(`/api/projects/${id}/labels?branch=${encodeURIComponent(branch)}`),
+
+  branches: (id: string) => req<BranchInfo[]>(`/api/projects/${id}/branches`),
+  createBranch: (id: string, name: string, from: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/branches`, { method: 'POST', body: JSON.stringify({ name, from }) }),
+  deleteBranch: (id: string, name: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/branches?name=${encodeURIComponent(name)}`, { method: 'DELETE' }),
+  unmergedCommits: (id: string, name: string) =>
+    req<{ count: number; newest: string | null }>(`/api/projects/${id}/branches/unmerged?name=${encodeURIComponent(name)}`),
+  commit: (id: string, branch: string, message: string, author?: string) =>
+    req<{ committed: boolean; hash?: string }>(`/api/projects/${id}/commit`, { method: 'POST', body: JSON.stringify({ branch, message, author }) }),
+  log: (id: string, branch: string) => req<LogEntry[]>(`/api/projects/${id}/log?branch=${encodeURIComponent(branch)}`),
+  commitDiff: (id: string, hash: string) => req<{ patch: string; stat: string }>(`/api/projects/${id}/commit/${hash}/diff`),
+  revertCommits: (id: string, branch: string, hashes: string[], message?: string, author?: string) =>
+    req<{ ok: boolean; hash?: string; author?: string | null }>(`/api/projects/${id}/revert`, { method: 'POST', body: JSON.stringify({ branch, hashes, message, author }) }),
+  // The mark travels in the query only without accounts; with a signed-in
+  // user the server uses its own row and ignores these.
+  agentActivity: (id: string, branch: string, mark?: { head: string; at: string } | null) =>
+    req<AgentActivity>(`/api/projects/${id}/agent-activity?branch=${encodeURIComponent(branch)}`
+      + (mark ? `&sinceHead=${encodeURIComponent(mark.head)}&sinceAt=${encodeURIComponent(mark.at)}` : '')),
+  markAgentActivitySeen: (id: string, branch: string, head: string, kind: 'prompted' | 'acknowledged') =>
+    req<{ ok: boolean; stored: boolean; acknowledged?: boolean }>(`/api/projects/${id}/agent-activity/seen`,
+      { method: 'POST', body: JSON.stringify({ branch, head, kind }) }),
+
+  // Remote git hosts (GitHub, GitLab). Account routes name the provider; project
+  // routes take it from the stored link, so the web never sends it for sync.
+  remotes: () => req<RemoteInfo[]>('/api/remotes'),
+  remoteStatus: (p: RemoteProviderId) => req<RemoteStatus>(`/api/remotes/${p}/status`),
+  remoteConnect: (p: RemoteProviderId, token: string, baseUrl?: string) =>
+    req<{ connected: boolean; login: string; baseUrl?: string }>(`/api/remotes/${p}/connect`, { method: 'POST', body: JSON.stringify({ token, baseUrl }) }),
+  remoteDisconnect: (p: RemoteProviderId) => req<{ ok: boolean }>(`/api/remotes/${p}/disconnect`, { method: 'POST' }),
+  remoteRepos: async (p: RemoteProviderId): Promise<RemoteRepo[]> => {
+    const res = await fetch(withBase(`/api/remotes/${p}/repos`));
+    if (res.ok) return res.json() as Promise<RemoteRepo[]>;
+    const body = await res.json().catch(() => ({})) as { error?: string; reason?: string };
+    if (res.status === 401 && body.reason === 'token-invalid') throw new RemoteTokenError(body.error || 'The stored token was rejected', p);
+    throw new ApiError(body.error || `HTTP ${res.status}`, res.status);
+  },
+  remoteImport: (p: RemoteProviderId, fullName: string) => req<ProjectSummary>(`/api/remotes/${p}/import`, { method: 'POST', body: JSON.stringify({ fullName }) }),
+  projectRemoteStatus: (id: string) => req<RemoteLink & { linked: boolean; ahead: number; behind: number }>(`/api/projects/${id}/remote/status`),
+  remoteLink: (id: string, provider: RemoteProviderId, name?: string, priv?: boolean, namespace?: string) =>
+    req<{ ok: boolean; remote: RemoteLink }>(`/api/projects/${id}/remote/link`, { method: 'POST', body: JSON.stringify({ provider, name, private: priv, namespace }) }),
+  remotePush: (id: string, message?: string, auto?: boolean) => req<{ ok: boolean; skipped?: boolean }>(`/api/projects/${id}/remote/push`, { method: 'POST', body: JSON.stringify({ message, auto }) }),
+  // conflict-aware: returns { conflict, conflicts } on a 409 instead of throwing
+  remotePull: async (id: string): Promise<{ ok?: boolean; conflict?: boolean; conflicts?: string[] }> => {
+    const res = await fetch(withBase(`/api/projects/${id}/remote/pull`), { method: 'POST' });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 409) return { conflict: true, conflicts: body.conflicts || [] };
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    return { ok: true };
+  },
+  remoteResetToRemote: (id: string) => req<{ ok: boolean }>(`/api/projects/${id}/remote/reset-to-remote`, { method: 'POST' }),
+  remoteBranches: (id: string) => req<{ branches: string[]; current: string; default: string }>(`/api/projects/${id}/remote/branches`),
+  remoteSwitchBranch: (id: string, branch: string) => req<{ ok: boolean; branch: string }>(`/api/projects/${id}/remote/switch-branch`, { method: 'POST', body: JSON.stringify({ branch }) }),
+  remoteCreateBranch: (id: string, name: string) => req<{ ok: boolean; branch: string }>(`/api/projects/${id}/remote/create-branch`, { method: 'POST', body: JSON.stringify({ name }) }),
+  remoteChangeRequest: (id: string, title?: string) => req<{ url: string; number: number }>(`/api/projects/${id}/remote/change-request`, { method: 'POST', body: JSON.stringify({ title }) }),
+  remoteAutopush: (id: string, enabled: boolean) => req<{ ok: boolean; autopush: boolean }>(`/api/projects/${id}/remote/autopush`, { method: 'POST', body: JSON.stringify({ enabled }) }),
+  /** Re-runs the provisioning that failed at create time (no provider in the
+   *  body: the server takes the namespace from `remotePending`). */
+  remoteRetryProvision: (id: string) => req<{ ok: boolean; remote: RemoteLink }>(`/api/projects/${id}/remote/link`, { method: 'POST', body: JSON.stringify({}) }),
+
+  // GitLab group provisioning. 404 means the server has none configured;
+  // callers hide the picker rather than report it.
+  gitlabNamespaces: () => req<{ root: string; namespaces: GitlabNamespace[] }>('/api/remotes/gitlab/namespaces'),
+  gitlabCreateSubgroup: (parentPath: string | undefined, name: string) =>
+    req<GitlabNamespace>('/api/remotes/gitlab/subgroups', { method: 'POST', body: JSON.stringify({ parentPath, name }) }),
+  merge: (id: string, from: string, into: string, author?: string) =>
+    req<{ ok: boolean; conflicts?: string[]; message?: string }>(`/api/projects/${id}/merge`, { method: 'POST', body: JSON.stringify({ from, into, author }) }),
+
+  zoteroValidate: (apiKey: string) =>
+    req<{ userID: number; username?: string; groups: Array<{ id: number; name: string }> }>('/api/zotero/validate', { method: 'POST', body: JSON.stringify({ apiKey }) }),
+  zoteroCollections: (apiKey: string, libraryPrefix: string) =>
+    req<Array<{ key: string; name: string; parent: string | false }>>('/api/zotero/collections', { method: 'POST', body: JSON.stringify({ apiKey, libraryPrefix }) }),
+  zoteroLink: (id: string, body: { apiKey: string; libraryPrefix: string; collectionKey?: string; bibFile?: string }) =>
+    req<{ ok: boolean; itemCount?: number; bibFile?: string }>(`/api/projects/${id}/zotero/link`, { method: 'POST', body: JSON.stringify(body) }),
+  zoteroSync: (id: string, branch: string, force = false) =>
+    req<{ synced: boolean; unchanged?: boolean; itemCount?: number; bibFile?: string }>(`/api/projects/${id}/zotero/sync`, { method: 'POST', body: JSON.stringify({ branch, force }) }),
+  zoteroUnlink: (id: string) => req<{ ok: boolean }>(`/api/projects/${id}/zotero`, { method: 'DELETE' }),
+
+  plugins: () => req<PluginManifest[]>('/api/plugins'),
+
+  comments: (id: string, branch: string) => req<Comment[]>(`/api/projects/${id}/comments?branch=${encodeURIComponent(branch)}`),
+  addComment: (id: string, body: { branch: string; file: string; anchor: { from: number; to: number; quote: string }; body: string; suggestion?: string; author?: string }) =>
+    req<Comment>(`/api/projects/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+  replyComment: (id: string, cid: string, body: string, author?: string) =>
+    req<Comment>(`/api/projects/${id}/comments/${cid}/reply`, { method: 'POST', body: JSON.stringify({ body, author }) }),
+  resolveComment: (id: string, cid: string, resolved: boolean) =>
+    req<Comment>(`/api/projects/${id}/comments/${cid}/resolve`, { method: 'POST', body: JSON.stringify({ resolved }) }),
+  acceptSuggestion: (id: string, cid: string, branch: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/comments/${cid}/accept`, { method: 'POST', body: JSON.stringify({ branch }) }),
+  deleteComment: (id: string, cid: string) =>
+    req<{ ok: boolean }>(`/api/projects/${id}/comments/${cid}`, { method: 'DELETE' }),
+
+  me: () => req<{ authEnabled: boolean; passwordAuth: boolean; user: AuthUser | null; providers: OAuthProviderInfo[]; admin: boolean; mcpEnabled?: boolean; publicUrl?: string | null }>('/api/auth/me'),
+  adminStats: () => req<AdminStats>('/api/admin/stats'),
+  adminUsers: () => req<AdminUserRow[]>('/api/admin/users'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    req<{ ok: boolean }>('/api/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
+  resetRequest: (email: string) =>
+    req<{ ok: boolean; token?: string }>('/api/auth/reset-request', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, newPassword: string) =>
+    req<{ ok: boolean }>('/api/auth/reset', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+  login: (email: string, password: string) =>
+    req<{ user: AuthUser }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  register: (email: string, password: string, name?: string) =>
+    req<{ user: AuthUser }>('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
+  logout: () => req<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }),
+  listTokens: () => req<AccessToken[]>('/api/tokens'),
+  createToken: (name: string, projectIds?: string[], expiresAt?: string) =>
+    req<AccessToken & { token: string }>('/api/tokens', { method: 'POST', body: JSON.stringify({ name, projectIds, expiresAt }) }),
+  revokeToken: (tokenId: string) => req<{ ok: boolean }>(`/api/tokens/${tokenId}`, { method: 'DELETE' }),
+  // OAuth consent (cookie session only — access tokens are refused here)
+  // The whole authorize request goes along, so a defect the consent POST
+  // would refuse (no PKCE challenge) is refused before the card renders.
+  getOAuthClient: (authorizeParams: Record<string, string>) =>
+    oauthReq<OAuthClientInfo>(`/api/oauth/client?${new URLSearchParams(authorizeParams)}`),
+  postOAuthConsent: (body: { [param: string]: string | string[] | null | undefined; decision: 'allow' | 'deny'; projectIds: string[] | null }) =>
+    oauthReq<{ redirectTo: string }>('/api/oauth/consent', { method: 'POST', body: JSON.stringify(body) }),
+  share: (id: string, mode: 'private' | 'link', collaborators: string[]) =>
+    req<ProjectSummary>(`/api/projects/${id}/share`, { method: 'POST', body: JSON.stringify({ mode, collaborators }) }),
+};
+
+// No violet: #a78bfa (and the violet family generally) is reserved for the
+// agent presence identity — a human with agent-violet breaks the semantics.
+const PRESENCE_PALETTE = ['#e8554d', '#f0a202', '#2e933c', '#2e62e9', '#d63384', '#0aa2c0'];
+
+/** Local identity for presence + commit attribution — the fallback without
+ *  accounts; a signed-in person is `accountIdentity(user)`. */
+export function localUser(): { name: string; color: string } {
+  let name = localStorage.getItem('aldine.name');
+  if (!name) {
+    name = `Writer ${Math.floor(100 + Math.random() * 900)}`;
+    localStorage.setItem('aldine.name', name);
+  }
+  let color = localStorage.getItem('aldine.color');
+  if (!color || !PRESENCE_PALETTE.includes(color)) {
+    // re-roll colors picked before the violet reservation (e.g. legacy #8f3ec9)
+    color = PRESENCE_PALETTE[Math.floor(Math.random() * PRESENCE_PALETTE.length)];
+    localStorage.setItem('aldine.color', color);
+  }
+  return { name, color };
+}
+
+/** Presence identity of a signed-in person: the account name, with a colour
+ *  that is the same in every browser they open the project from. */
+export function accountIdentity(user: { id: string; name: string; email?: string | null }): { name: string; color: string } {
+  let h = 0;
+  for (const ch of user.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return { name: user.name || user.email || 'Signed in', color: PRESENCE_PALETTE[h % PRESENCE_PALETTE.length] };
+}

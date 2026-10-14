@@ -1,0 +1,93 @@
+import { WebSocketServer } from 'ws';
+import { config } from './config.js';
+import { buildApp, isCollabUpgrade } from './app.js';
+import { hocuspocus, shutdownFlushSet, closeProjectConnections, onAutoCommit } from './collab.js';
+import { scheduleAutopush } from './autopush.js';
+import { checkProvisioning, deprovisionProject } from './provision.js';
+import { TRASH_DAYS } from './trash.js';
+import { initProjectEvents } from './events.js';
+import { autoCommit } from './gitops.js';
+import * as store from './store.js';
+import { captureError } from './observability.js';
+import { initDb, closeDb } from './db/index.js';
+import { initRateLimit } from './ratelimit.js';
+import { ensureSigningSecret } from './output-signing.js';
+import { AUTH_ENABLED } from './auth.js';
+import { discover, oidcBootLine, oidcConfig, oidcConfigWarnings } from './oidc.js';
+
+// Never let a stray rejection take down the collaboration server.
+process.on('unhandledRejection', (reason) => { console.error('[aldine] unhandledRejection', reason); captureError(reason); });
+
+// Select and connect the datastore (JSON default, or Postgres via DATABASE_URL) before anything uses it.
+await initDb();
+// Connect Redis for cross-node rate limiting if REDIS_URL is set (else in-memory).
+await initRateLimit();
+// The PDF-link signer: a weak ALDINE_SIGNING_SECRET must not reach the first compile.
+ensureSigningSecret();
+// Cross-node revocation: when a peer node changes a project's access, close
+// our local collab sockets for it so clients re-authenticate. No-op without Redis.
+initProjectEvents({ onAccessChanged: closeProjectConnections });
+
+const app = await buildApp();
+
+await app.listen({ port: config.port, host: '0.0.0.0' });
+
+// Yjs collaboration over WebSocket at <basePath>/collab
+const wss = new WebSocketServer({ noServer: true });
+app.server.on('upgrade', (request, socket, head) => {
+  if (isCollabUpgrade(request.url)) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      hocuspocus.handleConnection(ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+console.log(`[aldine] server on :${config.port}${config.basePath} — data=${config.dataDir} compiler=${config.compilerUrl}`);
+if (AUTH_ENABLED) {
+  for (const warning of oidcConfigWarnings()) console.warn(warning);
+  const line = oidcBootLine();
+  if (line) {
+    console.log(line);
+    // Warms the discovery cache; an unreachable IdP is logged, never fatal.
+    const c = oidcConfig()!;
+    discover(c.issuer).catch((err) => console.warn(`[aldine] OIDC discovery failed (sign-in will retry): ${err.message}`));
+  }
+}
+
+// Trash purge: hard-delete soft-deleted projects after ALDINE_TRASH_DAYS
+// (default 30). Swept on boot and daily; errors are logged, never fatal.
+// Every autosave that landed on main is pushed to the linked remote (when the
+// project has autopush on); provisioned GitLab projects are removed with the
+// purge in case the trash-time deletion failed.
+onAutoCommit((projectId, branch) => { if (branch === 'main') scheduleAutopush(projectId); });
+void checkProvisioning();
+const sweepTrash = () => store.purgeExpiredTrash(TRASH_DAYS, async (meta) => { await deprovisionProject(meta); })
+  .then((ids) => { if (ids.length) console.log(`[aldine] trash purge: removed ${ids.length} project(s) older than ${TRASH_DAYS}d`); })
+  .catch((err) => console.error('[aldine] trash purge failed', err));
+sweepTrash();
+setInterval(sweepTrash, 24 * 60 * 60 * 1000).unref();
+
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[aldine] ${signal} — flushing ${hocuspocus.documents.size} open documents…`);
+  try {
+    // commit only the branches that had open docs or pending agent work
+    // (typically a handful), not every project — avoids a SIGTERM fan-out of
+    // hundreds of git processes. autoCommit, not commitAll: pending agent work
+    // must land under its author before the anonymous sweep, exactly as the
+    // debounce would have done.
+    const dirty = shutdownFlushSet();
+    await Promise.allSettled(dirty.map((d) => autoCommit(d.projectId, d.branch, 'aldine: autosave on shutdown')));
+    console.log(`[aldine] flushed ${dirty.length} project/branch(es); exiting`);
+  } catch (err) {
+    console.error('[aldine] shutdown flush error', err);
+  }
+  try { await app.close(); await closeDb(); } catch { /* noop */ }
+  process.exit(0);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

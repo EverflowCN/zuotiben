@@ -1,0 +1,40 @@
+{
+  "name": "@aldine/web",
+  "private": true,
+  "version": "0.11.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/search": "^6.5.10",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.8",
+    "@hocuspocus/provider": "^2.15.2",
+    "codemirror-lang-latex": "^0.4.1",
+    "katex": "^0.18.1",
+    "mathlive": "^0.110.0",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^6.30.0",
+    "y-codemirror.next": "^0.3.5",
+    "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.8",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^4.1.10"
+  },
+  "license": "AGPL-3.0-only"
+}

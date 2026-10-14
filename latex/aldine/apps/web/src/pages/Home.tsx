@@ -1,0 +1,554 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api, ApiError, ProjectSummary, RemoteInfo, TemplateCategory, TemplateInfo, TemplateRepoState } from '../api';
+import { useToast } from '../components/Toast';
+import { useDialogs } from '../components/Dialogs';
+import { useAuth } from '../components/Auth';
+import Modal from '../components/Modal';
+import ShareModal from '../components/ShareModal';
+import { IconDoc, IconLink, IconX } from '../components/Icons';
+import AccountSettings from '../components/AccountSettings';
+import { getTheme, toggleTheme } from '../theme';
+import RemoteImport from '../components/RemoteImport';
+import { isRemoteProviderId, RemoteProviderId } from '../remotes';
+import Onboarding from '../components/Onboarding';
+import NamespacePicker, { rememberedNamespace } from '../components/NamespacePicker';
+import About from '../components/About';
+import { friendlyDate } from '../util/dates';
+import { OAUTH_RESUME_KEY } from '../util/oauthParams';
+import { pickTemplate, templateToPost } from '../util/templates';
+import { importSummary } from '../util/engines';
+
+/** Mirrors IMPORT_MAX_ZIP_BYTES in apps/server/src/routes.ts — the server
+ *  enforces it; this pre-flight only spares the upload. */
+const IMPORT_MAX_ZIP_MB = 60;
+const IMPORT_MAX_ZIP_BYTES = IMPORT_MAX_ZIP_MB * 1024 * 1024;
+
+/** Gallery order; a category with no template in it is not drawn. */
+const TEMPLATE_CATEGORIES: TemplateCategory[] = ['General', 'Journals', 'Conferences', 'Theses', 'Slides'];
+
+function matchesQuery(t: TemplateInfo, q: string): boolean {
+  const hay = [t.name, t.description, t.category, t.documentClass, t.id, t.kit?.host, t.source?.label].join(' ').toLowerCase();
+  return q.split(/\s+/).every((word) => hay.includes(word));
+}
+
+/** Template ids from a repository are `repo:<repoId>/<folder>`. */
+function repoIdOf(t: TemplateInfo): string {
+  return t.id.slice('repo:'.length).split('/')[0];
+}
+
+interface GalleryGroup {
+  key: string;
+  testid: string;
+  heading: string;
+  /** Set on a repository whose last refresh failed while its previous checkout is still listed. */
+  stale?: { repoId: string; text: string };
+  items: TemplateInfo[];
+}
+
+/** Built-in categories in TEMPLATE_CATEGORIES order, with one group per
+ *  repository (in config order) between 'General' and the venue categories.
+ *  Repository templates are never placed in a category group. */
+function galleryGroups(shown: TemplateInfo[], repos: TemplateRepoState[]): GalleryGroup[] {
+  const byRepo = new Map<string, TemplateInfo[]>();
+  for (const t of shown) {
+    if (t.source?.kind !== 'repo') continue;
+    const id = repoIdOf(t);
+    byRepo.set(id, [...(byRepo.get(id) ?? []), t]);
+  }
+  const repoOrder = [...repos.map((r) => r.id), ...byRepo.keys()].filter((id, i, all) => all.indexOf(id) === i);
+  const repoGroups: GalleryGroup[] = [];
+  for (const repoId of repoOrder) {
+    const items = byRepo.get(repoId);
+    if (!items?.length) continue;
+    const state = repos.find((r) => r.id === repoId);
+    const stale = state && !state.ok && state.available
+      ? { repoId, text: state.syncedAt ? `last updated ${friendlyDate(state.syncedAt)}, refresh failed` : 'refresh failed' }
+      : undefined;
+    repoGroups.push({
+      key: `repo:${repoId}`,
+      testid: `template-category-repo-${repoId}`,
+      heading: state?.label ?? items[0].source?.label ?? repoId,
+      stale,
+      items,
+    });
+  }
+  const out: GalleryGroup[] = [];
+  for (const cat of TEMPLATE_CATEGORIES) {
+    const items = shown.filter((t) => t.source?.kind !== 'repo' && (t.category || 'General') === cat);
+    if (items.length) out.push({ key: cat, testid: `template-category-${cat}`, heading: cat, items });
+    if (cat === 'General') out.push(...repoGroups);
+  }
+  return out;
+}
+
+export default function Home() {
+  const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const zipInput = useRef<HTMLInputElement>(null);
+  const [creating, setCreating] = useState(false);
+  const [themeChoice, setThemeChoice] = useState(getTheme());
+  const [newName, setNewName] = useState('');
+  const [templates, setTemplates] = useState<TemplateInfo[] | null>(null);
+  const [repoStates, setRepoStates] = useState<TemplateRepoState[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [template, setTemplate] = useState('article');
+  const [templateQuery, setTemplateQuery] = useState('');
+  // Undefined until the namespace picker loads, i.e. while the server has no
+  // GitLab provisioning: nothing is sent and no GitLab toast is shown.
+  const [namespace, setNamespace] = useState<string | undefined>(undefined);
+  const [sharing, setSharing] = useState<ProjectSummary | null>(null);
+  const [showAccount, setShowAccount] = useState(false);
+  const [remotes, setRemotes] = useState<RemoteInfo[]>([]);
+  const [importFrom, setImportFrom] = useState<RemoteProviderId | null>(null);
+  const [trash, setTrash] = useState<{ id: string; name: string; deletedAt: string }[]>([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('aldine.onboarded') !== '1');
+  const dismissOnboarding = () => { localStorage.setItem('aldine.onboarded', '1'); setShowOnboarding(false); };
+  const navigate = useNavigate();
+  const toast = useToast();
+  const dialogs = useDialogs();
+  const { authEnabled, user, admin, setUser } = useAuth();
+
+  const load = () => {
+    api.listTrash().then(setTrash).catch(() => setTrash([]));
+    return api.listProjects()
+      .then((p) => { setProjects(p); setLoadFailed(false); })
+      .catch(() => { setLoadFailed(true); setProjects((cur) => cur ?? []); });
+  };
+  useEffect(() => { load(); }, []);
+  // Signed in through an SSO provider while an app was waiting on
+  // /oauth/authorize: the provider callback lands here, so resume the consent.
+  useEffect(() => {
+    if (!authEnabled || !user) return;
+    let resume: string | null = null;
+    try { resume = sessionStorage.getItem(OAUTH_RESUME_KEY); sessionStorage.removeItem(OAUTH_RESUME_KEY); } catch { /* private mode */ }
+    if (resume) navigate(`/oauth/authorize${resume}`, { replace: true });
+  }, []);
+  useEffect(() => { api.remotes().then(setRemotes).catch(() => setRemotes([])); }, []);
+  // returning from a host's OAuth connect → reopen the import flow (now
+  // connected). `?github=connected` is the pre-GitLab callback and stays.
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    const back = q.get('remote') ?? (q.get('github') === 'connected' ? 'github' : null);
+    if (back) {
+      if (isRemoteProviderId(back)) setImportFrom(back);
+      window.history.replaceState({}, '', location.pathname);
+    }
+  }, []);
+  const loadTemplates = () => {
+    // The repo list is informational: a server without the route (or without
+    // repos) still gets its gallery.
+    api.templateRepos().then((r) => setRepoStates(r.repos)).catch(() => setRepoStates([]));
+    return api.templates().then((list) => {
+      setTemplates(list);
+      setTemplate((cur) => pickTemplate(list, cur));
+    }).catch(() => setTemplates((cur) => cur ?? []));
+  };
+  // Repositories sync in the background after boot, so a dialog opened later
+  // must see what has arrived since the page loaded.
+  useEffect(() => { if (creating || templates === null) loadTemplates(); }, [creating]);
+
+  const refreshTemplates = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const { repos } = await api.refreshTemplateRepos();
+      setRepoStates(repos);
+      const list = await api.templates();
+      setTemplates(list);
+      setTemplate((cur) => pickTemplate(list, cur));
+      const failed = repos.filter((r) => !r.ok);
+      if (failed.length) {
+        toast(`Could not refresh ${failed.map((r) => r.label).join(', ')}: ${failed[0].error ?? 'unknown error'}`, 'error');
+      }
+    } catch (err: any) {
+      toast(`Could not refresh templates: ${err.message}`, 'error');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // A search that hides the chosen tile would leave Create acting on something
+  // the user cannot see, so the first result of a narrowing search becomes the
+  // choice. With no search, or when the choice is still on screen, it stands.
+  const shownTemplates = (() => {
+    const q = templateQuery.trim().toLowerCase();
+    if (!templates) return [] as TemplateInfo[];
+    return q ? templates.filter((t) => matchesQuery(t, q)) : templates;
+  })();
+  const effectiveTemplate = shownTemplates.some((t) => t.id === template)
+    ? template
+    : shownTemplates[0]?.id ?? template;
+  const chosen = templates?.find((t) => t.id === effectiveTemplate) ?? null;
+  const closeCreate = () => { setCreating(false); setTemplateQuery(''); };
+
+  // One request per click: a venue kit takes seconds to download, and a
+  // double-click or a held Enter used to make two identical projects and
+  // land in the second.
+  const [submitting, setSubmitting] = useState(false);
+  const create = async () => {
+    if (submitting) return;
+    const name = newName.trim() || 'Untitled Project';
+    setSubmitting(true);
+    try {
+      const p = await api.createProject(name, undefined, templateToPost(templates ?? [], effectiveTemplate), namespace);
+      if (p.venueKit && !p.venueKit.ok) {
+        toast(`Could not download the ${p.venueKit.name} kit from ${p.venueKit.host}. The project was created from a skeleton; README-venue.md says where to get the kit.`, 'error');
+      }
+      // Provisioning never blocks the project: a failure is a warning and the
+      // editor offers a retry.
+      if (p.remoteError) toast(p.remoteError, 'error');
+      else if (p.remote && namespace) toast(`Also created on GitLab in ${p.remote.owner}`, 'ok');
+      navigate(`/p/${p.id}`);
+    } catch (err: any) {
+      toast(`Could not create project: ${err.message}`, 'error');
+      setSubmitting(false);
+    }
+  };
+
+  const importZip = async (file: File) => {
+    if (!/\.zip$/i.test(file.name)) { toast('Please drop a .zip file', 'error'); return; }
+    const sizeMb = Number((file.size / (1024 * 1024)).toFixed(1));
+    if (file.size > IMPORT_MAX_ZIP_BYTES) { toast(`ZIP is ${sizeMb} MB; the limit is ${IMPORT_MAX_ZIP_MB} MB`, 'error'); return; }
+    toast('Importing…');
+    try {
+      // One-click import: the group is the last one picked in the new-project
+      // dialog (none until the picker has been shown once).
+      const p = await api.importZip(file.name.replace(/\.zip$/i, ''), file, rememberedNamespace());
+      toast(importSummary(p), 'ok');
+      if (p.remoteError) toast(p.remoteError, 'error');
+      else if (p.remote) toast(`Also created on GitLab in ${p.remote.owner}`, 'ok');
+      navigate(`/p/${p.id}`, { state: { import: p.import } });
+    } catch (err: any) {
+      // A 413 without the route's own text comes from a proxy or body limit
+      // below what the app allows — the size is the only number worth stating.
+      if (err instanceof ApiError && err.status === 413 && !/limit is/.test(err.message)) {
+        toast(`ZIP too large for this server: ${sizeMb} MB was refused before it reached the app, which allows ${IMPORT_MAX_ZIP_MB} MB`, 'error');
+        return;
+      }
+      toast(`Import failed: ${err.message}`, 'error');
+    }
+  };
+
+  const remove = async (e: React.MouseEvent, p: ProjectSummary) => {
+    e.stopPropagation();
+    // No question first: the trash keeps the project for 30 days, and the
+    // notification carries the way back.
+    try {
+      await api.deleteProject(p.id);
+      toast(`Moved ${p.name} to the trash`, 'ok', { label: 'Undo', testId: 'undo-trash', onClick: () => restore(p.id, p.name) });
+      load();
+    } catch (err: any) {
+      toast(`Could not delete ${p.name}: ${err.message}`, 'error');
+    }
+  };
+
+  const claim = async (e: React.MouseEvent, p: ProjectSummary) => {
+    e.stopPropagation();
+    if (!(await dialogs.confirm({ title: `Claim “${p.name}”?`, body: 'You become its owner and other users lose access.', confirmLabel: 'Claim project' }))) return;
+    try { await api.claimProject(p.id); toast(`You now own ${p.name}`, 'ok'); }
+    catch (err: any) { toast(err.message, 'error'); } // e.g. someone claimed it first
+    load(); // winner sees owner controls; a loser sees the project disappear
+  };
+
+  const restore = async (id: string, name: string) => {
+    try { await api.restoreProject(id); toast(`Restored ${name}`, 'ok'); load(); }
+    catch (err: any) { toast(err.message, 'error'); }
+  };
+
+  const purge = async (id: string, name: string) => {
+    if (!(await dialogs.confirm({ title: `Delete “${name}” forever?`, body: 'This cannot be undone.', confirmLabel: 'Delete forever', danger: true }))) return;
+    try { await api.deleteProject(id, true); toast(`Deleted ${name} forever`, 'ok'); load(); }
+    catch (err: any) { toast(err.message, 'error'); }
+  };
+
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <div
+      className={`home ${dragOver ? 'home--drag' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(false); }}
+      onDrop={async (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const f = e.dataTransfer.files[0];
+        if (f) await importZip(f);
+      }}
+    >
+      <div className="home__inner">
+        <div className="home__bar">
+          <div>
+            <h1 className="home__brand">aldine<em>.</em></h1>
+            <p className="home__tag">Write LaTeX together. Fast, versioned, yours.</p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              className="btn"
+              data-testid="theme-toggle"
+              title="Switch light/dark theme"
+              aria-label="Switch light/dark theme"
+              onClick={() => setThemeChoice(toggleTheme())}
+            >
+              {themeChoice === 'dark' ? '☀︎' : '☾'}
+            </button>
+            {admin && authEnabled && (
+              <Link className="btn" to="/admin" data-testid="admin-link" title="Server-wide accounts and usage">Server admin</Link>
+            )}
+            {authEnabled && user && (
+              <span className="user-chip">
+                <button className="user-chip__name" data-testid="user-name" onClick={() => setShowAccount(true)} title="Account settings">{user.name}</button>
+                <button className="btn btn--small" data-testid="logout" onClick={async () => { await api.logout(); setUser(null); }}>Sign out</button>
+              </span>
+            )}
+            <button className="btn" data-testid="import-zip" onClick={() => zipInput.current?.click()}>Import ZIP</button>
+            <input ref={zipInput} type="file" accept=".zip" hidden data-testid="import-input" aria-hidden="true" tabIndex={-1}
+              onChange={async (e) => { if (e.target.files?.[0]) await importZip(e.target.files[0]); e.target.value = ''; }} />
+            {remotes.map((r) => (
+              <button key={r.id} className="btn" onClick={() => setImportFrom(r.id)} data-testid={`new-from-${r.id}`}>
+                From {r.label}
+              </button>
+            ))}
+            <button className="btn btn--primary" onClick={() => setCreating(true)} data-testid="new-project">
+              New project
+            </button>
+          </div>
+        </div>
+
+        {projects === null ? (
+          <div className="empty"><div className="spinner" style={{ margin: '0 auto' }} /></div>
+        ) : loadFailed ? (
+          <div className="empty">
+            <p style={{ margin: '0 0 16px' }}>Couldn’t reach the server to load your projects.</p>
+            <button className="btn btn--primary" onClick={load}>Try again</button>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="empty" data-testid="projects-empty">
+            <p style={{ margin: '0 0 16px' }}>No projects yet — start a paper however you like.</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn btn--primary" onClick={() => setCreating(true)}>New project</button>
+              {remotes.map((r) => (
+                <button key={r.id} className="btn" onClick={() => setImportFrom(r.id)}>Import from {r.label}</button>
+              ))}
+              <button className="btn" onClick={() => zipInput.current?.click()}>Import a ZIP</button>
+            </div>
+          </div>
+        ) : (
+          <div className="projects" data-testid="project-grid">
+            {projects.map((p) => {
+              // Deleting is owner-only server-side; without auth everyone owns
+              // everything. Don't offer what the server will refuse.
+              const canManage = !authEnabled || !!p.isOwner;
+              return (
+              <div
+                key={p.id}
+                role="button"
+                tabIndex={0}
+                className="project-card"
+                data-testid={`project-card-${p.id}`}
+                onClick={() => navigate(`/p/${p.id}`)}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/p/${p.id}`)}
+              >
+                <span className="project-card__icon"><IconDoc width={20} height={20} /></span>
+                <span className="project-card__name">{p.name}</span>
+                <span className="project-card__meta">
+                  <span>{friendlyDate(p.createdAt)}</span>
+                  {authEnabled && p.ownerId && !p.isOwner && <span title={`Shared by ${p.ownerName || 'someone'}`}>· shared</span>}
+                  {authEnabled && !p.ownerId && (
+                    <button className="btn btn--small" style={{ marginLeft: 'auto' }} data-testid={`claim-${p.id}`}
+                      title="This project predates accounts on this server and has no owner yet"
+                      onClick={(e) => claim(e, p)}>Claim</button>
+                  )}
+                  {p.zotero && <span title="Zotero linked" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconLink /> Zotero</span>}
+                  {authEnabled && p.isOwner && (
+                    <button className="project-card__del" title={p.share?.mode === 'link' ? 'Shared by link — anyone signed in with the link can edit' : 'Share project'} style={{ marginLeft: 'auto' }} data-testid={`share-${p.id}`}
+                      onClick={(e) => { e.stopPropagation(); setSharing(p); }}><IconLink /></button>
+                  )}
+                  {canManage && (
+                    <button className="project-card__del" title="Delete project" aria-label={`Delete ${p.name}`} style={authEnabled && p.isOwner ? undefined : { marginLeft: 'auto' }} onClick={(e) => remove(e, p)}><IconX /></button>
+                  )}
+                </span>
+              </div>
+              );
+            })}
+          </div>
+        )}
+
+        {trash.length > 0 && (
+          <p style={{ textAlign: 'center', marginTop: 26 }}>
+            <button className="btn btn--ghost btn--small" onClick={() => setShowTrash(true)} data-testid="open-trash">
+              Trash ({trash.length})
+            </button>
+          </p>
+        )}
+
+        {/* AGPL section 13: a network instance must offer its users the source. */}
+        <p className="home__legal">
+          <button className="btn btn--ghost btn--small" onClick={() => setAboutOpen(true)} data-testid="open-about">
+            About &amp; source
+          </button>
+        </p>
+      </div>
+
+      {aboutOpen && <About onClose={() => setAboutOpen(false)} />}
+
+      {showTrash && (
+        <Modal onClose={() => setShowTrash(false)} label="Trash" testId="trash-modal">
+          <div>
+            <h2 style={{ marginBottom: 2 }}>Trash</h2>
+            <p className="modal__sub">Deleted projects are kept for 30 days, then removed permanently.</p>
+            {trash.length === 0 && <p style={{ color: 'var(--text-2)' }}>The trash is empty.</p>}
+            {trash.map((t) => (
+              <div key={t.id} className="settings__row" style={{ alignItems: 'center', gap: 10 }} data-testid={`trash-${t.id}`}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                  <span style={{ color: 'var(--text-3)', fontSize: 'var(--text-s)' }}>{friendlyDate(t.deletedAt)}</span>
+                  <button className="btn btn--small" onClick={() => restore(t.id, t.name)} data-testid={`restore-${t.id}`}>Restore</button>
+                  <button className="btn btn--ghost btn--small" onClick={() => purge(t.id, t.name)} data-testid={`purge-${t.id}`}>Delete forever</button>
+                </span>
+              </div>
+            ))}
+            <div className="modal__row" style={{ marginTop: 14 }}><button className="btn" onClick={() => setShowTrash(false)}>Close</button></div>
+          </div>
+        </Modal>
+      )}
+
+      {sharing && (
+        <ShareModal
+          project={sharing}
+          onClose={() => setSharing(null)}
+          onSaved={(updated) => {
+            setSharing(null);
+            setProjects((cur) => cur?.map((p) => (p.id === updated.id ? { ...p, share: updated.share } : p)) ?? cur);
+          }}
+        />
+      )}
+      {showAccount && user && (
+        <AccountSettings user={user} onClose={() => setShowAccount(false)} />
+      )}
+      {importFrom && (
+        <RemoteImport key={importFrom} provider={importFrom} onClose={() => setImportFrom(null)} onImported={(id) => navigate(`/p/${id}`)} />
+      )}
+      {showOnboarding && (
+        <Onboarding onNew={() => setCreating(true)} onRemote={setImportFrom} remotes={remotes.map((r) => r.id)} onImportZip={importZip} onClose={dismissOnboarding} />
+      )}
+
+      {creating && (
+        <Modal onClose={closeCreate} label="New project">
+          <div>
+            <h2>New project</h2>
+            <p className="modal__sub">Name it, pick a starting point, start writing.</p>
+            <input
+              autoFocus
+              className="input"
+              placeholder="Project name"
+              value={newName}
+              data-testid="new-project-name"
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
+            />
+            {remotes.some((r) => r.provisioning) && <NamespacePicker value={namespace} onChange={setNamespace} />}
+            {templates === null && <p className="tpl-empty">Loading templates…</p>}
+            {templates !== null && templates.length > 0 && (
+              <>
+                <div className="tpl-search">
+                  <input
+                    className="input"
+                    placeholder="Search templates, for example IEEE or NeurIPS"
+                    aria-label="Search templates"
+                    value={templateQuery}
+                    data-testid="template-search"
+                    onChange={(e) => setTemplateQuery(e.target.value)}
+                  />
+                  {/* Escape belongs to the dialog: the modal closes on it before
+                      any handler here could clear the query. */}
+                  {templateQuery && (
+                    <button
+                      className="tpl-search__clear"
+                      aria-label="Clear the template search"
+                      data-testid="template-search-clear"
+                      onClick={() => setTemplateQuery('')}
+                    >
+                      <IconX />
+                    </button>
+                  )}
+                </div>
+                {repoStates.length > 0 && (
+                  <div className="tpl-toolbar">
+                    <button
+                      className="btn btn--small"
+                      onClick={refreshTemplates}
+                      disabled={refreshing}
+                      data-testid="template-refresh"
+                    >
+                      {refreshing ? 'Refreshing…' : 'Refresh templates'}
+                    </button>
+                  </div>
+                )}
+                <div className="tpl-gallery" data-testid="template-grid">
+                  {(() => {
+                    const shown = shownTemplates;
+                    if (!shown.length) {
+                      return <p className="tpl-empty" data-testid="template-empty">No template matches that. Create still starts from {chosen ? chosen.name : 'the built-in article'}.</p>;
+                    }
+                    return galleryGroups(shown, repoStates).map((g) => (
+                      <div key={g.key} className="tpl-group" data-testid={g.testid}>
+                        <div className="tpl-group__label">
+                          {g.heading}
+                          {g.stale && (
+                            <span className="tpl-group__stale" data-testid={`template-repo-stale-${g.stale.repoId}`}>
+                              {g.stale.text}
+                            </span>
+                          )}
+                        </div>
+                        <div className="tpl-grid">
+                          {g.items.map((t) => (
+                            <button
+                              key={t.id}
+                              className={`tpl ${effectiveTemplate === t.id ? 'tpl--active' : ''}`}
+                              data-testid={`template-${t.id}`}
+                              onClick={() => setTemplate(t.id)}
+                              title={t.description}
+                            >
+                              <span className="tpl__icon">{t.icon || '📄'}</span>
+                              <span className="tpl__name">{t.name}</span>
+                              <span className="tpl__desc">{t.description}</span>
+                              {/* The kit is downloaded when the project is created, not now:
+                                  say so before the user picks the tile. */}
+                              {t.kit && (
+                                <span className="tpl__kit" data-testid={`template-kit-${t.id}`}>
+                                  Downloads the official kit from {t.kit.host}
+                                </span>
+                              )}
+                              {t.license && <span className="tpl__license" data-testid={`template-license-${t.id}`}>{t.license}</span>}
+                              {t.source?.kind === 'repo' && (
+                                <span className="tpl__source" data-testid={`template-source-${t.id}`}>
+                                  {t.source.label ?? repoIdOf(t)}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                  ));
+                  })()}
+                </div>
+                <p className="tpl-choice" data-testid="template-choice">
+                  Starting from {chosen ? chosen.name : 'the built-in article'}
+                  {chosen?.license ? ` (${chosen.license})` : ''}
+                  {chosen?.kit ? `. Aldine downloads the official kit from ${chosen.kit.host} when you create the project.` : ''}
+                </p>
+              </>
+            )}
+            <div className="modal__row">
+              <button className="btn" onClick={closeCreate}>Cancel</button>
+              <button className="btn btn--primary" onClick={create} disabled={submitting} data-testid="create-project">{submitting ? 'Creating…' : 'Create'}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,52 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - git
+
+write_files:
+  # Demo config: auth off, TLS via the compose tls profile, app on loopback.
+  # The Agent API runs with the published static token from variables.tf;
+  # ALDINE_SIGNING_SECRET stays unset on purpose: the app generates one into
+  # the secrets volume, which the wipe destroys, so PDF links die with the
+  # data they point at.
+  - path: /opt/aldine/.env.demo
+    content: |
+      ALDINE_DOMAIN=${demo_domain}
+      ALDINE_PUBLIC_URL=https://${demo_domain}
+      ALDINE_APP_BIND=127.0.0.1
+      ALDINE_COMPILE_PER_MIN=6
+      ALDINE_PROTECTED_PROJECTS=${protected_projects}
+      ALDINE_MCP=1
+      ALDINE_MCP_TOKEN=${mcp_token}
+
+  # Nightly wipe: pull the current main, destroy the project data and rebuild
+  # the stack, so the demo never runs a fixed commit for months. A failed pull
+  # or build leaves the previous images in place. A demo box keeps nothing —
+  # except Caddy's certificate store: `down -v` would take that too, and
+  # re-issuing nightly burns Let's Encrypt's limit of 5 certificates per
+  # identifier per 168h, which takes the demo offline for hours.
+  - path: /etc/systemd/system/aldine-demo-wipe.service
+    content: |
+      [Unit]
+      Description=Wipe and recreate the Aldine demo stack
+      [Service]
+      Type=oneshot
+      WorkingDirectory=/opt/aldine/repo
+      ExecStart=/bin/bash -c 'git pull --ff-only; docker compose --env-file /opt/aldine/.env.demo -f docker-compose.full.yml -f deploy/docker-compose.prod.yml --profile tls down && docker volume rm -f aldine_aldine-data aldine_aldine-secrets && docker compose --env-file /opt/aldine/.env.demo -f docker-compose.full.yml -f deploy/docker-compose.prod.yml --profile tls up -d --build && docker image prune -f'
+  - path: /etc/systemd/system/aldine-demo-wipe.timer
+    content: |
+      [Unit]
+      Description=Nightly Aldine demo wipe
+      [Timer]
+      OnCalendar=*-*-* 04:00:00 UTC
+      Persistent=true
+      [Install]
+      WantedBy=timers.target
+
+runcmd:
+  - git clone ${repo_url} /opt/aldine/repo
+  - cd /opt/aldine/repo && docker compose --env-file /opt/aldine/.env.demo -f docker-compose.full.yml -f deploy/docker-compose.prod.yml --profile tls up -d --build
+  - systemctl daemon-reload
+  - systemctl enable --now aldine-demo-wipe.timer

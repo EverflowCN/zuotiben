@@ -1,0 +1,83 @@
+import { defineConfig } from '@playwright/test';
+
+/**
+ * E2E suite. Assumes:
+ *  - compiler service on :4020 (docker container, or locally:
+ *    `DATA_DIR=$(pwd)/.data-e2e PORT=4020 node apps/compiler/server.js` —
+ *    the compiler must share the app server's DATA_DIR or every compile 404s)
+ *  - it starts the app server (:3100), a mock Zotero API (:4919), a mock GitLab
+ *    (:4921, real bare repos under .data-e2e-gitlab), a mock Gitea/Forgejo
+ *    (:4923, .data-e2e-gitea) and Vite preview itself
+ * Set ALDINE_URL to test an already-running stack (e.g. docker compose on :8080);
+ * webServers are skipped via reuseExistingServer when ports are taken.
+ */
+// E2E_PORT / E2E_MOCK_PORT let two checkouts run this suite side by side
+// (reuseExistingServer would otherwise make one run test the other's server).
+const PORT = Number(process.env.E2E_PORT || 3100);
+const MOCK = Number(process.env.E2E_MOCK_PORT || 4919);
+const GITLAB = Number(process.env.E2E_GITLAB_PORT || 4921);
+const GITEA = Number(process.env.E2E_GITEA_PORT || 4923);
+const BASE = process.env.ALDINE_URL || `http://localhost:${PORT}`;
+
+export default defineConfig({
+  testDir: './tests',
+  // 34 needs the provisioning stack (service token, mock GitLab on its own port); playwright.provisioning.config.ts runs it.
+  testIgnore: /34-provisioning\.spec\.ts$/,
+  timeout: 120_000,
+  expect: { timeout: 15_000 },
+  retries: 1,
+  workers: 1,
+  reporter: [['list']],
+  use: {
+    baseURL: BASE,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    viewport: { width: 1440, height: 900 },
+  },
+  webServer: process.env.ALDINE_URL ? undefined : [
+    {
+      command: `E2E_MOCK_PORT=${MOCK} node tests/mock-zotero.mjs`,
+      port: MOCK,
+      reuseExistingServer: true,
+      timeout: 10_000,
+    },
+    {
+      command: `E2E_GITLAB_PORT=${GITLAB} node tests/mock-gitlab.mjs`,
+      port: GITLAB,
+      reuseExistingServer: true,
+      timeout: 10_000,
+    },
+    {
+      command: `E2E_GITEA_PORT=${GITEA} node tests/mock-gitea.mjs`,
+      port: GITEA,
+      reuseExistingServer: true,
+      timeout: 10_000,
+    },
+    {
+      // META_DIR gets its own e2e dir: connections (remote tokens) written by
+      // the remotes spec must not land in the developer's real .secrets.
+      // OPENROUTER_API_KEY/OPENAI_API_KEY are emptied so an ambient key can't
+      // override the mock Anthropic endpoint the AI-fix test relies on.
+      // ALDINE_MCP_TOKEN matches MCP_TOKEN in tests/15-mcp.spec.ts (auth is off
+      // in this suite, so /mcp runs in static-token mode).
+      // ALDINE_AGENT_PRESENCE_TTL_MS shortens the 60 s agent-presence expiry so
+      // the session-review toast test (16-agent-ui) doesn't idle for a minute.
+      // build:viewer emits apps/server/assets/pdf-viewer.html, which
+      // 18-pdf-viewer loads directly.
+      // VENUES_FILE points at the registry the mock server writes (it names the
+      // mock's own port), so no venue test ever reaches a real publisher;
+      // ALDINE_TEST_HOOKS is what makes a loopback kit URL fetchable at all,
+      // and what lets TEMPLATE_REPOS name the file:// bare repository that
+      // tests/32-template-repos.spec.ts builds under .data-e2e once the
+      // server is up (the boot sync fails until the spec's first refresh).
+      // RL_MCP_BURST: the MCP specs make tens of calls a second from one IP
+      // and one token; at the default 60-burst/1 s bucket 15-mcp drains it and
+      // 16-agent-ui opens on 429s.
+      command: `npm run build -w apps/web && npm run build:viewer -w apps/server && PORT=${PORT} DATA_DIR=$(pwd)/.data-e2e META_DIR=$(pwd)/.secrets-e2e ALDINE_MCP=1 ALDINE_MCP_TOKEN=aldine-e2e-mcp RL_MCP_BURST=1000 ALDINE_AGENT_PRESENCE_TTL_MS=5000 ALDINE_TEST_HOOKS=1 GITLAB_API_BASE=http://localhost:${GITLAB} GITEA_API_BASE=http://localhost:${GITEA} VENUES_FILE=$(pwd)/.data-e2e/venues-e2e.json TEMPLATE_REPOS='[{"id":"lab","label":"Lab templates","url":"file://'"$(pwd)"'/.data-e2e/template-repo.git"}]' TEMPLATE_REPOS_REFRESH_MS=60000 OPENROUTER_API_KEY= OPENAI_API_KEY= ZOTERO_API_BASE=http://localhost:${MOCK} DOI_API_BASE=http://localhost:${MOCK} ARXIV_API_BASE=http://localhost:${MOCK} OPENALEX_API_BASE=http://localhost:${MOCK} ANTHROPIC_API_KEY=test-ai-key ANTHROPIC_BASE_URL=http://localhost:${MOCK} npx tsx apps/server/src/index.ts`,
+      cwd: '..',
+      port: PORT,
+      reuseExistingServer: true,
+      timeout: 600_000,
+    },
+  ],
+});

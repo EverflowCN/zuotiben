@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # release.yml runs this suite on the tagged commit before building images:
+  # a tag push does not trigger the push/pull_request events above.
+  workflow_call:
+
+jobs:
+  check:
+    name: Typecheck, build & integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Configure git identity (for the integration test's git ops)
+        run: |
+          git config --global user.email ci@aldine.local
+          git config --global user.name aldine-ci
+          git config --global init.defaultBranch main
+      - name: Typecheck (server)
+        run: npm run typecheck -w apps/server
+      - name: Typecheck (web)
+        run: npx tsc --noEmit
+        working-directory: apps/web
+      - name: Build web
+        run: npm run build -w apps/web
+      - name: GitHub-sync integration test
+        run: npm run test:github -w apps/server
+      - name: GitLab-sync integration test
+        run: npm run test:gitlab -w apps/server
+      - name: Gitea/Forgejo-sync integration test
+        run: npm run test:gitea -w apps/server
+      - name: GitLab provisioning integration test
+        run: npm run test:gitlab:provision -w apps/server
+      - name: GitLab deletion integration test
+        run: npm run test:gitlab:delete -w apps/server
+      - name: Datastore conformance (JSON + Postgres)
+        run: npm run test:db -w apps/server
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      # A stale notices file drops somebody's attribution, and a copyleft
+      # dependency would quietly foreclose ever shipping a differently licensed
+      # edition. Same command checks both.
+      - name: Third-party notices and licence gate
+        run: npm run notices:check
+      # A starter file whose licence nobody recorded is one nobody can safely
+      # copy into a paper, and the gallery shows a licence on every tile.
+      - name: Template licence gate
+        run: npm run templates:check
+      - name: Server unit tests
+        run: npm run test:unit -w apps/server
+      - name: Web unit tests
+        run: npm run test -w apps/web
+      # package.json versions, the compose default and the README block all
+      # name the release by hand; a tag whose pins disagree is refused by
+      # release.yml, so catch the drift on the PR instead.
+      - name: Release pins agree
+        run: node scripts/check-release-pins.mjs
+
+  compose:
+    name: docker compose config is valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate base + prod + profiles
+        run: |
+          docker compose config >/dev/null
+          docker compose -f docker-compose.full.yml config >/dev/null
+          ALDINE_DOMAIN=x DATABASE_URL=x docker compose -f docker-compose.full.yml --profile tls --profile postgres --profile redis config >/dev/null
+          ALDINE_APP_BIND=127.0.0.1 docker compose -f docker-compose.full.yml -f deploy/docker-compose.prod.yml config >/dev/null

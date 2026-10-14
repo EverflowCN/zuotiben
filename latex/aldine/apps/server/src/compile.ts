@@ -1,0 +1,379 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from './config.js';
+import { branchDir, readMeta, writeMeta } from './store.js';
+import { detectRoot } from './root.js';
+import { ensureWorktree } from './gitops.js';
+import { flushBranchDocs, signalAgentTypeset } from './collab.js';
+
+/** `context`: the source line TeX was reading when it failed (the compiler's
+ *  parser reconstructs it from the log's "l.<n>" line). `source`: the tool
+ *  that raised the row — set by the Agent API from the message's prefix. */
+export interface CompileError { type: 'error' | 'warning' | 'typesetting'; line: number | null; message: string; file?: string; context?: string; source?: string }
+
+export interface CompileResult {
+  ok: boolean;
+  timedOut?: boolean;
+  exitCode?: number;
+  pdf: string | null;      // path relative to branch dir (.aldine-out/main.pdf)
+  pdfUrl: string | null;   // URL the client can fetch
+  /** This run produced no PDF: pdfUrl is the last one that did, unchanged. */
+  pdfStale?: boolean;
+  /** Page count of this run's PDF (from the engine's log); absent when unknown or stale. */
+  pages?: number;
+  /** mtime (ms) of the file behind pdfUrl when it was last shown. With pdfStale
+   *  a newer file on disk means that PDF was overwritten (a halt-on-error run
+   *  truncates it), so the "previous" one no longer exists to link to. */
+  pdfWrittenAt?: number;
+  /** This run halted on an error after it had started writing the PDF: the
+   *  file on disk is its partial output, and the previous typeset's PDF no
+   *  longer exists anywhere but in clients that already loaded it. */
+  pdfTruncated?: boolean;
+  /** Identifies the run whose PDF pdfUrl serves; SyncTeX lookups pass it back
+   *  so a jump is refused instead of resolving against a different run. */
+  compileId?: number;
+  /** Identifies THIS run; unlike compileId it is never reused (an unchanged
+   *  document recompiled keeps its compileId and URL), so it is the only safe
+   *  ordering key for "is a newer typeset already on the branch?". */
+  runId: number;
+  synctex: string | null;  // path relative to branch dir; informational
+  log: string;
+  errors: CompileError[];
+  durationMs: number;
+  error?: string;
+}
+
+/** The engine's "Output written on x.pdf (N pages, …)" line — the last one
+ *  wins (a rerun for cross-references logs several). Only the log tail is
+ *  scanned: a 200 KB log with the line at the end must not cost a full pass.
+ *  TeX wraps log lines at max_print_line (79 unless the compiler raises it),
+ *  so a long output path may push "(N pages" onto the next line. */
+export function pagesFromLog(log: string): number | null {
+  const tail = log.length > 65_536 ? log.slice(-65_536) : log;
+  let pages: number | null = null;
+  for (const m of tail.matchAll(/Output written on [^\n]*?(?:\n[^\n]*?)?\(\n?(\d+)[ \n]pages?/g)) pages = Number(m[1]);
+  return pages;
+}
+
+/** Where latexmk writes the PDF for rootFile (the compiler's `pdf` field): "paper/main.tex" → "paper/.aldine-out/main.pdf". */
+export function outputPdfRel(rootFile: string): string {
+  const dir = path.posix.dirname(rootFile || 'main.tex');
+  const base = path.posix.basename(rootFile || 'main.tex').replace(/\.tex$/i, '');
+  return path.posix.join(dir === '.' ? '' : dir, '.aldine-out', `${base}.pdf`);
+}
+
+/**
+ * The PDF currently on disk for a branch, whichever run wrote it — what the
+ * MCP get_pdf_url tool hands out without recompiling. `pages` comes from the
+ * .log beside it and is null when that log belongs to a later failed run
+ * ("No pages of output"). `partial` is set when that log records a run that
+ * stopped on an error AND wrote this very file (mtimes within a second):
+ * a halt-on-error run's truncated output, which is nobody's to hand out.
+ * A run that halted before touching the PDF leaves an older PDF beside a
+ * newer log, so the previous typeset stays available. The worktree must
+ * exist already.
+ */
+export function outputOnDisk(projectId: string, branch: string, rootFile: string): { pdf: string; typesetAt: string; pages: number | null; partial: boolean } | null {
+  const rel = outputPdfRel(rootFile);
+  const abs = path.join(branchDir(projectId, branch), rel);
+  let st: fs.Stats;
+  try { st = fs.statSync(abs); } catch { return null; }
+  let pages: number | null = null;
+  let partial = false;
+  try {
+    const logPath = abs.replace(/\.pdf$/, '.log');
+    const logSt = fs.statSync(logPath);
+    const fd = fs.openSync(logPath, 'r');
+    try {
+      const len = Math.min(logSt.size, 65_536);
+      const buf = Buffer.alloc(len);
+      fs.readSync(fd, buf, 0, len, logSt.size - len);
+      const tail = buf.toString('utf8');
+      pages = pagesFromLog(tail);
+      // "! " lines are fatal only under -halt-on-error; without it TeX runs on
+      // and the caller (which knows the project's setting) ignores this flag.
+      partial = st.mtimeMs >= logSt.mtimeMs - 1000 && /^(?:! |==> Fatal error occurred)/m.test(tail);
+    } finally { fs.closeSync(fd); }
+  } catch { /* no log — page count unknown */ }
+  return { pdf: rel, typesetAt: st.mtime.toISOString(), pages, partial };
+}
+
+/** projectDir sent to the compiler is relative to the shared data volume root. */
+function relProjectDir(projectId: string, branch: string): string {
+  return path.relative(config.dataDir, branchDir(projectId, branch));
+}
+
+/**
+ * Serialize compiles per project::branch so two clients can't run latexmk in
+ * the same .aldine-out dir concurrently (which corrupts aux files / the PDF).
+ * A queued request coalesces onto the in-flight one's successor.
+ */
+const compileChain = new Map<string, Promise<unknown>>();
+
+/**
+ * Last successful pdfUrl per project::branch. A failed latexmk run leaves the
+ * previous PDF on disk (the compiler reports it by existence, not by `ok`), so
+ * minting a fresh cache-buster would present that old PDF as this run's result
+ * and misalign SyncTeX with the source. In-memory: after a restart the first
+ * failed compile reports no PDF rather than an unknown one.
+ */
+const lastGoodPdfUrl = new Map<string, { url: string; compileId: number; pdf: string; writtenAt?: number }>();
+
+/** compileId of the run whose SyncTeX file is on disk, per project::branch. */
+const lastSynctexId = new Map<string, number>();
+
+/** The last run this node finished per project::branch, and how many are in
+ *  flight — what compileStatus reports so a client can adopt a typeset it did
+ *  not make instead of rebuilding the same PDF. */
+const lastRun = new Map<string, { result: CompileResult; finishedAt: number; agent: boolean }>();
+const running = new Map<string, number>();
+
+let lastCompileId = 0;
+/** Strictly increasing even within one millisecond, so two quick runs never share a URL. */
+function nextCompileId(): number {
+  lastCompileId = Math.max(Date.now(), lastCompileId + 1);
+  return lastCompileId;
+}
+
+/**
+ * Drop remembered URLs when the files behind them go: deleting a branch
+ * removes its worktree (and .aldine-out), so a branch recreated under the
+ * same name must not inherit a URL that now 404s. Without `branch`, every
+ * branch of the project is forgotten.
+ */
+export function forgetPdfUrls(projectId: string, branch?: string): void {
+  if (branch !== undefined) {
+    const key = `${projectId}::${branch}`;
+    lastGoodPdfUrl.delete(key); lastSynctexId.delete(key); lastRun.delete(key); running.delete(key);
+    return;
+  }
+  for (const key of lastGoodPdfUrl.keys()) if (key.startsWith(`${projectId}::`)) lastGoodPdfUrl.delete(key);
+  for (const key of lastSynctexId.keys()) if (key.startsWith(`${projectId}::`)) lastSynctexId.delete(key);
+  for (const key of lastRun.keys()) if (key.startsWith(`${projectId}::`)) lastRun.delete(key);
+  for (const key of running.keys()) if (key.startsWith(`${projectId}::`)) running.delete(key);
+}
+
+export interface CompilerInfo {
+  /** The compiler answered /health. */
+  ok: boolean;
+  /** TeX Live release year ("2026") and scheme ("full" | "medium"); "unknown"
+   *  when the compiler predates the report or runs outside the image. */
+  texlive: { release: string; scheme: string };
+}
+
+const UNKNOWN_TEXLIVE = { release: 'unknown', scheme: 'unknown' };
+// A reachable compiler's TeX Live does not change while it runs; an
+// unreachable one is retried soon so the settings panel recovers with it.
+const COMPILER_INFO_TTL_MS = 5 * 60_000;
+const COMPILER_INFO_RETRY_MS = 5_000;
+let compilerInfoCache: { until: number; value: CompilerInfo } | null = null;
+let compilerInfoInflight: Promise<CompilerInfo> | null = null;
+
+/** Release and scheme of the connected compiler's TeX Live, cached. */
+export function compilerInfo(): Promise<CompilerInfo> {
+  const now = Date.now();
+  if (compilerInfoCache && compilerInfoCache.until > now) return Promise.resolve(compilerInfoCache.value);
+  if (compilerInfoInflight) return compilerInfoInflight;
+  compilerInfoInflight = (async () => {
+    let value: CompilerInfo;
+    try {
+      const res = await fetch(`${config.compilerUrl}/health`, { signal: AbortSignal.timeout(5_000) });
+      const raw = (await res.json()) as { ok?: boolean; texlive?: { release?: unknown; scheme?: unknown } };
+      const str = (v: unknown) => (typeof v === 'string' && v ? v : 'unknown');
+      value = { ok: !!raw.ok, texlive: { release: str(raw.texlive?.release), scheme: str(raw.texlive?.scheme) } };
+    } catch {
+      value = { ok: false, texlive: UNKNOWN_TEXLIVE };
+    }
+    compilerInfoCache = { until: Date.now() + (value.ok ? COMPILER_INFO_TTL_MS : COMPILER_INFO_RETRY_MS), value };
+    return value;
+  })().finally(() => { compilerInfoInflight = null; });
+  return compilerInfoInflight;
+}
+
+export function compileProject(projectId: string, branch: string, opts: { agent?: boolean } = {}): Promise<CompileResult> {
+  const key = `${projectId}::${branch}`;
+  const prev = compileChain.get(key) || Promise.resolve();
+  const result = prev.catch(() => undefined).then(() => runCompile(projectId, branch, !!opts.agent));
+  // The chain tail must never reject (would surface as an unhandled rejection);
+  // the caller gets `result` (which may reject and is awaited/handled by the route).
+  const tail = result.catch(() => undefined).then(() => {
+    if (compileChain.get(key) === tail) compileChain.delete(key);
+  });
+  compileChain.set(key, tail);
+  return result;
+}
+
+export interface CompileStatus {
+  /** A typeset for this branch is in flight on this node. */
+  running: boolean;
+  /** The last run this node completed, or null (restart, or another node). */
+  result: CompileResult | null;
+  finishedAt: number | null;
+  /** The last run was agent-caused (an MCP compile, or a client typeset that
+   *  followed agent edits). */
+  agent: boolean;
+}
+
+/** The branch's last run as this node remembers it. A pure memory read: it is
+ *  reached once per agent-caused run per client, never polled, and must never
+ *  grow a disk stat, a git call or a compiler round trip. */
+export function compileStatus(projectId: string, branch: string): CompileStatus {
+  const key = `${projectId}::${branch}`;
+  const last = lastRun.get(key) ?? null;
+  return {
+    running: (running.get(key) ?? 0) > 0,
+    result: last?.result ?? null,
+    finishedAt: last?.finishedAt ?? null,
+    agent: last?.agent ?? false,
+  };
+}
+
+async function runCompile(projectId: string, branch: string, agent: boolean): Promise<CompileResult> {
+  const key = `${projectId}::${branch}`;
+  running.set(key, (running.get(key) ?? 0) + 1);
+  try {
+    const result = await runCompileInner(projectId, branch, agent);
+    lastRun.set(key, { result, finishedAt: Date.now(), agent });
+    return result;
+  } finally {
+    const n = (running.get(key) ?? 1) - 1;
+    if (n <= 0) running.delete(key); else running.set(key, n);
+    // In the finally: a run that throws must still release the clients that
+    // cancelled their own typeset when it started.
+    if (agent) signalAgentTypeset(projectId, branch, 'done');
+  }
+}
+
+async function runCompileInner(projectId: string, branch: string, agent: boolean): Promise<CompileResult> {
+  const meta = await readMeta(projectId);
+  await ensureWorktree(projectId, branch);
+  flushBranchDocs(projectId, branch);
+  // After the flush, never before: the signal tells clients this run already
+  // contains every edit they have seen, which is what makes them cancel their
+  // own pending typeset.
+  if (agent) signalAgentTypeset(projectId, branch, 'start');
+  // A rootless project (blank, or its last .tex deleted) adopts a .tex here as
+  // well as on file creation: files also arrive through git (pull, GitHub
+  // sync) without passing the file routes.
+  if (!meta.rootFile) {
+    const root = detectRoot(projectId, branch);
+    if (!root) throw new Error('No .tex file to typeset. Create one to start writing.');
+    meta.rootFile = root;
+    await writeMeta(meta);
+  }
+
+  const res = await fetch(`${config.compilerUrl}/compile`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      projectDir: relProjectDir(projectId, branch),
+      rootFile: meta.rootFile,
+      engine: meta.engine,
+      haltOnError: !!meta.stopOnFirstError,
+    }),
+  });
+  const raw = (await res.json()) as Partial<Omit<CompileResult, 'pdfUrl'>> & { error?: string; pdfFresh?: boolean; synctexFresh?: boolean };
+  // Normalize: the compiler may return a bare {ok:false,error} on a 4xx — always
+  // hand the client a well-formed CompileResult so the UI never sees undefined fields.
+  const body: Omit<CompileResult, 'pdfUrl' | 'pdfStale' | 'runId'> = {
+    ok: !!raw.ok,
+    timedOut: raw.timedOut,
+    exitCode: raw.exitCode,
+    pdf: raw.pdf ?? null,
+    synctex: raw.synctex ?? null,
+    log: raw.log ?? (raw.error ? `Compiler error: ${raw.error}` : ''),
+    errors: Array.isArray(raw.errors) ? raw.errors : [],
+    durationMs: raw.durationMs ?? 0,
+    error: raw.error,
+  };
+  const key = `${projectId}::${branch}`;
+  const compileId = nextCompileId();
+  const runId = compileId;
+  // Older compilers report only `ok`; treat their successful output as fresh.
+  // The engine's own "no output PDF file produced" / "No pages of output"
+  // overrides the compiler's mtime check: on a shared volume the previous
+  // run's file can pass as this run's.
+  const pdfFresh = (raw.pdfFresh ?? body.ok) && !(!body.ok && /no output PDF file produced|No pages of output/i.test(body.log));
+  const synctexFresh = raw.synctexFresh ?? body.ok;
+  if (synctexFresh && body.synctex) lastSynctexId.set(key, compileId);
+  // A run that wrote a PDF is shown even when it logged errors: TeX ran to the
+  // end, so the document is complete and the errors sit in the list beside
+  // it. With stopOnFirstError the PDF on disk is truncated at the first error,
+  // so only an error-free run is shown and the previous one stays on screen.
+  // The remembered URL names a PDF path. It stands for this run only when
+  // that path is the one this root produces: switching the main document and
+  // back would otherwise serve the other document as a clean success.
+  const remembered = lastGoodPdfUrl.get(key) ?? null;
+  const expectedPdf = body.pdf ?? outputPdfRel(meta.rootFile);
+  const previous = remembered && remembered.pdf === expectedPdf ? remembered : null;
+  if (!previous && remembered) lastGoodPdfUrl.delete(key);
+  const pdfAbs = body.pdf ? path.join(branchDir(projectId, branch), body.pdf) : null;
+  const mtime = () => { try { return pdfAbs ? fs.statSync(pdfAbs).mtimeMs : undefined; } catch { return undefined; } };
+  const mintUrl = (id: number) => `${config.basePath}/api/projects/${projectId}/output?branch=${encodeURIComponent(branch)}&path=${encodeURIComponent(body.pdf!)}&t=${id}`;
+  // The shown file's mtime travels with the URL: a later run can tell whether
+  // the file behind a remembered link was rewritten since (the MCP tool hands
+  // out no link to a file another node's halted run has replaced).
+  const shown = (url: string, id: number) => {
+    const writtenAt = mtime();
+    lastGoodPdfUrl.set(key, { url, compileId: id, pdf: body.pdf!, writtenAt });
+    const pages = pagesFromLog(body.log);
+    return { ...body, pdfUrl: url, compileId: id, runId, ...(pages !== null ? { pages } : {}), ...(writtenAt !== undefined ? { pdfWrittenAt: writtenAt } : {}) };
+  };
+  if (body.pdf && pdfFresh && (body.ok || !meta.stopOnFirstError)) return shown(mintUrl(compileId), compileId);
+  // latexmk found nothing to redo: the PDF on disk is this run's result even
+  // though nothing was rewritten. It keeps its URL and compileId — a fresh
+  // cache-buster would refetch identical bytes and unbind SyncTeX, and
+  // calling it stale would flag every typeset of an unchanged document.
+  if (body.ok && body.pdf) {
+    const id = previous?.compileId ?? compileId;
+    if (!lastSynctexId.has(key) && body.synctex) lastSynctexId.set(key, id);
+    return shown(previous?.url ?? mintUrl(id), id);
+  }
+  // No PDF from this run: whatever a client shows is the last successful
+  // typeset, so pdfStale says so whenever one was shown. Its link is offered
+  // only while the file is still there — a halted run under stopOnFirstError
+  // deletes the output once a page has shipped out, and a URL to a deleted
+  // file is worse than no URL (the preview keeps its pages on screen without
+  // one). A halted run that got as far as writing the file left a torso
+  // behind the previous link: clients that already loaded the previous PDF
+  // keep showing it, and pdfTruncated tells everyone else (the MCP tool) not
+  // to hand the link out.
+  const truncated = !!body.pdf && pdfFresh;
+  const kept = previous && fs.existsSync(path.join(branchDir(projectId, branch), previous.pdf)) ? previous : null;
+  if (!kept) lastGoodPdfUrl.delete(key);
+  return {
+    ...body,
+    pdfUrl: kept?.url ?? null,
+    pdfStale: previous !== null,
+    compileId: kept?.compileId,
+    runId,
+    ...(kept?.writtenAt !== undefined ? { pdfWrittenAt: kept.writtenAt } : {}),
+    ...(truncated ? { pdfTruncated: true } : {}),
+  };
+}
+
+/** `{ stale: true }` when the caller's preview (compileId) is not the run whose SyncTeX is on disk. */
+export async function synctexLookup(projectId: string, branch: string, payload: Record<string, unknown>): Promise<{ stale?: boolean; ok?: boolean; error?: string } & Record<string, unknown>> {
+  const meta = await readMeta(projectId);
+  const { compileId, ...rest } = payload;
+  if (typeof compileId === 'number') {
+    const current = lastSynctexId.get(`${projectId}::${branch}`);
+    if (current !== undefined && current !== compileId) {
+      return { ok: false, stale: true, error: 'The preview and the typeset output are from different runs — typeset again to jump accurately' };
+    }
+  }
+  // Only the lookup fields cross to the compiler: projectDir and rootFile are
+  // the server's to set, and a body that carried its own would read another
+  // project's SyncTeX records.
+  const { direction, file, line, column, page, x, y } = rest;
+  const res = await fetch(`${config.compilerUrl}/synctex`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      projectDir: relProjectDir(projectId, branch),
+      rootFile: meta.rootFile,
+      direction, file, line, column, page, x, y,
+    }),
+  });
+  return res.json();
+}

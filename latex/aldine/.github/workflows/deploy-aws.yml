@@ -1,0 +1,138 @@
+name: Deploy to AWS
+
+# Ships new images to the already-provisioned ECS service. Infrastructure itself
+# is managed by Terraform (deploy/aws) and applied separately — this only builds,
+# pushes, and rolls the service, so it's safe to run often.
+#
+# Every deploy is pinned: images are tagged with the git SHA and the task
+# definition is re-registered to reference exactly that SHA. Rolling back means
+# pointing the service at a previous task-def revision (see rollback-aws.yml) —
+# each revision is an immutable (server, compiler) pair from one commit, and
+# `describe-services` always tells you which commit is running.
+# `:latest` is still pushed as a human alias / push-images.sh fallback.
+#
+# Manual trigger only (no surprise deploys/costs on every push). `target`
+# picks the service: production (papyr) or staging (papyr-staging — exists
+# only when Terraform's staging_domain_name is set; dispatch it on a feature
+# branch that github_deploy_branches allows). Each target has its own IAM
+# role, ECR repositories and service, so a feature branch holding the staging
+# role cannot push a prod image or roll the prod service, whatever it puts in
+# this file. Requires:
+#   - vars.AWS_DEPLOY_ROLE_ARN         : the prod role (deploy/aws/github-oidc.tf;
+#     trusted by main only)
+#   - vars.AWS_STAGING_DEPLOY_ROLE_ARN : the staging role (trusted by main plus
+#     github_deploy_branches)
+#   - vars.AWS_REGION                  : e.g. eu-west-1
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Service to roll
+        type: choice
+        options: [production, staging]
+        required: true
+
+env:
+  # Task-definition family, service and ECR repository prefix share a name per
+  # target; the role is the one IAM trusts for that target.
+  SERVICE: ${{ inputs.target == 'staging' && 'papyr-staging' || 'papyr' }}
+  IMAGE_PREFIX: ${{ inputs.target == 'staging' && 'papyr-staging' || 'papyr' }}
+  DEPLOY_ROLE_ARN: ${{ inputs.target == 'staging' && vars.AWS_STAGING_DEPLOY_ROLE_ARN || vars.AWS_DEPLOY_ROLE_ARN }}
+
+permissions:
+  id-token: write # OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_PREFIX }}-server:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_PREFIX }}-server:latest
+
+      # The hosted instance runs all of TeX Live; the Dockerfile's default is
+      # the medium scheme the published images use.
+      - name: Build & push compiler
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/compiler
+          file: apps/compiler/Dockerfile
+          platforms: linux/arm64
+          build-args: TEXLIVE_SCHEME=full
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_PREFIX }}-compiler:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_PREFIX }}-compiler:latest
+
+      # The full TeX Live compiler build runs about an hour under emulation,
+      # which is the OIDC session's lifetime: the roll below failed with an
+      # expired token after the images were already pushed. Assume the role
+      # again so the roll and the wait for stability start with a fresh hour.
+      - name: Refresh AWS credentials for the roll
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Register SHA-pinned task definition & roll the service
+        run: |
+          set -euo pipefail
+          REG="${{ steps.ecr.outputs.registry }}"
+          SHA="${{ github.sha }}"
+          # Latest task def in the family → swap both images to the SHA tags →
+          # register. Registration cannot be scoped per family in IAM, so the
+          # staging role could have registered the latest prod revision (with
+          # any env or secret reference): refuse to build a prod deploy on one.
+          aws ecs describe-task-definition --task-definition "$SERVICE" \
+            --query taskDefinition --region "${{ vars.AWS_REGION }}" > td.json
+          BY=$(jq -r '.registeredBy // ""' td.json)
+          if [ "${{ inputs.target }}" = production ]; then
+            case "$BY" in *papyr-github-deploy-staging*)
+              echo "Refusing: the latest $SERVICE revision was registered by the staging deploy role ($BY)."
+              echo "Register a clean revision with terraform apply, then rerun."; exit 1;;
+            esac
+          fi
+          # SENTRY_RELEASE rides along with the image tags: terraform owns the rest
+          # of the container env and has no commit to name, so the deploy sets it
+          # here and re-sets it on every deploy, exactly like the image swap.
+          jq --arg s "$REG/$IMAGE_PREFIX-server:$SHA" --arg c "$REG/$IMAGE_PREFIX-compiler:$SHA" --arg rel "$SHA" '
+            .containerDefinitions |= map(
+              if .name == "server" then .image = $s
+                | .environment = (((.environment // []) | map(select(.name != "SENTRY_RELEASE"))) + [{name: "SENTRY_RELEASE", value: $rel}])
+              elif .name == "compiler" then .image = $c
+              else . end)
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                  .compatibilities, .registeredAt, .registeredBy)' td.json > td-new.json
+          REV=$(aws ecs register-task-definition --cli-input-json file://td-new.json \
+            --query 'taskDefinition.revision' --output text --region "${{ vars.AWS_REGION }}")
+          echo "Registered task definition $SERVICE:$REV (commit $SHA)"
+          aws ecs update-service --cluster papyr --service "$SERVICE" \
+            --task-definition "$SERVICE:$REV" --region "${{ vars.AWS_REGION }}"
+          aws ecs wait services-stable --cluster papyr --services "$SERVICE" \
+            --region "${{ vars.AWS_REGION }}"
+          echo "## Deployed (${{ inputs.target || 'production' }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- task definition: \`$SERVICE:$REV\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- commit: \`$SHA\`" >> "$GITHUB_STEP_SUMMARY"
