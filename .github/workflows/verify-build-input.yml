@@ -1,0 +1,54 @@
+name: Verify build input
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  access-check:
+    # Do not expose credentials to untrusted pull requests or alternate branches.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Ensure read-only dependency credentials are configured
+        shell: bash
+        env:
+          DEPENDENCY_REPOSITORY: ${{ secrets.BUILD_INPUT_REPOSITORY }}
+          DEPENDENCY_TOKEN: ${{ secrets.BUILD_INPUT_READ_TOKEN }}
+        run: |
+          if [[ -z "$DEPENDENCY_REPOSITORY" || -z "$DEPENDENCY_TOKEN" ]]; then
+            echo '::error::Set BUILD_INPUT_REPOSITORY and BUILD_INPUT_READ_TOKEN in repository Actions secrets.'
+            exit 1
+          fi
+      - name: Load private build input
+        id: input
+        uses: ./.github/actions/build-input
+        with:
+          repository: ${{ secrets.BUILD_INPUT_REPOSITORY }}
+          token: ${{ secrets.BUILD_INPUT_READ_TOKEN }}
+      - name: Verify imported source without publishing files
+        shell: bash
+        env:
+          BUILD_INPUT_DIR: ${{ steps.input.outputs.directory }}
+        run: |
+          set -euo pipefail
+          test -d "$BUILD_INPUT_DIR/.git"
+          test -f "$BUILD_INPUT_DIR/.github/scripts/verify-build.sh" || {
+            echo '::error::Source integrity script was not found in the dependency.'
+            exit 1
+          }
+          bash "$BUILD_INPUT_DIR/.github/scripts/verify-build.sh"
+      - name: Remove temporary build input
+        if: always()
+        shell: bash
+        env:
+          BUILD_INPUT_DIR: ${{ steps.input.outputs.directory }}
+        run: |
+          if [[ -n "$BUILD_INPUT_DIR" && "$BUILD_INPUT_DIR" == "$RUNNER_TEMP"/* ]]; then
+            rm -rf -- "$BUILD_INPUT_DIR"
+          fi
+          rm -rf -- "$GITHUB_WORKSPACE/.build-dependency"
