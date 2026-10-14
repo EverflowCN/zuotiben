@@ -1,6 +1,11 @@
 name: BusyTeX browser PDF smoke test
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/smoke-browser-xelatex.cjs"
+      - ".github/workflows/browser-xelatex-smoke.yml"
   # Run after the actual Pages rollout, not concurrently with its build.
   workflow_run:
     workflows: ["Deploy GitHub Pages"]
@@ -10,7 +15,7 @@ permissions:
 
 jobs:
   test:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -22,5 +27,7 @@ jobs:
         run: |
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.0
           npx playwright install --with-deps chromium
+      - name: Ensure PDF font utilities available
+        run: command -v pdftotext && command -v pdffonts || { sudo apt-get update && sudo apt-get install -y poppler-utils; }
       - name: Compile minimal XeLaTeX and assert PDF download
         run: node scripts/smoke-browser-xelatex.cjs
