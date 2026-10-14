@@ -53,6 +53,20 @@ const { chromium } = require('playwright');
     console.log('Chinese log tail:', (chineseLog || '').slice(-2800));
     if (!chineseStatus?.includes('编译成功')) throw new Error('Chinese ctexart + amsmath browser compile failed: ' + chineseStatus);
     console.log('PASS: XeLaTeX CJK text and mathematical formula also generated a PDF.');
+
+    // Round-trip the entire local LaTeX project through a real ZIP download/upload.
+    const zipDownloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.getByRole('button', { name: '导出 ZIP' }).click();
+    const zipDownload = await zipDownloadPromise;
+    if (!zipDownload.suggestedFilename().endsWith('.zip')) throw new Error('ZIP export has unexpected name');
+    const zipFile = await zipDownload.path();
+    page.on('dialog', (dialog) => dialog.accept());
+    await page.locator('input[type="file"][accept*="application/zip"]').setInputFiles(zipFile);
+    await page.waitForFunction(() => (document.querySelector('[role=status]')?.textContent || '').includes('ZIP 已导入'), null, { timeout: 30000 });
+    if (!(await editor.inputValue()).includes('这是一份浏览器生成的数学试卷')) {
+      throw new Error('ZIP import did not restore the Chinese LaTeX project');
+    }
+    console.log('PASS: Exported full workspace ZIP and successfully re-imported it.');
     if (errors.length) console.log('Nonfatal browser console errors:', errors.slice(0, 8));
     console.log('PASS: Real Aldine fork UI called BusyTeX WASM and returned a PDF.');
   } finally {
