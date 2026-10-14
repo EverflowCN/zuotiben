@@ -59,7 +59,7 @@ const { execFileSync } = require('child_process');
     await page.waitForFunction(() => {
       const status = document.querySelector('.browser-aldine__status-text')?.textContent || '';
       return status.includes('编译成功') || status.includes('编译失败') || status.includes('浏览器编译失败');
-    }, { timeout: 600000 });
+    }, null, { timeout: 600000 });
     const status = await page.locator('.browser-aldine__status-text').textContent();
     await page.getByRole('button', { name: /日志/ }).last().click().catch(() => {});
     const log = await page.getByTestId('browser-compile-log').textContent().catch(() => '');
