@@ -58,7 +58,7 @@ for file in texlive-recommended.data texlive-recommended.js texlive-extra.data t
 done
 # Ship tiny TeX Live \ProvidesPackage manifests to let the browser identify
 # exactly which GitHub-hosted collection contains each macro package.
-for file in texlive-basic.js.providespackage.txt texlive-recommended.js.providespackage.txt texlive-extra.js.providespackage.txt; do
+for file in texlive-basic.js.providespackage.txt texlive-recommended.js.providespackage.txt texlive-extra.js.providespackage.txt texlive-basic.txt texlive-recommended.txt texlive-extra.txt; do
   if [[ ! -s "$dest/$file" ]]; then
     curl --fail --location --retry 3 --retry-delay 3 --silent --show-error "$base/$file" -o "$dest/$file"
   fi
