@@ -59,7 +59,7 @@ const { chromium } = require('playwright');
 
     // Round-trip the entire local LaTeX project through a real ZIP download/upload.
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30000 });
-    await page.getByRole('button', { name: '导出 ZIP' }).click();
+    await page.getByRole('button', { name: '导出 ZIP' }).first().click();
     const zipDownload = await zipDownloadPromise;
     if (!zipDownload.suggestedFilename().endsWith('.zip')) throw new Error('ZIP export has unexpected name');
     const zipFile = await zipDownload.path();
