@@ -4,12 +4,12 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
-  # Keep the embedded source aligned with edits made in EverflowCN/aldine.
+  # Build the Pages artifact from EverflowCN/aldine on each run.
   schedule:
     - cron: "17 2,14 * * *"
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Setup Node for Aldine
         uses: actions/setup-node@v4
@@ -49,32 +49,10 @@ jobs:
           rm -rf latex/aldine/node_modules latex/aldine/apps/web/dist
           find latex/aldine -type d -name node_modules -prune -exec rm -rf {} +
 
-      - name: Commit fork source and compiled preview into website repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A latex/aldine latex/index.html latex/assets latex/.aldine-source-rev
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(latex): sync Aldine fork and publish updated preview [skip ci]"
-            # Parallel edits can advance main while the build is running.
-            # Rebase only this bot-generated commit and retry without force-pushing.
-            pushed=0
-            for attempt in 1 2 3; do
-              git fetch origin main
-              git rebase origin/main
-              if git push origin HEAD:main; then
-                pushed=1
-                break
-              fi
-              sleep 2
-            done
-            if [ "$pushed" -ne 1 ]; then
-              echo "Could not push sync commit after 3 attempts" >&2
-              exit 1
-            fi
-          else
-            echo "Aldine source and preview already up to date"
-          fi
+      # Deploy the just-built Aldine frontend directly from the current
+      # workflow workspace. Never push generated Vite asset filenames back to
+      # main: concurrent edits otherwise cause rename/rename rebase conflicts.
+      # EverflowCN/aldine remains the upstream source of truth.
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
