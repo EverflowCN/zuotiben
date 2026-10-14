@@ -1,0 +1,26 @@
+name: BusyTeX browser PDF smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/smoke-browser-xelatex.cjs"
+      - ".github/workflows/browser-xelatex-smoke.yml"
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install headless Chromium and Playwright
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Compile minimal XeLaTeX and assert PDF download
+        run: node scripts/smoke-browser-xelatex.cjs
