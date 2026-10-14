@@ -31,4 +31,30 @@ for file in busytex_worker.js busytex_pipeline.js busytex.js busytex.wasm busyte
  fi
  test -s "$dest/$file"
 done
+# Large TeX Live collections are hosted with the deployed GitHub Pages
+# artifact, not committed to git history. They are OPTIONAL in the browser.
+# Never force every visitor to download ~528 MiB on top of Basic.
+#
+# Same pinned TeX Live 2026 release as the Basic WASM files above.
+# Verify source release SHA-256 before publishing to prevent mixed versions
+# or incomplete downloads from silently corrupting compilation.
+cat > "$dest/texlive-optional.sha256" <<'SHA256'
+7a912aa15f9e534b1948566771bf2510ca704fab3c3fdece7f75bc6558525a92  texlive-recommended.data
+4354ad2040462400ca856e595cec970509c95f8d2ac87fb3e06e0e17ffc9033a  texlive-recommended.js
+9ae117b8fd7eacc13430296278d63603070f083c6f1e647937a6866874c726ae  texlive-extra.data
+6c935b358ababde879aa2c62b48601d6e6be4ee7f3f9ed86c7f49136b803d618  texlive-extra.js
+SHA256
+for file in texlive-recommended.data texlive-recommended.js texlive-extra.data texlive-extra.js; do
+  expected="$(awk -v f="$file" '$2==f {print $1}' "$dest/texlive-optional.sha256")"
+  if [[ -s "$dest/$file" ]] && echo "$expected  $dest/$file" | sha256sum -c --status; then
+    echo "Using verified GitHub Actions cache: $file"
+    continue
+  fi
+  rm -f "$dest/$file"
+  curl --fail --location --retry 4 --retry-delay 3 --silent --show-error "$base/$file" -o "$dest/$file.tmp"
+  mv "$dest/$file.tmp" "$dest/$file"
+  echo "$expected  $dest/$file" | sha256sum -c --status
+  echo "Verified and staged GitHub-hosted optional bundle: $file"
+done
+echo "BusyTeX Basic + optional Recommended/Extra are staged as static GitHub Pages files."
 echo "BusyTeX browser test bundle and WASM assets staged successfully."
