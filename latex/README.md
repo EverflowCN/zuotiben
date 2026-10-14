@@ -59,3 +59,7 @@ GitHub 的源文件大小限制意味着大 `.data` 文件不能直接 `git add`
 - 注意：静态包名归属不能保证 XeLaTeX WASM 兼容、中文字体可用、PDF 分页与本地一致；需继续进行完整工程端到端编译验证。
 
 **2026-10-15 实测清单补充：**对先前上传的 173 文件 Everflow 原版母版进行静态扫描后，三个本地资源档位中的宏包索引识别为 Basic 20、Recommended 11、Extra 15、工程内 2、索引暂未直接列出 6（`bbding`、`ctex`、`newtxmath`、`xeCJK`、`xeCJKfntef`、`zhnumber`）。用户打开「检查模板依赖」看到的**资源建议来自实际 TeX Live 文件索引**，并非仅按包名猜测。未列出不等于编译一定失败，仍保留按需下载宏包的选项。上述结果并非原版母版 BusyTeX WASM 编译通过的证明。
+
+## 多文件工程与可选宏包资源包修复
+
+Aldine 浏览器工作区导入 ZIP 时优先将 `Everflow-Exam.tex` 识别为入口，避免将子目录中的辅助 `.tex` 错认成主文档。BusyTeX 的固定发行版 `busytex_pipeline.js` 在站点构建时打上小范围兼容补丁：**用户明确选择 Recommended/Extra 时，即使实际 `\usepackage` 写在 `.sty`/`.cls` 中，也不会被上游默认的包名推断逻辑自动裁掉。** CI 检查补丁锚点，如版本更新导致不匹配则拒绝静默发布。新增不含私人原版模板内容的 CJK/TikZ/multirow 合成文档测试，验证大体积资源包实际加载和浏览器编译。
