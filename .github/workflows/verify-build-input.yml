@@ -36,7 +36,7 @@ jobs:
           BUILD_INPUT_DIR: ${{ steps.input.outputs.directory }}
         run: |
           set -euo pipefail
-          test -d "$BUILD_INPUT_DIR/.git"
+          test -s "$BUILD_INPUT_DIR/README.md"
           test -f "$BUILD_INPUT_DIR/.github/scripts/verify-build.sh" || {
             echo '::error::Source integrity script was not found in the dependency.'
             exit 1
