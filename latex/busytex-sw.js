@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
   // and reopening the editor does not re-download the same missing packages.
   // Never cache user documents, third-party arbitrary URLs, or 301 "not found".
   if (url.origin === TEXLIVE_REMOTE_ORIGIN &&
-      /^\\/\\d{1,3}\\/[a-zA-Z0-9_.+%-]{1,240}$/.test(url.pathname) &&
+      new RegExp('^/[0-9]{1,3}/[a-zA-Z0-9_.+%-]{1,240}$').test(url.pathname) &&
       !url.search && !url.hash && request.credentials !== 'include') {
     event.respondWith((async () => {
       const cache = await caches.open(REMOTE_CACHE_NAME);
