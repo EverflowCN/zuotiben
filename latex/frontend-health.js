@@ -1,5 +1,7 @@
 // Explicit warning while only Aldine's static React app is deployed.
 (() => {
+  // Local BusyTeX workspace is operational without the Node.js API.
+  if (new URLSearchParams(location.search).get('local') === '1') return;
   const show = () => {
     if (document.getElementById('everflow-aldine-offline')) return;
     const el = document.createElement('aside');
