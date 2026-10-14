@@ -12,6 +12,10 @@ const CACHE_FILES = new Set([
   'busytex_biber.js',
   'texlive-basic.data',
   'texlive-basic.js',
+  // Optional 190MB/330MB data packages are cached by Emscripten IndexedDB,
+  // not duplicated in CacheStorage; cache only their small JS loaders here.
+  'texlive-recommended.js',
+  'texlive-extra.js',
   'dvipdfmx.cfg',
   'texmf.cnf',
   'updmap.cfg',
