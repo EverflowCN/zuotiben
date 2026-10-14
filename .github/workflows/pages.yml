@@ -92,6 +92,9 @@ jobs:
       - name: Build browser-only BusyTeX test from own fork
         run: bash scripts/build-busytex-browser.sh
 
+      - name: Audit Everflow package coverage against pinned TeX Live manifests
+        run: python3 scripts/analyze-everflow-runtime.py
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
