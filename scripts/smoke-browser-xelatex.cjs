@@ -207,6 +207,9 @@ const { chromium } = require('playwright');
     if (!fixtureText.includes('tikz') || !fixtureText.includes('xeCJK') || !fixtureText.includes('multirow')) {
       throw new Error('Source package dependencies not extracted');
     }
+    if (!fixtureText.includes('建议资源：扩展')) {
+      throw new Error('Everflow recommended tier must reflect the real TeX Live Extra file index');
+    }
     const coverageSummary = await page.getByTestId('preflight-coverage').textContent();
     if (coverageSummary?.includes('无法加载')) throw new Error('GitHub hosted file inventory was not available');
     console.log('PASS: ZIP auto-preflight recognizes Everflow and classifies TeX Live file/package assets.');
