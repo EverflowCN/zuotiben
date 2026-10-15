@@ -78,8 +78,26 @@ def main():
         if best[1] < 0.50:
             low.append({"local_page": i + 1, "nearest_browser_page": best[0] + 1,
                         "similarity": best[1]})
+    aligned = [overlap(a5[i], b5[i]) for i in range(min(len(a5), len(b5)))]
+    first_divergence = next((i + 1 for i, score in enumerate(aligned) if score < 0.95), None)
+    mapping = []
+    for i, sig in enumerate(a5):
+        if not sig:
+            continue
+        candidates = [(j, overlap(sig, b5[j])) for j in
+                      range(max(0, i - 3), min(len(b5), i + 4))]
+        if candidates:
+            j, score = max(candidates, key=lambda item: item[1])
+            if j != i:
+                mapping.append({"local_page": i + 1, "browser_page": j + 1,
+                                "similarity": score})
     report = {
         "privacy": "aggregate-only; no content or private source printed",
+        "first_same_index_text_divergence_page": first_divergence,
+        "same_index_page_similarities": aligned,
+        "shifted_best_matches": mapping,
+        "local_page_chars": list(map(len, loc)),
+        "browser_page_chars": list(map(len, web)),
         "local_pages": len(loc),
         "browser_pages": len(web),
         "page_count_delta_browser_minus_local": len(web) - len(loc),
