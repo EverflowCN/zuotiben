@@ -1,6 +1,9 @@
 name: Everflow complete Exam browser verification
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/everflow-full-e2e.yml']
   # Manual only: native/browser parity diagnosis never runs on ordinary pushes.
 
 permissions:
