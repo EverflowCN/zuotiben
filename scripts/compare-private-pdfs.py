@@ -47,6 +47,14 @@ def overlap(left, right):
     return round(2 * shared / (len(left) + len(right)), 4)
 
 
+def wide_pages(path, total):
+    """Return numbered non-A4-width pages without revealing page contents."""
+    metadata = run("pdfinfo", "-box", "-f", "1", "-l", str(total), str(path))
+    sizes = re.findall(r"^Page\\s+(\\d+)\\s+size:\\s*([\\d.]+)\\s+x\\s+([\\d.]+)", metadata, flags=re.M)
+    return [int(number) for number, width, height in sizes
+            if float(width) > 900 and float(height) > 700]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("local_pdf")
@@ -56,6 +64,7 @@ def main():
     if not a.is_file() or not b.is_file():
         raise SystemExit("Private PDF file absent")
     loc, web = pages(a), pages(b)
+    loc_wide, web_wide = wide_pages(a, len(loc)), wide_pages(b, len(web))
     a5, b5 = list(map(grams, loc)), list(map(grams, web))
     matched = []
     low = []
@@ -73,6 +82,14 @@ def main():
         "privacy": "aggregate-only; no content or private source printed",
         "local_pages": len(loc),
         "browser_pages": len(web),
+        "page_count_delta_browser_minus_local": len(web) - len(loc),
+        "local_wide_page_numbers": loc_wide,
+        "browser_wide_page_numbers": web_wide,
+        "local_final_page_chars": len(loc[-1]),
+        "browser_final_page_chars": len(web[-1]),
+        "suspected_missing_spread_page": (len(loc) == len(web) + 1 and
+                                          (len(loc) in loc_wide) and
+                                          (len(web) not in web_wide)),
         "page_count_equal": len(loc) == len(web),
         "local_extracted_chars": sum(map(len, loc)),
         "browser_extracted_chars": sum(map(len, web)),
