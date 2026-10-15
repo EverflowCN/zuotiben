@@ -14,7 +14,7 @@ jobs:
   full-exam-e2e:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 28
     steps:
       - name: Checkout public application
         uses: actions/checkout@v4
@@ -71,44 +71,10 @@ jobs:
           npx playwright install --with-deps chromium
           command -v pdftotext && command -v pdfinfo && command -v pdffonts || { sudo apt-get update && sudo apt-get install -y poppler-utils; }
 
-      - name: Install reference XeLaTeX packages within free public-runner allocation
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends \
-            texlive-xetex texlive-lang-chinese texlive-latex-extra \
-            texlive-plain-generic texlive-science texlive-fonts-recommended \
-            fonts-texgyre fonts-texgyre-math fonts-oflb-asana-math fonts-noto-cjk
-
-      - name: Compile private full Exam as local-only baseline
-        shell: bash
-        env:
-          PRIVATE_DIR: ${{ steps.private.outputs.directory }}
-          BASELINE_DIR: ${{ runner.temp }}/everflow-reference
-        run: |
-          set -euo pipefail
-          mkdir -p "$BASELINE_DIR"
-          for pass in 1 2; do
-            if ! ( cd "$PRIVATE_DIR" && xelatex -no-shell-escape \
-                -interaction=nonstopmode -halt-on-error -file-line-error \
-                "-output-directory=$BASELINE_DIR" Everflow-Exam.tex \
-                > "$BASELINE_DIR/tex-build.log" 2>&1 ); then
-              echo "::error::Local XeLaTeX reference failed; protected compile logs omitted."
-              exit 1
-            fi
-          done
-          test -s "$BASELINE_DIR/Everflow-Exam.pdf" || {
-            echo "::error::Local XeLaTeX reference PDF not generated."
-            exit 1
-          }
-          echo "Private XeLaTeX baseline generated outside the public workspace."
-
       - name: Verify complete original private Exam using BusyTeX in real browser
         env:
           PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
           EVERFLOW_REDUCED_MODE: "0"
-          PRIVATE_LOCAL_BASELINE_PDF: ${{ runner.temp }}/everflow-reference/Everflow-Exam.pdf
         run: node scripts/smoke-everflow-private.cjs
 
       - name: Erase all private runner storage
@@ -119,8 +85,6 @@ jobs:
           PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
         run: |
           rm -f -- "$PRIVATE_TEMPLATE_ZIP"
-          BASELINE_DIR="$RUNNER_TEMP/everflow-reference"
-          if [[ -d "$BASELINE_DIR" ]]; then rm -rf -- "$BASELINE_DIR"; fi
           if [[ -n "$PRIVATE_DIR" && "$PRIVATE_DIR" == "$RUNNER_TEMP"/* ]]; then
             rm -rf -- "$PRIVATE_DIR"
           fi
