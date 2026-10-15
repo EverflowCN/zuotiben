@@ -68,12 +68,28 @@ const { chromium } = require('playwright');
     // after a click. Require a NEW blob URL before asserting Chinese PDF data.
     const previousPdfUrl = await page.getByRole('link', {name:'下载 PDF'}).getAttribute('href');
     await page.getByTestId('browser-compile').click();
-    await page.waitForFunction(previous => {
-      const v = document.querySelector('.browser-aldine__status-text')?.textContent || '';
-      const href = document.querySelector('a[download$=".pdf"]')?.getAttribute('href');
-      return v.includes('编译失败') || v.includes('浏览器编译失败') ||
-        (v.includes('编译成功') && !!href && href !== previous);
-    }, previousPdfUrl, { timeout: 240000 });
+    try {
+      await page.waitForFunction(previous => {
+        const v = document.querySelector('.browser-aldine__status-text')?.textContent || '';
+        const href = document.querySelector('a[download$=".pdf"]')?.getAttribute('href');
+        return v.includes('编译失败') || v.includes('浏览器编译失败') ||
+          (v.includes('编译成功') && !!href && href !== previous);
+      }, previousPdfUrl, { timeout: 110000 });
+    } catch (error) {
+      const snapshot = await page.evaluate(() => ({
+        status: document.querySelector('.browser-aldine__status-text')?.textContent,
+        eta: document.querySelector('[data-testid="compile-eta"]')?.textContent,
+        mainDocumentStart: document.querySelector('.code-pane [contenteditable="true"]')?.textContent?.slice(0, 130),
+        progress: document.querySelector('.browser-aldine__compile-progress')?.textContent,
+        mainDoc: document.querySelector('[aria-label="主文档"]')?.value,
+        resource: document.querySelector('[aria-label="TeX Live 资源包"]')?.value,
+        link: document.querySelector('a[download$=".pdf"]')?.getAttribute('href'),
+        hasLog: Boolean(document.querySelector('[data-testid="browser-compile-log"]'))
+      }));
+      console.log('SECOND-PASS TIMEOUT SNAPSHOT:', JSON.stringify(snapshot));
+      console.log('Browser errors:', JSON.stringify(errors.slice(-6)));
+      throw error;
+    }
     const chineseStatus = await status.textContent();
     const chineseLog = await page.getByTestId('browser-compile-log').textContent().catch(() => '(log unavailable)');
     console.log('Chinese + math status:', chineseStatus);
