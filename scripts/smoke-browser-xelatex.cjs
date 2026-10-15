@@ -238,6 +238,10 @@ PGF floating-point dependency regression.
     });
     await page.locator('input[accept*="application/zip"]').setInputFiles({name:'pgf-regression.zip',mimeType:'application/zip',buffer:Buffer.from(pgfFixture)});
     await page.waitForFunction(() => document.querySelector('.browser-aldine__status-text')?.textContent.includes('ZIP 已导入'));
+    // Verify the ZIP actually entered the project VFS before attributing errors to TeX Live.
+    await page.getByTestId('file-project-style.sty').waitFor({timeout:10000});
+    const compiledLocalFiles = await page.locator('[data-testid^="file-"]').evaluateAll(nodes => nodes.map(x => x.getAttribute('data-testid')));
+    if (!compiledLocalFiles.includes('file-project-style.sty')) throw Error('PGF fixture lost its custom .sty before compiling');
     await page.getByRole('combobox', {name:'TeX Live 资源包'}).selectOption('basic');
     await page.locator('.browser-aldine__settings summary').click();
     await page.getByRole('checkbox', {name:'自动获取缺失宏包'}).uncheck();
@@ -245,7 +249,10 @@ PGF floating-point dependency regression.
     await page.waitForFunction(() => /编译成功|编译失败|浏览器编译失败/.test(document.querySelector('.browser-aldine__status-text')?.textContent || ''), null, {timeout:300000});
     const pgfStatus = await page.locator('.browser-aldine__status-text').textContent();
     if (!pgfStatus.includes('编译成功')) {
-      console.log('PGF regression log:', (await page.getByTestId('browser-compile-log').textContent()).slice(-10000));
+      const fullLog = await page.getByTestId('browser-compile-log').textContent() || '';
+      console.log('PGF regression earliest output:', fullLog.slice(0,4200));
+      console.log('PGF regression error markers:', fullLog.split('\\n').filter(x => /not found|can't find file|input|kpse_find_file|enter file name|emergency stop|package|error/i.test(x)).slice(0,22).map(x => x.slice(0,180)));
+      console.log('PGF regression log tail:', fullLog.slice(-3200));
       throw Error('PGF nested dependency regression failed: ' + pgfStatus);
     }
     console.log('PASS: PGF internal pgfmathfloat.code.tex compiles through nested .sty, automatic tier selection, and no remote package fallback.');
