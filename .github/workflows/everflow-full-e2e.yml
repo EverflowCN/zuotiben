@@ -80,7 +80,7 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends \
             texlive-xetex texlive-plain-generic texlive-lang-chinese texlive-latex-extra \
             texlive-science texlive-fonts-recommended texlive-fonts-extra fonts-texgyre \
-            fonts-texgyre-math poppler-utils
+            fonts-texgyre-math fonts-oflb-asana-math poppler-utils
 
       - name: Build one-pass and two-pass native references with output redacted
         env:
