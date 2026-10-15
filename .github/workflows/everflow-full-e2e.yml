@@ -1,7 +1,7 @@
 name: Everflow complete Exam browser verification
 on:
   workflow_dispatch:
-  # One-time recheck: capture only per-page character counts to diagnose the 57/58 mismatch.
+  # Same-input native/browser diagnosis; private outputs stay in runner.temp.
   # Runs once when installed/edited, not after every unrelated deployment.
   push:
     branches: ["main"]
@@ -15,7 +15,7 @@ jobs:
   full-exam-e2e:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 35
     steps:
       - name: Checkout public application
         uses: actions/checkout@v4
@@ -72,10 +72,28 @@ jobs:
           npx playwright install --with-deps chromium
           command -v pdftotext && command -v pdfinfo && command -v pdffonts || { sudo apt-get update && sudo apt-get install -y poppler-utils; }
 
+      - name: Install native XeLaTeX for same-input comparison
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            texlive-xetex texlive-lang-chinese texlive-latex-extra \
+            texlive-science texlive-fonts-recommended fonts-texgyre \
+            fonts-texgyre-math poppler-utils
+
+      - name: Build one-pass and two-pass native references with output redacted
+        env:
+          INPUT_DIR: ${{ steps.private.outputs.directory }}
+          PRIVATE_REFERENCE_DIR: ${{ runner.temp }}/everflow-native-reference
+        run: python3 scripts/build-private-reference.py
+
       - name: Verify complete original private Exam using BusyTeX in real browser
         env:
           PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
           EVERFLOW_REDUCED_MODE: "0"
+          PRIVATE_LOCAL_BASELINE_ONE_PASS_PDF: ${{ runner.temp }}/everflow-native-reference/exam-pass-1.pdf
+          PRIVATE_LOCAL_BASELINE_PDF: ${{ runner.temp }}/everflow-native-reference/exam-pass-2.pdf
         run: node scripts/smoke-everflow-private.cjs
 
       - name: Erase all private runner storage
@@ -86,6 +104,7 @@ jobs:
           PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
         run: |
           rm -f -- "$PRIVATE_TEMPLATE_ZIP"
+          rm -rf -- "$RUNNER_TEMP/everflow-native-reference"
           if [[ -n "$PRIVATE_DIR" && "$PRIVATE_DIR" == "$RUNNER_TEMP"/* ]]; then
             rm -rf -- "$PRIVATE_DIR"
           fi
