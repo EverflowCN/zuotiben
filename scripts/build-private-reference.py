@@ -12,6 +12,13 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     if not (root / "Everflow-Exam.tex").is_file():
         raise SystemExit("Private Exam entrypoint unavailable")
+    font_files = ("NewCMSans10-Book.otf", "NewCMMono10-Book.otf",
+                  "TeXGyreTermesX-Regular.otf", "XITSMath-Regular.otf")
+    for filename in font_files:
+        found = subprocess.run(["kpsewhich", filename], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, timeout=15)
+        if found.returncode or not found.stdout.strip():
+            raise SystemExit("Private reference font dependency unavailable: " + filename)
     command = ["xelatex", "-no-shell-escape", "-interaction=nonstopmode",
                "-halt-on-error", "-file-line-error",
                "-output-directory=" + str(out), "Everflow-Exam.tex"]
@@ -23,6 +30,13 @@ def main():
             raise SystemExit("Private reference timed out; output redacted")
         pdf = out / "Everflow-Exam.pdf"
         if result.returncode or not pdf.is_file():
+            output = result.stdout.decode("utf-8", "replace")
+            print("PRIVATE_REFERENCE_FAILURE " + json.dumps({
+                "pass": number,
+                "font_error": bool(re.search(r"fontspec.*error|font.*not found", output, re.I)),
+                "missing_asset": bool(re.search(r"File .* not found|I can't find file", output)),
+                "undefined_command": "Undefined control sequence" in output
+            }))
             raise SystemExit("Private reference failed; compiler output redacted")
         copy = out / ("exam-pass-" + str(number) + ".pdf")
         copy.write_bytes(pdf.read_bytes())
