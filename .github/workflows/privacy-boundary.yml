@@ -1,0 +1,43 @@
+name: Public deploy private-source boundary regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/check-private-boundary.cjs"
+      - ".github/workflows/privacy-boundary.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify current PUBLIC tree contains no protected private master
+        run: node scripts/check-private-boundary.cjs
+      - name: Verify nested private source is blocked (synthetic empty file only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="$GITHUB_WORKSPACE/__private_probe__"
+          trap 'rm -rf -- "$probe"' EXIT
+          mkdir -p "$probe/90-core"
+          : > "$probe/90-core/everflow-engine.sty"
+          if node scripts/check-private-boundary.cjs; then
+            echo '::error::Private source filename was not blocked!'
+            exit 1
+          fi
+          rm -f -- "$probe/90-core/everflow-engine.sty"
+          ln -s "$RUNNER_TEMP" "$probe/external-link"
+          if node scripts/check-private-boundary.cjs; then
+            echo '::error::External directory symlink was not blocked!'
+            exit 1
+          fi
+          rm -rf -- "$probe"
+          node scripts/check-private-boundary.cjs
