@@ -5,6 +5,10 @@ const { chromium } = require('playwright');
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const errors = [];
+    let basicRemoteRequests = 0;
+    page.context().on('request', request => {
+      if (request.url().startsWith('https://texlive2026.texlyre.org/')) basicRemoteRequests++;
+    });
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto('https://zuotiben.top/latex/?local=1', { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -50,6 +54,8 @@ const { chromium } = require('playwright');
     console.log('Status:', result);
     console.log('Log tail:', (log || '').slice(-3500));
     if (!result?.includes('编译成功')) throw new Error('Browser XeLaTeX smoke test did not compile: ' + result);
+    if (basicRemoteRequests !== 0) throw new Error('A standard article triggered ' + basicRemoteRequests + ' remote TeX Live requests despite bundled Basic assets');
+    console.log('PASS: Standard article XeLaTeX compiled using Basic only, zero remote TeX Live file lookups.');
     if (!(await page.getByRole('link', { name: '下载 PDF' }).count())) throw new Error('PDF download link is missing');
 
     // Second pass: Chinese font discovery + mathematical formula.
