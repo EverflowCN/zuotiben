@@ -97,6 +97,18 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
     }));
     if (!readableCJK) throw Error('Private PDF produced, but Chinese text was not extractable');
     if (pages < (reduced ? 1 : 3)) throw Error('Private PDF did not contain a plausible number of pages');
+    // Optional local TeX Live baseline. Report numbers only, never PDF text/source.
+    if (process.env.PRIVATE_LOCAL_BASELINE_PDF) {
+      if (!fs.existsSync(process.env.PRIVATE_LOCAL_BASELINE_PDF)) {
+        throw Error('Private local PDF baseline was not generated');
+      }
+      const summary = execFileSync('python3', [
+        'scripts/compare-private-pdfs.py',
+        process.env.PRIVATE_LOCAL_BASELINE_PDF,
+        pdfPath
+      ], { encoding: 'utf8', timeout: 180000 });
+      console.log(summary.trim());
+    }
     console.log('PASS: Private Everflow Exam ' + (reduced ? 'preamble / minimal body' : 'complete body') + ' generated a Chinese PDF entirely in the browser.');
   } finally {
     await browser.close();
