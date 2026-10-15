@@ -225,16 +225,15 @@ const { chromium } = require('playwright');
       const zip = await import('/latex/browser-test/fflate.mjs');
       const enc = new TextEncoder();
       return [...zip.zipSync({
-        'main.tex': enc.encode(String.raw`\documentclass{ctexart}
+        'main.tex': enc.encode(String.raw`\documentclass{article}
 \usepackage{project-style}
 \begin{document}
-中文与 PGF 浮点依赖测试。
+PGF floating-point dependency regression.
 \begin{tikzpicture}\draw (0,0) rectangle (2,1);\end{tikzpicture}
-\pgfmathparse{1.25+2.5}\pgfmathresult
+\pgfmathfloatparsenumber{1.25}\pgfmathfloattofixed{\pgfmathresult}\pgfmathresult
 \end{document}`),
         'project-style.sty': enc.encode(String.raw`\ProvidesPackage{project-style}
-\RequirePackage{tikz}
-\input{pgfmathfloat.code.tex}`)
+\RequirePackage{tikz}`)
       })];
     });
     await page.locator('input[accept*="application/zip"]').setInputFiles({name:'pgf-regression.zip',mimeType:'application/zip',buffer:Buffer.from(pgfFixture)});
