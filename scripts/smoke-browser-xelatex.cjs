@@ -280,6 +280,20 @@ PGF floating-point dependency regression.
       console.log('PGF regression earliest output:', fullLog.slice(0,4200));
       console.log('PGF regression error markers:', fullLog.split('\\n').filter(x => /not found|can't find file|input|kpse_find_file|enter file name|emergency stop|package|error/i.test(x)).slice(0,22).map(x => x.slice(0,180)));
       console.log('PGF regression log tail:', fullLog.slice(-3200));
+      const dependencyState = await page.evaluate(async () => {
+        const base = '/latex/browser-test/core/busytex/';
+        const lib = await import('/latex/browser-test/busytex-lib.mjs');
+        const fileCounts = await Promise.all(['recommended','extra'].map(async tier => {
+          const response = await fetch(base + 'texlive-' + tier + '.txt', {cache:'force-cache'});
+          const text = response.ok ? await response.text() : '';
+          return {tier, manifestOk:response.ok, hasTikzFile:/\/tikz\.sty(?:\r?\n|$)/m.test(text)};
+        }));
+        return {selected:document.querySelector('[aria-label="TeX Live 资源包"]')?.value,
+          readyRecommended:await lib.isPackageCached(base + 'texlive-recommended.js'),
+          readyExtra:await lib.isPackageCached(base + 'texlive-extra.js'),
+          fileCounts};
+      });
+      console.log('PGF resource inventory diagnostics:', JSON.stringify(dependencyState));
       throw Error('PGF nested dependency regression failed: ' + pgfStatus);
     }
     console.log('PASS: PGF internal pgfmathfloat.code.tex compiles through nested .sty, automatic tier selection, and no remote package fallback.');
