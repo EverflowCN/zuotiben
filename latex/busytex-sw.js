@@ -67,6 +67,17 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const match = await cache.match(request);
+    // These two scripts receive application fixes between upstream WASM releases.
+    if (filename === 'busytex_pipeline.js' || filename === 'busytex_worker.js') {
+      try {
+        const fresh = await fetch(request, { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
+        if (fresh.ok && fresh.type === 'basic') {
+          event.waitUntil(cache.put(request, fresh.clone()).catch(() => {}));
+          return fresh;
+        }
+        if (!match) return fresh;
+      } catch (error) { if (!match) throw error; }
+    }
     if (match) return match;
     const response = await fetch(request);
     if (response.ok && response.type === 'basic') {

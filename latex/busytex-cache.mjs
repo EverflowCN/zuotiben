@@ -142,6 +142,18 @@ export async function prepareBusyTeXCache(onProgress = () => {}) {
     await registering;
   }
 
+  // Runtime JavaScript changes independently of the pinned 120 MB WASM/data.
+  // Old cache-first workers can otherwise keep a buggy package resolver forever.
+  const codeRevision = '2026-10-15-preload-v2';
+  const codeMarker = 'everflow.busytex.runtime-code';
+  if (stored(codeMarker) !== codeRevision && 'caches' in window && navigator.onLine !== false) {
+    try {
+      const codeCache = await caches.open(BUSYTEX_CACHE_NAME);
+      await Promise.all(['busytex_pipeline.js', 'busytex_worker.js'].map(name => codeCache.delete(ROOT + name)));
+      remember(codeMarker, codeRevision);
+    } catch { /* Offline and storage-limited users can still use cached engines. */ }
+  }
+
   // Automatic, no bespoke "Keep cache" button; browser may still deny or
   // prompt because persistence is a browser-controlled permission.
   void requestBusyTeXPersistentStorage().then((granted) => {

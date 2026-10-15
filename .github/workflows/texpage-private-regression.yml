@@ -1,0 +1,87 @@
+name: TeXPage layout and full private Exam regression
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy GitHub Pages"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  private-e2e:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && contains(github.event.workflow_run.head_commit.message, '[texpage-verify]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - name: Checkout public application
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Read already-configured private template source (temporary files only)
+        uses: ./.github/actions/build-input
+        id: private
+        with:
+          repository: ${{ secrets.BUILD_INPUT_REPOSITORY }}
+          token: ${{ secrets.BUILD_INPUT_READ_TOKEN }}
+
+      - name: Assemble test ZIP without committing, uploading or logging private files
+        shell: bash
+        env:
+          INPUT_DIR: ${{ steps.private.outputs.directory }}
+          PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, zipfile
+          root = pathlib.Path(os.environ["INPUT_DIR"])
+          archive = pathlib.Path(os.environ["PRIVATE_TEMPLATE_ZIP"])
+          if not (root/"Everflow-Exam.tex").is_file():
+              raise SystemExit("Private input does not contain a compatible LaTeX Exam entrypoint")
+          dirs = {
+              "00-user-config", "90-core", "assets", "config", "core", "covers",
+              "custom-pages", "exam-pages", "figures", "frontmatter", "img",
+              "public-pages", "questions", "styles"
+          }
+          count = 0
+          with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=5) as z:
+              for p in root.rglob("*"):
+                  if not p.is_file() or p.is_symlink():
+                      continue
+                  rel = p.relative_to(root)
+                  if rel.parts[0] not in dirs and rel.as_posix() not in {
+                      "Everflow-Exam.tex", "Everflow-Book.tex", "Everflow-Public.tex"
+                  }:
+                      continue
+                  if p.stat().st_size > 25*1024*1024:
+                      raise SystemExit("Private input has a resource too large for safe browser import")
+                  z.write(p, rel.as_posix())
+                  count += 1
+          if count < 15 or archive.stat().st_size > 32*1024*1024:
+              raise SystemExit("Private LaTeX archive failed limits check")
+          print("Temporary private LaTeX ZIP prepared; contents deliberately not logged.")
+          PY
+
+      - name: Install headless Chromium and PDF analysis utilities
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+          command -v pdftotext && command -v pdfinfo && command -v pdffonts || { sudo apt-get update && sudo apt-get install -y poppler-utils; }
+
+      - name: Compile complete original private Exam after the published rollout
+        env:
+          PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
+          EVERFLOW_REDUCED_MODE: "0"
+        run: node scripts/smoke-everflow-private.cjs
+
+      - name: Erase all private runner storage
+        if: always()
+        shell: bash
+        env:
+          PRIVATE_DIR: ${{ steps.private.outputs.directory }}
+          PRIVATE_TEMPLATE_ZIP: ${{ runner.temp }}/everflow-private-e2e.zip
+        run: |
+          rm -f -- "$PRIVATE_TEMPLATE_ZIP"
+          if [[ -n "$PRIVATE_DIR" && "$PRIVATE_DIR" == "$RUNNER_TEMP"/* ]]; then
+            rm -rf -- "$PRIVATE_DIR"
+          fi

@@ -153,6 +153,12 @@ const { chromium } = require('playwright');
       console.log('Service worker diagnostics:', JSON.stringify(diagnostics));
       throw new Error('Persistent SW/WASM cache not installed.');
     }
+    // Reproduce a returning user's stale pipeline while retaining the large core.
+    await page.evaluate(async () => {
+      const cache = await caches.open('everflow-busytex-core-v1.4.0-46ebb621-v1');
+      await cache.put('/latex/browser-test/core/busytex/busytex_pipeline.js', new Response('throw Error("stale resolver sentinel")', {headers:{'Content-Type':'text/javascript'}}));
+      localStorage.setItem('everflow.busytex.runtime-code', 'old-resolver');
+    });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByTestId('browser-compile').waitFor({ timeout: 30000 });
     const afterReload = await page.evaluate(async () => ({
@@ -172,6 +178,7 @@ const { chromium } = require('playwright');
     console.log('After reload compilation:', reopened);
     if (!reopened?.includes('编译成功')) throw new Error('Second-visit cached browser compilation failed.');
     console.log('PASS: Persistent BusyTeX WASM cache survives reload and XeLaTeX compiles again.');
+    console.log('PASS: Returning browser repairs stale compiler scripts without deleting cached WASM or project files.');
 
 
     // Synthetic Everflow fixture: check the REAL published TeX Live file index
@@ -214,6 +221,36 @@ const { chromium } = require('playwright');
     const coverageSummary = await page.getByTestId('preflight-coverage').textContent();
     if (coverageSummary?.includes('无法加载')) throw new Error('GitHub hosted file inventory was not available');
     console.log('PASS: ZIP auto-preflight recognizes Everflow and classifies TeX Live file/package assets.');
+    const pgfFixture = await page.evaluate(async () => {
+      const zip = await import('/latex/browser-test/fflate.mjs');
+      const enc = new TextEncoder();
+      return [...zip.zipSync({
+        'main.tex': enc.encode(String.raw`\documentclass{ctexart}
+\usepackage{project-style}
+\begin{document}
+中文与 PGF 浮点依赖测试。
+\begin{tikzpicture}\draw (0,0) rectangle (2,1);\end{tikzpicture}
+\pgfmathparse{1.25+2.5}\pgfmathresult
+\end{document}`),
+        'project-style.sty': enc.encode(String.raw`\ProvidesPackage{project-style}
+\RequirePackage{tikz}
+\input{pgfmathfloat.code.tex}`)
+      })];
+    });
+    await page.locator('input[accept*="application/zip"]').setInputFiles({name:'pgf-regression.zip',mimeType:'application/zip',buffer:Buffer.from(pgfFixture)});
+    await page.waitForFunction(() => document.querySelector('.browser-aldine__status-text')?.textContent.includes('ZIP 已导入'));
+    await page.getByRole('combobox', {name:'TeX Live 资源包'}).selectOption('basic');
+    await page.locator('.browser-aldine__settings summary').click();
+    await page.getByRole('checkbox', {name:'自动获取缺失宏包'}).uncheck();
+    await page.getByTestId('browser-compile').click();
+    await page.waitForFunction(() => /编译成功|编译失败|浏览器编译失败/.test(document.querySelector('.browser-aldine__status-text')?.textContent || ''), null, {timeout:300000});
+    const pgfStatus = await page.locator('.browser-aldine__status-text').textContent();
+    if (!pgfStatus.includes('编译成功')) {
+      console.log('PGF regression log:', (await page.getByTestId('browser-compile-log').textContent()).slice(-10000));
+      throw Error('PGF nested dependency regression failed: ' + pgfStatus);
+    }
+    console.log('PASS: PGF internal pgfmathfloat.code.tex compiles through nested .sty, automatic tier selection, and no remote package fallback.');
+
     // Import a completely SYNTHETIC multi-entry Everflow-like ZIP (not the
     // user's private template). Ensure its real Exam entrypoint is selected,
     // not an unrelated helper file or the Book/Public alternate entrypoint.
