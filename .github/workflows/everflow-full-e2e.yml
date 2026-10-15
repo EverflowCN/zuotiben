@@ -1,6 +1,7 @@
 name: Everflow complete Exam browser verification
 on:
   workflow_dispatch:
+  # One-time recheck: capture only per-page character counts to diagnose the 57/58 mismatch.
   # Runs once when installed/edited, not after every unrelated deployment.
   push:
     branches: ["main"]
