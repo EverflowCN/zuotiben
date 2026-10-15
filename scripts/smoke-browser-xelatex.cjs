@@ -11,7 +11,8 @@ const { chromium } = require('playwright');
     await page.getByTestId('browser-compile').waitFor({ timeout: 30000 });
     const editor = page.locator('.code-pane [contenteditable="true"][aria-label="main.tex"]');
     await page.locator('.editor-shell .toolbar').waitFor();
-    // The empty preview is lightweight; PDF.js is mounted only after a PDF exists.\n    await page.locator('.editor-shell .browser-aldine__preview').waitFor();
+    // The empty preview is lightweight; PDF.js is mounted only after a PDF exists.
+    await page.locator('.editor-shell .browser-aldine__preview').waitFor();
     await page.getByRole('tab', { name: '文件' }).waitFor();
     await editor.fill([
       '\\documentclass[12pt]{article}',
