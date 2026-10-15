@@ -1,12 +1,7 @@
 name: Everflow complete Exam browser verification
 on:
   workflow_dispatch:
-  # Same-input native/browser diagnosis; private outputs stay in runner.temp.
-  # Runs once when installed/edited, not after every unrelated deployment.
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/everflow-full-e2e.yml"
+  # Manual only: native/browser parity diagnosis never runs on ordinary pushes.
 
 permissions:
   contents: read
