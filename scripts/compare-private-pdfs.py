@@ -55,6 +55,19 @@ def wide_pages(path, total):
             if float(width) > 900 and float(height) > 700]
 
 
+def layout_metadata(path):
+    # Only font family labels and numeric image geometry leave the runner.
+    font_rows = run("pdffonts", str(path)).splitlines()[2:]
+    fonts = sorted(set(re.sub(r"^[A-Z]{6}\+", "", line.split()[0])
+                       for line in font_rows if line.strip()))
+    images = []
+    for line in run("pdfimages", "-list", str(path)).splitlines()[2:]:
+        row = line.split()
+        if len(row) >= 5 and row[0].isdigit() and row[3].isdigit() and row[4].isdigit():
+            images.append({"page": int(row[0]), "width": int(row[3]), "height": int(row[4])})
+    return {"font_families": fonts, "image_geometry": images}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("local_pdf")
@@ -91,7 +104,11 @@ def main():
             if j != i:
                 mapping.append({"local_page": i + 1, "browser_page": j + 1,
                                 "similarity": score})
+    native_meta, browser_meta = layout_metadata(a), layout_metadata(b)
     report = {
+        "native_layout_metadata": native_meta,
+        "browser_layout_metadata": browser_meta,
+        "font_family_sets_equal": native_meta["font_families"] == browser_meta["font_families"],
         "privacy": "aggregate-only; no content or private source printed",
         "first_same_index_text_divergence_page": first_divergence,
         "same_index_page_similarities": aligned,
