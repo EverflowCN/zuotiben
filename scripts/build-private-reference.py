@@ -35,7 +35,8 @@ def main():
                 "pass": number,
                 "font_error": bool(re.search(r"fontspec.*error|font.*not found", output, re.I)),
                 "missing_asset": bool(re.search(r"File .* not found|I can't find file", output)),
-                "undefined_command": "Undefined control sequence" in output
+                "undefined_command": "Undefined control sequence" in output,
+                "missing_ulem": bool(re.search(r"File [\'`\\\"]ulem\\.sty[\'`\\\"] not found", output))
             }))
             raise SystemExit("Private reference failed; compiler output redacted")
         copy = out / ("exam-pass-" + str(number) + ".pdf")
