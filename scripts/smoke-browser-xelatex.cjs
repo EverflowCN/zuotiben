@@ -64,11 +64,16 @@ const { chromium } = require('playwright');
       '\\]',
       '\\end{document}'
     ].join('\n'));
+    // The status from the previous successful build remains visible briefly
+    // after a click. Require a NEW blob URL before asserting Chinese PDF data.
+    const previousPdfUrl = await page.getByRole('link', {name:'下载 PDF'}).getAttribute('href');
     await page.getByTestId('browser-compile').click();
-    await page.waitForFunction(() => {
-      const v = document.querySelector('[role=status]')?.textContent || '';
-      return v.includes('编译成功') || v.includes('编译失败') || v.includes('浏览器编译失败');
-    }, null, { timeout: 240000 });
+    await page.waitForFunction(previous => {
+      const v = document.querySelector('.browser-aldine__status-text')?.textContent || '';
+      const href = document.querySelector('a[download$=".pdf"]')?.getAttribute('href');
+      return v.includes('编译失败') || v.includes('浏览器编译失败') ||
+        (v.includes('编译成功') && !!href && href !== previous);
+    }, previousPdfUrl, { timeout: 240000 });
     const chineseStatus = await status.textContent();
     const chineseLog = await page.getByTestId('browser-compile-log').textContent().catch(() => '(log unavailable)');
     console.log('Chinese + math status:', chineseStatus);
