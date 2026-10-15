@@ -50,7 +50,7 @@ def overlap(left, right):
 def wide_pages(path, total):
     """Return numbered non-A4-width pages without revealing page contents."""
     metadata = run("pdfinfo", "-box", "-f", "1", "-l", str(total), str(path))
-    sizes = re.findall(r"^Page\\s+(\\d+)\\s+size:\\s*([\\d.]+)\\s+x\\s+([\\d.]+)", metadata, flags=re.M)
+    sizes = re.findall(r"^Page\s+(\d+)\s+size:\s*([\d.]+)\s+x\s+([\d.]+)", metadata, flags=re.M)
     return [int(number) for number, width, height in sizes
             if float(width) > 900 and float(height) > 700]
 
