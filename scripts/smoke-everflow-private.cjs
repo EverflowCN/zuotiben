@@ -113,6 +113,17 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
       localReferencePages: reduced ? null : 58,
       localReferenceFinalPageWide: reduced ? null : true
     }));
+    // Numeric-only evidence for locating the first A4 page-breaking divergence.
+    // The actual text and template are NEVER included in the public CI log.
+    const pageTextLengths = [];
+    for (let n = 1; n <= pages; n++) {
+      const pageText = execFileSync('pdftotext', [
+        '-f', String(n), '-l', String(n), '-layout', '-enc', 'UTF-8', pdfPath, '-'
+      ], { encoding: 'utf8', timeout: 20000 });
+      pageTextLengths.push(pageText.replace(/\s/gu, '').length);
+    }
+    console.log('Private browser PDF page text-length metrics:',
+      JSON.stringify({ pages, counts: pageTextLengths }));
     // Optional local TeX Live baseline. Report numbers only, never PDF text/source.
     if (process.env.PRIVATE_LOCAL_BASELINE_PDF) {
       if (fs.existsSync(process.env.PRIVATE_LOCAL_BASELINE_PDF)) {
