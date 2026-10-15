@@ -109,3 +109,8 @@ Aldine 浏览器工作区导入 ZIP 时优先将 `Everflow-Exam.tex` 识别为�
 
 - 首轮小工程加速已在 Chromium 验证；真实 PDF 回归发现自定义 `.sty` 内的 TikZ 可能位于 TeX Live Extra，如果把这类宏包视作固定 Recommended，会导致 `tikz.sty not found`。已收紧跳过清单查询的范围：**仅基础宏包可跳过，TikZ/PGF/CTeX 等仍查询官方本机包清单并按需要选择 Extra**。
 - **保持简单工程的优化**：`article + amsmath` 仍使用 Basic、无外部宏包查询、单轮 XeLaTeX、无远程宏包回退；复杂母版保留完整依赖解析。
+
+### 2026-10-15 · 复杂宏包 BusyTeX 多轮补充
+
+- 不再假定 TikZ/PGF、CTeX 等在所有 BusyTeX 资源档位下都能安全使用单轮编译。**仅 Basic 标准工程采用快速单轮**；Recommended/Extra 工程保留 BusyTeX 的宏包解析与多轮编译流程，以规避 `tikz.sty not found` 等首次导入资源问题。
+- 宏包所在档位依然按实际安装清单解析，不再把 TikZ 固定视作推荐档位；这项修正与简单文档的耗时分段展示相互独立。
