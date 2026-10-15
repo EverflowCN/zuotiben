@@ -124,18 +124,18 @@ if (!file || !fs.existsSync(file)) throw Error('Private template file unavailabl
     }
     console.log('Private browser PDF page text-length metrics:',
       JSON.stringify({ pages, counts: pageTextLengths }));
-    // Optional local TeX Live baseline. Report numbers only, never PDF text/source.
-    if (process.env.PRIVATE_LOCAL_BASELINE_PDF) {
-      if (fs.existsSync(process.env.PRIVATE_LOCAL_BASELINE_PDF)) {
-        const summary = execFileSync('python3', [
-          'scripts/compare-private-pdfs.py',
-          process.env.PRIVATE_LOCAL_BASELINE_PDF,
-          pdfPath
-        ], { encoding: 'utf8', timeout: 180000 });
-        console.log(summary.trim());
-      } else {
-        console.log('No local reference PDF available; original browser-only test remains active.');
-      }
+    // Both references are generated from the same immutable private input.
+    const references = [
+      ['one-pass', process.env.PRIVATE_LOCAL_BASELINE_ONE_PASS_PDF],
+      ['two-pass', process.env.PRIVATE_LOCAL_BASELINE_PDF],
+    ].filter(([, filename]) => filename);
+    for (const [pass, filename] of references) {
+      if (!fs.existsSync(filename)) throw Error('Configured private reference PDF is missing');
+      const summary = execFileSync('python3', [
+        'scripts/compare-private-pdfs.py', filename, pdfPath
+      ], { encoding: 'utf8', timeout: 180000 });
+      console.log('Private reference comparison:', pass);
+      console.log(summary.trim());
     }
     console.log('PASS: Private Everflow Exam ' + (reduced ? 'preamble / minimal body' : 'complete body') + ' generated a Chinese PDF entirely in the browser.');
   } finally {
